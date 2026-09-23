@@ -18,8 +18,8 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 | M0 Skeleton | done 2026-09-24 | commit 0587ecb |
 | M1 Engine core | done 2026-09-24 | 28 JVM tests: filter, spikes, trains, no-Doppler, parked, tunnel, city distance, 10 Hz, pause, trips, steps, snapshot, resume (same boot + reboot), replay formats |
 | M2 Simulator + debug screen | done 2026-09-24 | Verified on emulator: City/Highway/Walk presets, spike rejected, signal loss → NO FIX, no speed field → POSITION, trip start/pause/resume/stop |
-| M3 Tracking service + sensors | in progress | |
-| M4 Storage + resume + Trips | todo | |
+| M3 Tracking service + sensors | done 2026-09-24 | Verified on emulator: permission dialogs chain (location → notifications), foreground `location` service with live notification, real LocationManager fixes (geo fix + velocity) → DOPPLER source, GnssStatus satellites, notification keeps updating with screen off, denied / coarse-only / step-permission cards |
+| M4 Storage + resume + Trips | in progress | |
 | M5 Gauge toolkit + first themes | todo | |
 | M6 Remaining themes + map + nerd | todo | |
 | M7 Target + step mode | todo | |
@@ -37,3 +37,6 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 - **Resume:** `EngineState.resumedAfter(gapMillis, nowNanos)` re-bases stored monotonic times, so resume works across reboots too.
 - **Developer options:** tap Version 7× in Settings. The Simulator switch runs `SimulatorSource` (the shared `SimRig` on the app clock, feeding `TrackingEngine`).
 - **Emulator helper:** `scratchpad/emu.sh` provides wait_boot, install, launch, shot, tap_text, hold_text, texts and crashes.
+- **Emulator GPS feed:** `scratchpad/feed.sh <kmh> <seconds>` drives `adb emu geo fix lon lat alt sats knots` at 1 Hz. The velocity argument arrives as `Location.speed`, so the engine sees DOPPLER.
+- **Service lifecycle:** `TrackingService` starts from `MainActivity.onStart()` (and after permission grants) when location is allowed. "Stop tracking" resets the live meter and stops the service. `SourceManager` runs GPS and step sensors only while the service is active, and never while the simulator is on.
+- **Motion:** `MotionSource` is on-demand (acquire/release). Heading comes from the rotation vector, using the flatter of the top-edge and back-camera axes. Yaw rate is the gyro · gravity, so it's independent of how the phone is mounted.

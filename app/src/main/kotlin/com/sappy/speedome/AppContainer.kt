@@ -3,7 +3,10 @@ package com.sappy.speedome
 import android.app.Application
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.sappy.speedome.settings.SettingsRepository
+import com.sappy.speedome.tracking.GnssRepository
+import com.sappy.speedome.tracking.MotionSource
 import com.sappy.speedome.tracking.SimulatorSource
+import com.sappy.speedome.tracking.SourceManager
 import com.sappy.speedome.tracking.TrackingEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +21,9 @@ class AppContainer(app: Application) {
     val settings = SettingsRepository(app, appScope)
     val tracking = TrackingEngine(appScope, settings.state)
     val simulator = SimulatorSource(appScope, tracking, settings.state)
+    val gnss = GnssRepository()
+    val motion = MotionSource(app)
+    val sources = SourceManager(app, appScope, settings.state, tracking, gnss)
 
     init {
         appScope.launch {

@@ -16,6 +16,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,11 @@ import kotlinx.coroutines.launch
 /** Developer-only controls under the gauge: simulator driving, session commands and raw engine readout. */
 @Composable
 fun DevPanel(view: TrackView, truth: SimulatorSource.Truth) {
+    val app = LocalAppContainer.current
+    DisposableEffect(Unit) {
+        app.motion.acquire()
+        onDispose { app.motion.release() }
+    }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (truth.running) SimControls()
         SessionButtons(view)
@@ -106,6 +112,9 @@ private fun SessionButtons(v: TrackView) {
 
 @Composable
 private fun DebugCard(v: TrackView, truth: SimulatorSource.Truth) {
+    val app = LocalAppContainer.current
+    val motion by app.motion.motion.collectAsStateWithLifecycle()
+    val gnss by app.gnss.snapshot.collectAsStateWithLifecycle()
     val f = v.lastFix
     val now = SystemClock.elapsedRealtimeNanos()
     val lines = buildList {
@@ -120,6 +129,8 @@ private fun DebugCard(v: TrackView, truth: SimulatorSource.Truth) {
             add("fix     ${Fmt.decimal(f.lat, 6)}, ${Fmt.decimal(f.lon, 6)}  ±${Fmt.decimal(f.hAcc, 1)} m")
             add("        age ${(now - f.tNanos) / 1_000_000} ms${if (f.isMock) "  MOCK" else ""}")
         }
+        add("sats    ${gnss.usedCount} used / ${gnss.satellites.size} in view${if (gnss.dualFrequency) "  L1+L5" else ""}  ${gnss.hardwareModel ?: ""}")
+        add("heading ${motion.headingDeg?.let { Fmt.decimal(it.toDouble(), 0) + "°" } ?: "–"}  yaw ${Fmt.decimal(motion.yawRateRadS.toDouble(), 2)} rad/s")
         if (truth.running) add("truth   ${Fmt.decimal(Fmt.kmh(truth.speedMps), 1)} km/h  odo ${Fmt.decimal(truth.odometerM, 1)} m")
     }
     Column(

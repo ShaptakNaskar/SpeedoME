@@ -64,16 +64,19 @@ fun SpeedScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         GpsRow(view.quality, simTruth.running)
+        val permissions = rememberPermissions()
+        PermissionCards(permissions, settings.mode)
         PlaceholderDial(Modifier.fillMaxWidth(0.78f), fraction = needle.kmh / range)
         Text(needle.readout.toString(), color = SpeedoColors.Text, fontSize = 72.sp, fontWeight = FontWeight.Light)
         Text("KM/H", color = SpeedoColors.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
         Spacer(Modifier.height(16.dp))
         StatsRow(view)
         Spacer(Modifier.height(16.dp))
-        when {
-            settings.devMode -> DevPanel(view, simTruth)
-            view.lastFix == null -> Caption("Waiting for GPS. Live tracking arrives in milestone M3.")
+        if (view.lastFix == null && permissions.state.canTrack && !simTruth.running) {
+            Caption("Waiting for GPS. The first fix is quickest outdoors or near a window.")
+            Spacer(Modifier.height(16.dp))
         }
+        if (settings.devMode) DevPanel(view, simTruth)
     }
 }
 
