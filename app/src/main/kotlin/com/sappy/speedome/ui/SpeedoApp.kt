@@ -33,8 +33,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sappy.speedome.BuildConfig
-import com.sappy.speedome.gauges.PlaceholderDial
 import com.sappy.speedome.ui.theme.SpeedoColors
 
 enum class Tab(val label: String, val icon: ImageVector) {
@@ -92,31 +90,8 @@ private fun TabBar(selected: Tab, onSelect: (Tab) -> Unit) {
 }
 
 @Composable
-private fun SpeedScreen() {
-    Column(
-        Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        PlaceholderDial(Modifier.fillMaxWidth(0.82f))
-        Text("0", color = SpeedoColors.Text, fontSize = 72.sp, fontWeight = FontWeight.Light)
-        Text("KM/H", color = SpeedoColors.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
-        Spacer(Modifier.height(28.dp))
-        Caption("Skeleton build. Live GPS tracking arrives in milestone M3.")
-    }
-}
-
-@Composable
 private fun TripsScreen() {
     EmptyState(title = "No trips yet", body = "Press Record on the Speed tab and your trips will be listed here.")
-}
-
-@Composable
-private fun SettingsScreen() {
-    EmptyState(
-        title = "SpeedoME ${BuildConfig.VERSION_NAME}",
-        body = "Settings arrive together with the features they control.",
-    )
 }
 
 @Composable
@@ -133,7 +108,7 @@ private fun EmptyState(title: String, body: String) {
 }
 
 @Composable
-private fun Caption(text: String) {
+fun Caption(text: String) {
     Text(
         text,
         color = SpeedoColors.Muted,

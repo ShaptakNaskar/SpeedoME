@@ -31,7 +31,13 @@ enum class SimPreset(
  * Vehicle + receiver + autopilot on one clock. [advance] returns the events a real phone would
  * deliver in that slice of time: fixes, step detector/counter events and ~1 Hz ticks.
  */
-class SimRig(seed: Int = 7, private val startUtcMillis: Long = 1_790_000_000_000L) {
+class SimRig(
+    seed: Int = 7,
+    private val startUtcMillis: Long = 1_790_000_000_000L,
+    private val startNanos: Long = 0L,
+    /** The app's tracking engine has its own ticker, so it switches these off. */
+    private val emitTicks: Boolean = true,
+) {
     private val rnd = Random(seed)
     val vehicle = SimVehicle()
     val gnss = SimGnss(rnd)
@@ -57,7 +63,7 @@ class SimRig(seed: Int = 7, private val startUtcMillis: Long = 1_790_000_000_000
     private var stepCarry = 0.0
     private var stepTotal = 52_000L
 
-    val nowNanos: Long get() = (timeS * 1e9).toLong()
+    val nowNanos: Long get() = startNanos + (timeS * 1e9).toLong()
     val nowUtcMillis: Long get() = startUtcMillis + (timeS * 1000).toLong()
 
     fun advance(dt: Double): List<EngineEvent> {
@@ -78,7 +84,7 @@ class SimRig(seed: Int = 7, private val startUtcMillis: Long = 1_790_000_000_000
         if (timeS >= nextTick) {
             nextTick = timeS + 1
             if (mode == Mode.STEP) out += StepCountEvent(t, stepTotal)
-            out += TickEvent(t, utc)
+            if (emitTicks) out += TickEvent(t, utc)
         }
         return out
     }

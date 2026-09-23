@@ -17,8 +17,8 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 |---|---|---|
 | M0 Skeleton | done 2026-09-24 | commit 0587ecb |
 | M1 Engine core | done 2026-09-24 | 28 JVM tests: filter, spikes, trains, no-Doppler, parked, tunnel, city distance, 10 Hz, pause, trips, steps, snapshot, resume (same boot + reboot), replay formats |
-| M2 Simulator + debug screen | in progress | |
-| M3 Tracking service + sensors | todo | |
+| M2 Simulator + debug screen | done 2026-09-24 | Verified on emulator: City/Highway/Walk presets, spike rejected, signal loss → NO FIX, no speed field → POSITION, trip start/pause/resume/stop |
+| M3 Tracking service + sensors | in progress | |
 | M4 Storage + resume + Trips | todo | |
 | M5 Gauge toolkit + first themes | todo | |
 | M6 Remaining themes + map + nerd | todo | |
@@ -35,3 +35,5 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 - **Zero clamp:** releasing the zero clamp needs 2 consecutive updates where both the estimate and the reading are > 0.8 m/s, so a parked phone never flickers. A filter reset releases it immediately.
 - **Tracking accuracy:** at 1 Hz, speed error is < 2 km/h worst case and < 0.7 km/h on average with the lab's q = 6. The filter is deliberately responsive, and the needle spring does the visual smoothing.
 - **Resume:** `EngineState.resumedAfter(gapMillis, nowNanos)` re-bases stored monotonic times, so resume works across reboots too.
+- **Developer options:** tap Version 7× in Settings. The Simulator switch runs `SimulatorSource` (the shared `SimRig` on the app clock, feeding `TrackingEngine`).
+- **Emulator helper:** `scratchpad/emu.sh` provides wait_boot, install, launch, shot, tap_text, hold_text, texts and crashes.

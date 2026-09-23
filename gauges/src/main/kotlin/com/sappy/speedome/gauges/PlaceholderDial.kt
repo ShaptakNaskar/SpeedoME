@@ -20,6 +20,7 @@ import kotlin.math.sin
 @Composable
 fun PlaceholderDial(
     modifier: Modifier = Modifier,
+    fraction: Float = 0f,
     accent: Color = Color(0xFFE8A33D),
 ) {
     Canvas(modifier.aspectRatio(1f)) {
@@ -46,7 +47,7 @@ fun PlaceholderDial(
                 cap = StrokeCap.Round,
             )
         }
-        val a0 = Math.toRadians(135.0)
+        val a0 = Math.toRadians(135.0 + 270.0 * fraction.coerceIn(0f, 1.02f))
         drawLine(
             color = accent,
             start = c,

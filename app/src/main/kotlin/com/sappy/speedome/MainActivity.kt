@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import com.sappy.speedome.ui.SpeedoApp
 import com.sappy.speedome.ui.theme.SpeedoTheme
 
@@ -16,9 +17,12 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
+        val container = (application as SpeedoApplication).container
         setContent {
-            SpeedoTheme {
-                SpeedoApp()
+            CompositionLocalProvider(LocalAppContainer provides container) {
+                SpeedoTheme {
+                    SpeedoApp()
+                }
             }
         }
     }
