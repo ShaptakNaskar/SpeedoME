@@ -1,0 +1,49 @@
+# SpeedoME
+
+An Android GPS speedometer and trip computer that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
+
+> **Status: early development.** Milestone M0 (project skeleton) is done: the app installs and has its three tabs, but doesn't track yet. The roadmap is in [`docs/plan.md`](docs/plan.md).
+
+## Planned features
+
+- **Honest speed:** uses the GPS chip's own Doppler speed, cleaned by a Kalman filter that rejects impossible jumps but never real high speeds (trains and planes included).
+- **Auto-range dial** that grows as you speed up and shrinks back afterwards. How it shrinks is configurable, and it can be switched off.
+- **Nine themes:** Retro, Modern, Digital, Night Focus, Map, Nerd, Speed Tape, Synthwave and Sunlight. You can try them all in the [Theme Lab](docs/theme-lab.html): download it and open it in a browser, then drive with the keyboard.
+- **Trip computer:** moving and overall averages, max speed, distance, target distance with arrival time, and an "arrive by" mode.
+- **Drive and step modes:** step mode adds step count, cadence and pace.
+- **Trips** that survive the app being killed, with a history and GPX export.
+- **Nerd page:** satellite sky plot, per-constellation signal strength, raw NMEA and a G-force meter.
+- **Private by design:** no Google Play Services, no account, no analytics. Your trips stay on your phone.
+
+## Building
+
+Requirements: JDK 17+, and the Android SDK with platform 37 (`compileSdk 37`).
+
+```sh
+./gradlew check                  # unit tests + lint
+./gradlew :app:assembleDebug     # app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+The debug build installs as **SpeedoME Dev** (`com.sappy.SpeedoMe.debug`), alongside the release build (`com.sappy.SpeedoMe`).
+
+### Release signing
+
+Copy `keystore.properties.example` to `keystore.properties`, which is git-ignored, and fill in your keystore details. Then run:
+
+```sh
+./gradlew :app:assembleRelease   # app/build/outputs/apk/release/app-release.apk
+```
+
+## Project layout
+
+| Path | What lives there |
+|---|---|
+| `engine/` | Pure Kotlin with no Android code: speed filter, trip stats, auto-range and arrival-time maths. Unit-tested on the JVM. |
+| `gauges/` | Jetpack Compose gauge toolkit and themes. |
+| `app/` | The Android app: tracking service, sensors, storage and screens. |
+| `docs/` | The design and implementation plan, and the Theme Lab mockup. |
+
+## License
+
+SpeedoME is free software under the [GNU General Public License v3.0 or later](LICENSE).

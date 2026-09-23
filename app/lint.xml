@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Adaptive icons stay in mipmap-anydpi-v26: aapt2 fails to resolve them from plain mipmap-anydpi in this setup. -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="src/main/res/mipmap-anydpi-v26" />
+    </issue>
+    <!-- targetSdk 36 is deliberate until Android 17 behaviour changes are reviewed (docs/plan.md, M9). -->
+    <issue id="OldTargetApi" severity="ignore" />
+</lint>
