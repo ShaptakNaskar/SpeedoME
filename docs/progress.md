@@ -20,12 +20,14 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 | M3 Tracking service + sensors | done 2026-09-24 | Verified on emulator: permission dialogs chain (location → notifications), foreground `location` service with live notification, real LocationManager fixes (geo fix + velocity) → DOPPLER source, GnssStatus satellites, notification keeps updating with screen off, denied / coarse-only / step-permission cards |
 | M4 Storage + resume + Trips | done 2026-09-24 | Verified on emulator: record → stop → summary sheet; Trips list (thumbnail) and detail (speed-coloured route, speed graph); Share GPX (chooser) and valid GPX 1.1 export; rename; delete; kill mid-trip → sticky service restarts and the same row continues with a new segment; kill with session aged 31 min → offer → Save & finish |
 | M5 Gauge toolkit + first themes | done 2026-09-24 | Retro, Modern and Digital themes on a cached static layer plus a per-frame dynamic pass; auto-range in the engine (10 tests); theme carousel (swipe and ‹ ›); startup sweep; landscape car-mount layout; new settings. 19 Roborazzi golden images verified by `check`. Verified on emulator: all themes in portrait and landscape, and settings take effect (cream dial, overall average, fixed dial) |
-| M6 Remaining themes + map + nerd | in progress | Part 1 done: Night Focus, Speed Tape, Synthwave, Sunlight (36 goldens), Night settings. Part 2 done: Nerd page (sky plot, C/N0, G circle, NMEA), info strip under any theme, heading/G switches, simulator sky + NMEA. Next: part 3 map, part 4 AGSL |
+| M6 Remaining themes + map + nerd | in progress | Part 1 done: Night Focus, Speed Tape, Synthwave, Sunlight (36 goldens), Night settings. Part 2 done: Nerd page (sky plot, C/N0, G circle, NMEA), info strip under any theme, heading/G switches, simulator sky + NMEA. Part 3 done: Map theme (MapLibre 13.6.1 + OpenFreeMap dark, retinted; speed-coloured live route with dashed gaps; puck + heading cone; course-up/north-up; speed-based zoom; re-centre; speed card). Next: part 4 AGSL |
 | M7 Target + step mode | todo | |
 | M8 Reliability + power + mock provider | todo | |
 | M9 Polish + release prep | todo | |
 
 ## Decisions made during implementation
+
+- **Map:** MapView runs in TextureView mode (a SurfaceView doesn't composite inside Compose's Crossfade). Course comes from the route's last points first, because the emulator (and some receivers) report a stale 0° bearing. The live route is kept in memory by `LiveRoute` for the current session (live or trip) and restarts with each session. Horizontal swipes on the map pan it, so theme switching there uses the header arrows. The universal APK is ~51 MB because of MapLibre's native libraries; M9 should add ABI splits.
 
 - **SDK levels:** compileSdk 37 (the Compose BOM needs it); targetSdk 36.
 - **Launcher icons** stay in `mipmap-anydpi-v26`, because aapt2 can't find them in plain `mipmap-anydpi`.

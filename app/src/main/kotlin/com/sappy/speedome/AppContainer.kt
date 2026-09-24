@@ -27,6 +27,7 @@ class AppContainer(app: Application) {
     val motion = MotionSource(app)
     val sources = SourceManager(app, appScope, settings.state, tracking, gnss)
     val db = SpeedoDatabase.create(app)
+    val liveRoute = com.sappy.speedome.tracking.LiveRoute(appScope, tracking.state)
     val recorder = SessionRecorder(appScope, db.trips(), tracking, settings.state)
 
     init {

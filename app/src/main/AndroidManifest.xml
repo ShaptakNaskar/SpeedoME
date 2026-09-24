@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Map tiles for the Map theme (the only network use). -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Step mode: hardware step counter and detector. -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 

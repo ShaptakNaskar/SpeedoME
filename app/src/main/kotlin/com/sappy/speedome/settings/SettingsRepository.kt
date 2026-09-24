@@ -49,6 +49,7 @@ data class AppSettings(
     val nerdStrip: Boolean = false,
     val showHeading: Boolean = false,
     val showGForce: Boolean = false,
+    val mapNorthUp: Boolean = false,
 ) {
     val engine: EngineSettings get() = EngineSettings(mode = mode, autoRange = AutoRangeSettings(shrink, fixedKmh))
 }
@@ -77,6 +78,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val nerdStrip = booleanPreferencesKey("nerd_strip")
         val showHeading = booleanPreferencesKey("show_heading")
         val showG = booleanPreferencesKey("show_g")
+        val mapNorthUp = booleanPreferencesKey("map_north_up")
     }
 
     val state: StateFlow<AppSettings> = store.data
@@ -111,6 +113,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             nerdStrip = this[Keys.nerdStrip] ?: d.nerdStrip,
             showHeading = this[Keys.showHeading] ?: d.showHeading,
             showGForce = this[Keys.showG] ?: d.showGForce,
+            mapNorthUp = this[Keys.mapNorthUp] ?: d.mapNorthUp,
         )
     }
 
@@ -133,5 +136,6 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         this[Keys.nerdStrip] = s.nerdStrip
         this[Keys.showHeading] = s.showHeading
         this[Keys.showG] = s.showGForce
+        this[Keys.mapNorthUp] = s.mapNorthUp
     }
 }

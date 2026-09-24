@@ -2,7 +2,7 @@
 
 An Android GPS speedometer and trip computer that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
 
-> **Status: early development.** Milestone M0 (project skeleton) is done: the app installs and has its three tabs, but doesn't track yet. The roadmap is in [`docs/plan.md`](docs/plan.md).
+> **Status: early development.** GPS tracking, saved trips and eight of the nine themes (including the live map) work; the AGSL effects, target/ETA, reliability and polish milestones are next. The roadmap is in [`docs/plan.md`](docs/plan.md) and progress in [`docs/progress.md`](docs/progress.md).
 
 ## Planned features
 
@@ -47,3 +47,5 @@ Copy `keystore.properties.example` to `keystore.properties`, which is git-ignore
 ## License
 
 SpeedoME is free software under the [GNU General Public License v3.0 or later](LICENSE).
+
+The Map theme uses [MapLibre Native](https://maplibre.org) (BSD-2-Clause) with vector tiles from [OpenFreeMap](https://openfreemap.org): © [OpenMapTiles](https://www.openmaptiles.org), data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Gauge fonts are under the SIL Open Font License (see `gauges/src/main/assets/licenses`).

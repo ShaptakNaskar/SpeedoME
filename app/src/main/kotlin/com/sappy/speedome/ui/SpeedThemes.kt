@@ -21,7 +21,7 @@ object SpeedThemes {
 
     val all: List<SpeedThemeEntry> = listOf(
         RetroTheme.entry(), ModernTheme.entry(), DigitalTheme.entry(), NightFocusTheme.entry(),
-        SpeedThemeEntry(NERD, "NERD", null),
+        SpeedThemeEntry(MAP, "MAP", null), SpeedThemeEntry(NERD, "NERD", null),
         SpeedTapeTheme.entry(), SynthwaveTheme.entry(), SunlightTheme.entry(),
     )
 

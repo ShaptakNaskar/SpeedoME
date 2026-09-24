@@ -147,7 +147,11 @@ fun SpeedScreen() {
             ) {
                 Crossfade(entry, animationSpec = tween(250), label = "theme") { e ->
                     val gauge = e.gauge
-                    if (gauge != null) GaugeView(gauge, { driver.frame }, Modifier.fillMaxSize()) else NerdPage(Modifier.fillMaxSize())
+                    when {
+                        gauge != null -> GaugeView(gauge, { driver.frame }, Modifier.fillMaxSize())
+                        e.id == SpeedThemes.MAP -> MapPage(driver, settings.mapNorthUp, Modifier.fillMaxSize())
+                        else -> NerdPage(Modifier.fillMaxSize())
+                    }
                 }
             }
             if (showStrip) InfoStrip(settings, view, driver)
