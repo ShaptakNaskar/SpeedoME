@@ -45,18 +45,18 @@ fun SessionControls(v: TrackView, onTarget: () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
         when {
             v.sessionKind == SessionKind.LIVE -> {
-                Pill("● RECORD", Color(0xFFFF5B4E)) { app.recorder.startTrip() }
+                Pill("● RECORD", Color(0xFFFF5B4E), "Record trip") { app.recorder.startTrip() }
                 Pill("RESET", SpeedoColors.Text) { app.recorder.reset() }
                 TargetPill(v, onTarget)
             }
             v.paused -> {
                 Pill("RESUME", SpeedoColors.Accent) { app.tracking.command(Command.Resume) }
-                Pill("■ STOP", SpeedoColors.Text) { app.recorder.stopTrip() }
+                Pill("■ STOP", SpeedoColors.Text, "Stop trip") { app.recorder.stopTrip() }
                 TargetPill(v, onTarget)
             }
             else -> {
                 Pill("PAUSE", SpeedoColors.Text) { app.tracking.command(Command.Pause) }
-                Pill("■ STOP", SpeedoColors.Text) { app.recorder.stopTrip() }
+                Pill("■ STOP", SpeedoColors.Text, "Stop trip") { app.recorder.stopTrip() }
                 TargetPill(v, onTarget)
             }
         }
@@ -75,12 +75,12 @@ private fun TargetPill(v: TrackView, onClick: () -> Unit) {
             .background(Color.White.copy(alpha = 0.07f))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = if (v.target != null) "Edit target" else "Set target" }
-            .padding(horizontal = 15.dp, vertical = 8.dp),
+            .padding(horizontal = 15.dp, vertical = 12.dp), // 48 dp touch target
     )
 }
 
 @Composable
-private fun Pill(label: String, color: Color, onClick: () -> Unit) {
+private fun Pill(label: String, color: Color, description: String? = null, onClick: () -> Unit) {
     Text(
         label,
         color = color,
@@ -91,7 +91,8 @@ private fun Pill(label: String, color: Color, onClick: () -> Unit) {
             .clip(RoundedCornerShape(50))
             .background(Color.White.copy(alpha = 0.07f))
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 11.dp),
+            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
+            .padding(horizontal = 20.dp, vertical = 15.dp), // 48 dp touch target
     )
 }
 

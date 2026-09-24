@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -40,6 +41,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sappy.speedome.BuildConfig
 import com.sappy.speedome.LocalAppContainer
@@ -152,6 +154,13 @@ fun SettingsScreen() {
             Choices(listOf(60, 80, 120, 160, 200, 260).map { "0–$it" to it }, s.fixedKmh, title = "Fixed dial") { v -> edit { it.copy(fixedKmh = v) } }
         }
 
+        Section("ABOUT")
+        var licences by remember { mutableStateOf(false) }
+        LinkRow("Privacy policy", "Your trips stay on your phone. Map tiles are the only network use.") { openUrl(context, "$REPO/blob/main/docs/privacy.md") }
+        LinkRow("Open-source licences", "MapLibre, OpenStreetMap data, fonts and AndroidX.") { licences = true }
+        LinkRow("Source code", "GPL-3.0 on GitHub.") { openUrl(context, REPO) }
+        if (licences) LicencesDialog { licences = false }
+
         HorizontalDivider(color = SpeedoColors.Raised)
         Column(
             Modifier.fillMaxWidth().clickable {
@@ -169,6 +178,45 @@ fun SettingsScreen() {
         }
         if (s.devMode) DeveloperSection(s, ::edit)
     }
+}
+
+private const val REPO = "https://github.com/ShaptakNaskar/SpeedoME"
+
+private fun openUrl(context: android.content.Context, url: String) {
+    runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, url.toUri())) }
+}
+
+@Composable
+private fun LinkRow(title: String, body: String, onClick: () -> Unit) {
+    Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(vertical = 4.dp)) {
+        Text(title, color = SpeedoColors.Text, fontSize = 16.sp)
+        Text(body, color = SpeedoColors.Muted, fontSize = 13.sp)
+    }
+}
+
+@Composable
+private fun LicencesDialog(onDismiss: () -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Open-source licences") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf(
+                    "SpeedoME" to "GNU General Public License v3.0 or later.",
+                    "MapLibre Native" to "BSD 2-Clause. © MapLibre contributors, Mapbox.",
+                    "Map data" to "© OpenStreetMap contributors (ODbL). Tiles by OpenFreeMap, schema © OpenMapTiles.",
+                    "Fonts" to "Oswald, Outfit, B612 Mono, Barlow Semi Condensed, Exo 2: SIL Open Font License 1.1.",
+                    "AndroidX, Jetpack Compose, Kotlin, kotlinx" to "Apache License 2.0.",
+                ).forEach { (name, text) ->
+                    Column {
+                        Text(name, color = SpeedoColors.Text, fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                        Text(text, color = SpeedoColors.Muted, fontSize = 13.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Close") } },
+    )
 }
 
 @Composable

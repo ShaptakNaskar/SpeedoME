@@ -39,6 +39,10 @@ class GaugeDriver {
     var frame by mutableStateOf(GaugeFrame())
         internal set
 
+    /** Developer readout, refreshed once a second: frame rate, mean and worst frame interval. */
+    var frameInfo by mutableStateOf("")
+        internal set
+
     internal var sweepStartNanos: Long? = null
 
     /** Plays the 0 → max → 0 startup sweep (docs/plan.md §9). */
@@ -90,6 +94,10 @@ fun rememberGaugeDriver(
         var nightUpper = 0.0
         var scroll = 0.0
         val start = SystemClock.elapsedRealtimeNanos()
+        var statFrames = 0
+        var statSum = 0.0
+        var statMax = 0.0
+        var statFrom = start
         while (true) {
             withFrameNanos { frameNanos ->
                 val now = SystemClock.elapsedRealtimeNanos()
@@ -98,6 +106,19 @@ fun rememberGaugeDriver(
                 val spring = currentTheme.spring
                 val u = s.engine.unitsPerMps // everything on the gauge is in display units
                 val target = view.displayTargetMps(now, s.predictNeedle) * u
+                if (last != 0L) {
+                    val raw = (frameNanos - last) / 1e6
+                    statFrames++
+                    statSum += raw
+                    statMax = max(statMax, raw)
+                    if (now - statFrom >= 1_000_000_000L) {
+                        driver.frameInfo = "frames  ${statFrames} fps  mean ${"%.1f".format(java.util.Locale.ROOT, statSum / statFrames)} ms  worst ${"%.1f".format(java.util.Locale.ROOT, statMax)} ms"
+                        statFrames = 0
+                        statSum = 0.0
+                        statMax = 0.0
+                        statFrom = now
+                    }
+                }
                 val dt = if (last == 0L) 1.0 / 60 else ((frameNanos - last) / 1e9).coerceIn(0.0, 0.05)
                 last = frameNanos
                 repeat(2) {

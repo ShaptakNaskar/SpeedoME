@@ -32,6 +32,7 @@ class AppContainer(app: Application) {
     val sources = SourceManager(app, appScope, settings.state, tracking, gnss, rawLogger)
     val db = SpeedoDatabase.create(app)
     val liveRoute = com.sappy.speedome.tracking.LiveRoute(appScope, tracking.state)
+    val replay = com.sappy.speedome.tracking.FileReplay(appScope, tracking)
     val recorder = SessionRecorder(appScope, db.trips(), tracking, settings.state)
 
     init {
@@ -44,6 +45,9 @@ class AppContainer(app: Application) {
         }
         appScope.launch {
             settings.state.collect { com.sappy.speedome.ui.Fmt.units = it.units }
+        }
+        appScope.launch {
+            replay.progress.map { it.running }.distinctUntilChanged().collect(sources::setReplaying)
         }
         appScope.launch {
             settings.state.map { it.devMode && it.rawLog }.distinctUntilChanged().collect(rawLogger::setEnabled)

@@ -62,6 +62,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /** Samples the engine a few times a second for text readouts (the gauge has its own frame loop). */
 @Composable
@@ -76,6 +77,7 @@ fun rememberTrackView(engine: StateFlow<EngineState>, periodMs: Long = 250): Tra
 }
 
 private val HEADER_HEIGHT = 44.dp
+private val HEADER_HEIGHT_LANDSCAPE = 52.dp // hosts the 48 dp control pills
 private val CONTROLS_HEIGHT = 64.dp
 private val STRIP_HEIGHT = 40.dp // room for two lines when every switch is on
 
@@ -129,12 +131,13 @@ fun SpeedScreen() {
         // Landscape (car mount): the gauge takes the full height and the controls move into the header.
         val landscape = maxWidth > maxHeight
         val gaugeHeight = if (landscape) {
-            (maxHeight - HEADER_HEIGHT - targetH - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(160.dp)
+            (maxHeight - HEADER_HEIGHT_LANDSCAPE - targetH - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(160.dp)
         } else {
             (maxHeight - HEADER_HEIGHT - CONTROLS_HEIGHT - targetH - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(240.dp)
         }
         Column(Modifier.fillMaxSize().background(chrome).verticalScroll(rememberScrollState())) {
             Header(
+                height = if (landscape) HEADER_HEIGHT_LANDSCAPE else HEADER_HEIGHT,
                 ink = ink,
                 view.quality, simRunning, entry.title, onPrev = { switchTheme(-1) }, onNext = { switchTheme(1) },
                 controls = if (landscape) ({ SessionControls(view) { targetDialog = true } }) else null,
@@ -143,8 +146,17 @@ fun SpeedScreen() {
                 PermissionCards(permissions, settings.mode)
                 ReliabilityOfferCard(permissions, recording = view.sessionKind == com.sappy.speedome.engine.SessionKind.TRIP)
             }
+            // Canvas gauges have no text for TalkBack; describe what they show (read when focused).
+            val gaugeDescription = if (entry.gauge != null) {
+                "${entry.title.lowercase()} gauge: ${Fmt.speed(view.speedMps).roundToInt()} ${Fmt.speedUnit}, " +
+                    "dial 0 to ${driver.frame.rangeToKmh}. Trip ${Fmt.dist(view.distanceM)} ${Fmt.distUnit}, max ${Fmt.speed(view.maxMps).roundToInt()}."
+            } else {
+                null
+            }
             Box(
-                Modifier.fillMaxWidth().height(gaugeHeight).pointerInput(Unit) {
+                Modifier.fillMaxWidth().height(gaugeHeight)
+                    .then(if (gaugeDescription != null) Modifier.semantics { contentDescription = gaugeDescription } else Modifier)
+                    .pointerInput(Unit) {
                     var dx = 0f
                     detectHorizontalDragGestures(
                         onDragStart = { dx = 0f },
@@ -169,7 +181,7 @@ fun SpeedScreen() {
                 if (view.lastFix == null && permissions.state.canTrack && !simRunning) {
                     Caption("Waiting for GPS. The first fix is quickest outdoors or near a window.")
                 }
-                if (settings.devMode) DevPanel(view)
+                if (settings.devMode) DevPanel(view, driver.frameInfo)
                 Spacer(Modifier.height(8.dp))
             }
         }
@@ -178,6 +190,7 @@ fun SpeedScreen() {
 
 @Composable
 private fun Header(
+    height: androidx.compose.ui.unit.Dp,
     ink: Color,
     quality: GpsQuality,
     simulated: Boolean,
@@ -191,7 +204,7 @@ private fun Header(
         GpsQuality.FALLBACK -> Color(0xFFF0B43C) to "GPS · POSITION"
         GpsQuality.NONE -> Color(0xFFFF5B4E) to "NO FIX"
     }
-    Row(Modifier.fillMaxWidth().height(HEADER_HEIGHT).padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(height).padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(9.dp).clip(CircleShape).background(color))
         Text(
             if (simulated) "$label · SIM" else label,

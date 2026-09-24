@@ -28,6 +28,7 @@ class SourceManager(
     private val steps = StepSource(appContext, tracking)
     private val serviceActive = MutableStateFlow(false)
     private val permissionEpoch = MutableStateFlow(0)
+    private val replaying = MutableStateFlow(false)
 
     private data class Wanted(val active: Boolean, val simulated: Boolean, val mode: Mode, val epoch: Int)
 
@@ -35,10 +36,15 @@ class SourceManager(
 
     init {
         scope.launch(Dispatchers.Main) {
-            combine(serviceActive, settings, permissionEpoch) { active, s, epoch ->
-                Wanted(active, s.devMode && s.simulator, s.mode, epoch)
+            combine(serviceActive, settings, permissionEpoch, replaying) { active, s, epoch, replay ->
+                Wanted(active, (s.devMode && s.simulator) || replay, s.mode, epoch)
             }.distinctUntilChanged().collect(::apply)
         }
+    }
+
+    /** A developer file replay stands in for real GPS, like the simulator. */
+    fun setReplaying(on: Boolean) {
+        replaying.value = on
     }
 
     fun setServiceActive(active: Boolean) {

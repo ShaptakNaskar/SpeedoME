@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
 
 /** Developer-only controls under the gauge: simulator driving, session commands and raw engine readout. */
 @Composable
-fun DevPanel(view: TrackView) {
+fun DevPanel(view: TrackView, frameInfo: String) {
     val app = LocalAppContainer.current
     val truth by app.simulator.truth.collectAsStateWithLifecycle()
     DisposableEffect(Unit) {
@@ -55,7 +55,8 @@ fun DevPanel(view: TrackView) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (truth.running) SimControls()
         if (BuildConfig.DEBUG) ResumeTests()
-        DebugCard(view, truth)
+        ReplayControls()
+        DebugCard(view, truth, frameInfo)
     }
 }
 
@@ -94,6 +95,39 @@ private fun SimControls() {
     }
 }
 
+/** Plays a GPX / NMEA / raw-log file into the live engine at its original pace. */
+@Composable
+private fun ReplayControls() {
+    val app = LocalAppContainer.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val p by app.replay.progress.collectAsStateWithLifecycle()
+    val pick = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            val text = runCatching { context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } }.getOrNull()
+            val name = uri.lastPathSegment?.substringAfterLast('/') ?: "file"
+            if (text != null) app.replay.play(name, text)
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Label("REPLAY")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            if (p.running) {
+                OutlinedButton(onClick = { app.replay.stop() }) { Text("Stop replay") }
+            } else {
+                OutlinedButton(onClick = { pick.launch(arrayOf("*/*")) }) { Text("Replay a file…") }
+            }
+            val status = when {
+                p.error != null -> p.error
+                p.total > 0 -> "${p.name}: ${p.done}/${p.total}${if (p.running) "" else " done"}"
+                else -> "GPX, NMEA or raw log"
+            }
+            Text(status.orEmpty(), color = SpeedoColors.Muted, fontSize = 12.sp)
+        }
+    }
+}
+
 /** Kills the process mid-session so both resume paths can be tested on a device. */
 @Composable
 private fun ResumeTests() {
@@ -108,7 +142,7 @@ private fun ResumeTests() {
 }
 
 @Composable
-private fun DebugCard(v: TrackView, truth: SimulatorSource.Truth) {
+private fun DebugCard(v: TrackView, truth: SimulatorSource.Truth, frameInfo: String) {
     val app = LocalAppContainer.current
     val motion by app.motion.motion.collectAsStateWithLifecycle()
     val gnss by app.gnss.snapshot.collectAsStateWithLifecycle()
@@ -128,6 +162,7 @@ private fun DebugCard(v: TrackView, truth: SimulatorSource.Truth) {
         }
         add("sats    ${gnss.usedCount} used / ${gnss.satellites.size} in view${if (gnss.dualFrequency) "  L1+L5" else ""}  ${gnss.hardwareModel ?: ""}")
         add("heading ${motion.headingDeg?.let { Fmt.decimal(it.toDouble(), 0) + "°" } ?: "–"}  yaw ${Fmt.decimal(motion.yawRateRadS.toDouble(), 2)} rad/s")
+        if (frameInfo.isNotEmpty()) add(frameInfo)
         if (truth.running) add("truth   ${Fmt.decimal(Fmt.speed(truth.speedMps), 1)} ${Fmt.speedUnit}  odo ${Fmt.decimal(truth.odometerM, 1)} m")
     }
     Column(

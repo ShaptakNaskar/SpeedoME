@@ -19,7 +19,7 @@ AVD=${AVD:-Phone_67_A16}
 PKG=${PKG:-com.sappy.SpeedoMe.debug}
 SHOTS=${SHOTS:-/tmp/speedome-shots}
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APK_DEFAULT="$ROOT/app/build/outputs/apk/debug/app-debug.apk"
+APK_DEFAULT="$ROOT/app/build/outputs/apk/debug/app-x86_64-debug.apk" # ABI split for the emulator
 mkdir -p "$SHOTS"
 
 a() { adb -s "$E" "$@"; }

@@ -21,8 +21,8 @@ Requirements: JDK 17+, and the Android SDK with platform 37 (`compileSdk 37`).
 
 ```sh
 ./gradlew check                  # unit tests + lint
-./gradlew :app:assembleDebug     # app/build/outputs/apk/debug/app-debug.apk
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+./gradlew :app:assembleDebug     # one APK per ABI in app/build/outputs/apk/debug/
+adb install -r app/build/outputs/apk/debug/app-arm64-v8a-debug.apk   # most phones; x86_64 for the emulator
 ```
 
 The debug build installs as **SpeedoME Dev** (`com.sappy.SpeedoMe.debug`), alongside the release build (`com.sappy.SpeedoMe`).
@@ -32,7 +32,7 @@ The debug build installs as **SpeedoME Dev** (`com.sappy.SpeedoMe.debug`), along
 Copy `keystore.properties.example` to `keystore.properties`, which is git-ignored, and fill in your keystore details. Then run:
 
 ```sh
-./gradlew :app:assembleRelease   # app/build/outputs/apk/release/app-release.apk
+./gradlew :app:assembleRelease   # app-arm64-v8a-release.apk (~15 MB) and friends, plus app-universal-release.apk
 ```
 
 ## Testing with fake GPS

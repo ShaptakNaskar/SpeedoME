@@ -10,6 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -72,7 +74,9 @@ fun NerdPage(modifier: Modifier = Modifier) {
         while (trail.size > 30) trail.removeFirst()
     }
 
-    Canvas(modifier) {
+    val summary = "Nerd page: ${gnss.usedCount} of ${gnss.satellites.size} satellites used" +
+        (v.lastFix?.let { ", accuracy ${Fmt.decimal(it.hAcc, 0)} metres, ${Fmt.decimal(Fmt.speed(v.speedMps), 1)} ${Fmt.speedUnit}" } ?: ", no fix")
+    Canvas(modifier.semantics { contentDescription = summary }) {
         val ink = Color(0xFFDFE9E5)
         val dim = Color(0xFFD2E1DC).copy(alpha = .5f)
         val mono = assets.paint(assets.b612)

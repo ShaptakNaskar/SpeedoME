@@ -1,0 +1,6 @@
+# Hand-written Baseline Profile: compile all of SpeedoME's own code (app, engine, gauges) ahead of
+# time. Compose and the other AndroidX libraries ship their own profiles. To replace this with a
+# measured profile, run `./gradlew :app:generateReleaseBaselineProfile` with a real, non-rooted phone
+# connected (the generator crashes the rooted userdebug emulator); see baselineprofile/.
+HSPLcom/sappy/speedome/**->**(**)**
+Lcom/sappy/speedome/**;
