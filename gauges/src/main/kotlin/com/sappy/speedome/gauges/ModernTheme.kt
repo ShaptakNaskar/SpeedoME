@@ -64,8 +64,22 @@ object ModernTheme : GaugeTheme {
             }
             drawCircle(Color.White, lw * .32f, polar(c, r, angleRad(frame.needleKmh, frame.rangeKmh)))
         }
+        frame.target?.let { t -> targetRing(c, r, t, accent) }
         bloomText(frame.readout.toString(), c.x, c.y + r * .02f, assets.paint(assets.outfit, 200), r * .6f, Color.White, frame.options, strength = .45f)
         stats(frame, l, assets)
+    }
+
+    /** Thin outer ring: target progress over the same 270° as the dial, white once reached. */
+    private fun DrawScope.targetRing(c: Offset, r: Float, t: GaugeTarget, accent: Color) {
+        val rr = r * 1.2f
+        val box = Offset(c.x - rr, c.y - rr)
+        val boxSize = Size(2 * rr, 2 * rr)
+        val w = r * .018f
+        drawArc(Color.White.copy(alpha = .08f), DIAL_START_DEG, DIAL_SWEEP_DEG, false, box, boxSize, style = Stroke(w, cap = StrokeCap.Round))
+        if (t.progress > 0f) {
+            val col = if (t.arrived) Color.White else accent.copy(alpha = .85f)
+            drawArc(col, DIAL_START_DEG, DIAL_SWEEP_DEG * t.progress, false, box, boxSize, style = Stroke(w, cap = StrokeCap.Round))
+        }
     }
 
     private fun DrawScope.stats(frame: GaugeFrame, l: GaugeLayout, assets: GaugeAssets) {

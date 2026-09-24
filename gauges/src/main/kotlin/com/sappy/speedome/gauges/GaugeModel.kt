@@ -63,7 +63,11 @@ data class GaugeFrame(
     val headingDeg: Float? = null,
     val altitudeM: Double? = null,
     val batteryLow: Boolean = false,
+    /** Set when a distance target is active (docs/plan.md §6). */
+    val target: GaugeTarget? = null,
 )
+
+data class GaugeTarget(val progress: Float, val remainingM: Double, val arrived: Boolean)
 
 /** Needle feel per theme: natural frequency ω (rad/s) and damping ζ (docs/plan.md §9). */
 data class NeedleSpring(val omega: Double, val zeta: Double)

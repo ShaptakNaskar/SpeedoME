@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,24 +40,43 @@ import com.sappy.speedome.ui.theme.SpeedoColors
 
 /** Record / Pause / Resume / Stop / Reset, as in the Theme Lab footer. */
 @Composable
-fun SessionControls(v: TrackView) {
+fun SessionControls(v: TrackView, onTarget: () -> Unit) {
     val app = LocalAppContainer.current
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
         when {
             v.sessionKind == SessionKind.LIVE -> {
                 Pill("● RECORD", Color(0xFFFF5B4E)) { app.recorder.startTrip() }
                 Pill("RESET", SpeedoColors.Text) { app.recorder.reset() }
+                TargetPill(v, onTarget)
             }
             v.paused -> {
                 Pill("RESUME", SpeedoColors.Accent) { app.tracking.command(Command.Resume) }
                 Pill("■ STOP", SpeedoColors.Text) { app.recorder.stopTrip() }
+                TargetPill(v, onTarget)
             }
             else -> {
                 Pill("PAUSE", SpeedoColors.Text) { app.tracking.command(Command.Pause) }
                 Pill("■ STOP", SpeedoColors.Text) { app.recorder.stopTrip() }
+                TargetPill(v, onTarget)
             }
         }
     }
+}
+
+/** A round "◎" button; amber while a target is set. */
+@Composable
+private fun TargetPill(v: TrackView, onClick: () -> Unit) {
+    Text(
+        "◎",
+        color = if (v.target != null) SpeedoColors.Accent else SpeedoColors.Text,
+        fontSize = 17.sp,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.07f))
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = if (v.target != null) "Edit target" else "Set target" }
+            .padding(horizontal = 15.dp, vertical = 8.dp),
+    )
 }
 
 @Composable

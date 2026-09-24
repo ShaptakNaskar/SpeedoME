@@ -146,7 +146,11 @@ object SpeedTapeTheme : GaugeTheme {
             "TIM ${fmtDuration(frame.stats.elapsedS)}" to ink,
         )
         lines.forEachIndexed { i, (s, col) -> text(s, ix, iy + i * 24.dp.toPx(), mono, 15.dp.toPx(), col, Align.LEFT) }
-        if (frame.gps == GpsDot.NONE) text("GPS LOST", ix, iy + lines.size * 24.dp.toPx(), mono, 15.dp.toPx(), magenta, Align.LEFT)
+        val alerts = buildList {
+            if (frame.gps == GpsDot.NONE) add("GPS LOST")
+            frame.target?.let { add(if (it.arrived) "TGT REACHED" else "TGT ${fmtKm(it.remainingM)}") }
+        }
+        alerts.forEachIndexed { i, s -> text(s, ix, iy + (lines.size + i) * 24.dp.toPx(), mono, 15.dp.toPx(), magenta, Align.LEFT) }
     }
 
     /** Aircraft-style readout: tens and hundreds are fixed, the units digit rolls continuously. */
@@ -158,7 +162,7 @@ object SpeedTapeTheme : GaugeTheme {
         val rest = whole / 10
         if (rest > 0) text(rest.toString(), x + w * .62f, y, paint, sizePx, Color.White, Align.RIGHT)
         clipRect(x + w * .62f, y - h * .64f, x + w * .98f, y + h * .64f) { // stays inside the pointer box
-            for (k in -1..1) text(((units + k + 10) % 10).toString(), x + w * .64f, y + (frac - k) * h * .95f, paint, sizePx, Color.White, Align.LEFT)
+            for (k in -1..1) text(((units + k + 10) % 10).toString(), x + w * .64f, y + (frac - k) * h * 1.15f, paint, sizePx, Color.White, Align.LEFT)
         }
     }
 }

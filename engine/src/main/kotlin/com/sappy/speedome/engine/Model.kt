@@ -20,6 +20,11 @@ data class EngineSettings(
 object Tuning {
     const val G = 9.81
 
+    // Target arrival (docs/plan.md §6): trend = average over the last 180 s, stops included.
+    const val TREND_WINDOW_S = 180.0
+    const val TREND_MIN_S = 15.0
+    const val TREND_MIN_MPS = 0.3
+
     // Kalman filter on [speed, acceleration]
     const val JERK_Q = 6.0
     const val ACCEL_DECAY_S = 3.0

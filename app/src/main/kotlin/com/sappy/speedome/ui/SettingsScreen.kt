@@ -71,6 +71,17 @@ fun SettingsScreen() {
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall, color = SpeedoColors.Text)
 
+        Section("MODE")
+        Choices(listOf("Drive" to Mode.DRIVE, "Walk & run" to Mode.STEP), s.mode) { v -> edit { it.copy(mode = v) } }
+        Text(
+            if (s.mode == Mode.STEP) {
+                "Counts steps, shows pace and cadence, and uses your steps for speed when GPS is weak. The dial starts at 0–10 km/h."
+            } else {
+                "Speed from GPS, dial from 0–20 km/h upward."
+            },
+            color = SpeedoColors.Muted, fontSize = 13.sp,
+        )
+
         Section("THEME")
         Choices(SpeedThemes.all.map { it.title.lowercase().replaceFirstChar(Char::uppercase) to it.id }, s.theme) { id -> edit { it.copy(theme = id) } }
         Choices(listOf("Black dial" to false, "Cream dial" to true), s.retroCream, title = "Retro") { v -> edit { it.copy(retroCream = v) } }
@@ -166,7 +177,6 @@ private fun DeveloperSection(s: AppSettings, edit: ((AppSettings) -> AppSettings
     Section("DEVELOPER")
     ToggleRow("Simulator", "Drive with simulated GPS instead of the real receiver.", s.simulator) { on -> edit { it.copy(simulator = on) } }
     ToggleRow("Needle prediction", "Between fixes the needle follows speed plus acceleration.", s.predictNeedle) { on -> edit { it.copy(predictNeedle = on) } }
-    Choices(listOf("Drive" to Mode.DRIVE, "Step" to Mode.STEP), s.mode, title = "Mode") { v -> edit { it.copy(mode = v) } }
     OutlinedButton(onClick = { edit { it.copy(devMode = false, simulator = false) } }) { Text("Turn off developer options") }
 }
 

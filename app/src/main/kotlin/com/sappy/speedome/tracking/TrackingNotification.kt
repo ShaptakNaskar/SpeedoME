@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.sappy.speedome.MainActivity
 import com.sappy.speedome.R
@@ -58,6 +59,20 @@ object TrackingNotification {
             .setShowWhen(false)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+        v.target?.let { t ->
+            // Target progress: the Android 16 progress-centric style, a plain bar below that (docs/plan.md §6).
+            b.setSubText(Fmt.target(t).joinToString(" · "))
+            val permille = (t.progress * 1000).roundToInt()
+            if (Build.VERSION.SDK_INT >= 36) {
+                b.setStyle(
+                    NotificationCompat.ProgressStyle()
+                        .setProgressSegments(listOf(NotificationCompat.ProgressStyle.Segment(1000).setColor(0xFFE8A33D.toInt())))
+                        .setProgress(permille),
+                )
+            } else {
+                b.setProgress(1000, permille, false)
+            }
+        }
         when {
             v.sessionKind == SessionKind.LIVE -> {
                 b.addAction(0, "Record", action(context, TrackingService.ACTION_START_TRIP))

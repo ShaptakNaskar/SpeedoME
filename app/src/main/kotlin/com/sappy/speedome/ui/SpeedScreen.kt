@@ -28,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -110,6 +112,9 @@ fun SpeedScreen() {
     val chrome = if (theme.light) Color.White else Color.Black
     val ink = if (theme.light) Color(0xFF111111) else SpeedoColors.Text
     val permissions = rememberPermissions()
+    var targetDialog by remember { mutableStateOf(false) }
+    if (targetDialog) TargetDialog(view.target) { targetDialog = false }
+    val targetH = if (view.target != null) TARGET_STRIP_HEIGHT else 0.dp
     val scope = rememberCoroutineScope()
 
     fun switchTheme(delta: Int) {
@@ -124,15 +129,15 @@ fun SpeedScreen() {
         // Landscape (car mount): the gauge takes the full height and the controls move into the header.
         val landscape = maxWidth > maxHeight
         val gaugeHeight = if (landscape) {
-            (maxHeight - HEADER_HEIGHT - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(160.dp)
+            (maxHeight - HEADER_HEIGHT - targetH - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(160.dp)
         } else {
-            (maxHeight - HEADER_HEIGHT - CONTROLS_HEIGHT - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(240.dp)
+            (maxHeight - HEADER_HEIGHT - CONTROLS_HEIGHT - targetH - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(240.dp)
         }
         Column(Modifier.fillMaxSize().background(chrome).verticalScroll(rememberScrollState())) {
             Header(
                 ink = ink,
                 view.quality, simRunning, entry.title, onPrev = { switchTheme(-1) }, onNext = { switchTheme(1) },
-                controls = if (landscape) ({ SessionControls(view) }) else null,
+                controls = if (landscape) ({ SessionControls(view) { targetDialog = true } }) else null,
             )
             Box(Modifier.padding(horizontal = 16.dp)) { PermissionCards(permissions, settings.mode) }
             Box(
@@ -154,8 +159,9 @@ fun SpeedScreen() {
                     }
                 }
             }
+            view.target?.let { t -> TargetStrip(t) { targetDialog = true } }
             if (showStrip) InfoStrip(settings, view, driver)
-            if (!landscape) Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth().background(Color.Black), contentAlignment = Alignment.Center) { SessionControls(view) }
+            if (!landscape) Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth().background(Color.Black), contentAlignment = Alignment.Center) { SessionControls(view) { targetDialog = true } }
             Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (view.lastFix == null && permissions.state.canTrack && !simRunning) {
                     Caption("Waiting for GPS. The first fix is quickest outdoors or near a window.")

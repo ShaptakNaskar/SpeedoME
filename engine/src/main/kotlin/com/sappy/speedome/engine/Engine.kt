@@ -15,7 +15,7 @@ import kotlin.math.max
 /** The pure, deterministic heart of SpeedoME: `state + event → state` (docs/plan.md §4–§5). */
 object Engine {
     fun reduce(state: EngineState, event: EngineEvent, settings: EngineSettings): EngineState {
-        val s = state.advanceClock(event.tNanos)
+        val s = state.advanceClock(event.tNanos).anchor(event)
         val next = when (event) {
             is FixEvent -> s.onFix(event, settings)
             is StepCountEvent -> s.onStepCount(event)
@@ -24,13 +24,13 @@ object Engine {
             is CommandEvent -> s.onCommand(event)
         }
         return when (event) {
-            is FixEvent, is TickEvent -> next.copy(
+            is FixEvent, is TickEvent -> next.sampleTrend(event.tNanos).copy(
                 range = AutoRange.update(
                     next.range, next.filter.output * 3.6, if (next.filter.zero) 0.0 else next.filter.a * 3.6,
                     event.tNanos, settings.mode, settings.autoRange,
                 ),
             )
-            is CommandEvent -> if (event.command == Command.Pause || event.command == Command.Resume) {
+            is CommandEvent -> if (event.command.keepsRange) {
                 next
             } else {
                 next.copy(range = AutoRange.initial(settings.mode, settings.autoRange)) // a fresh session starts small
@@ -41,6 +41,28 @@ object Engine {
 
     fun reduceAll(state: EngineState, events: Iterable<EngineEvent>, settings: EngineSettings): EngineState =
         events.fold(state) { s, e -> reduce(s, e, settings) }
+}
+
+private val Command.keepsRange
+    get() = this == Command.Pause || this == Command.Resume || this is Command.SetTarget || this == Command.ClearTarget
+
+private fun EngineState.anchor(e: EngineEvent): EngineState {
+    val utc = when (e) {
+        is FixEvent -> e.utcMillis
+        is TickEvent -> e.utcMillis
+        is CommandEvent -> e.utcMillis
+        else -> return this
+    }
+    return copy(clock = UtcAnchor(e.tNanos, utc))
+}
+
+/** One trend sample per second while not paused, covering the last [Tuning.TREND_WINDOW_S]. */
+private fun EngineState.sampleTrend(t: Long): EngineState {
+    if (session.paused) return this
+    val last = trend.lastOrNull()
+    if (last != null && (t - last.tNanos) / 1e9 < 1.0) return this
+    val window = Tuning.TREND_WINDOW_S
+    return copy(trend = (trend + TrendSample(t, stats.distanceM)).filter { (t - it.tNanos) / 1e9 <= window })
 }
 
 private data class Measurement(val z: Double, val r: Double, val source: SpeedSource)
@@ -194,9 +216,15 @@ private fun EngineState.onCommand(e: CommandEvent): EngineState = when (e.comman
     Command.Resume -> if (!session.paused) {
         this
     } else {
-        copy(session = session.copy(paused = false, segment = session.segment + 1), lastMeasureNanos = null, lastGood = null)
+        // The pause is not a stop, so the arrival trend restarts rather than averaging it in.
+        copy(session = session.copy(paused = false, segment = session.segment + 1), lastMeasureNanos = null, lastGood = null, trend = emptyList())
     }
+    is Command.SetTarget -> copy(target = Target(e.command.distanceM, stats.distanceM, e.command.arriveByUtc))
+    Command.ClearTarget -> copy(target = null)
 }
 
-private fun EngineState.freshSession(kind: SessionKind, utc: Long) =
-    copy(session = Session(kind = kind, startedUtc = utc), stats = Stats(), lastMeasureNanos = null, lastGood = null)
+/** A new session zeroes distance; a set target carries over and counts from the new zero. */
+private fun EngineState.freshSession(kind: SessionKind, utc: Long) = copy(
+    session = Session(kind = kind, startedUtc = utc), stats = Stats(), lastMeasureNanos = null, lastGood = null,
+    trend = emptyList(), target = target?.copy(startDistanceM = 0.0),
+)

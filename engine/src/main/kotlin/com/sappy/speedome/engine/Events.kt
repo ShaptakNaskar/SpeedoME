@@ -48,4 +48,9 @@ sealed interface Command {
 
     /** End the recorded trip (the app saves it first); a fresh live meter begins. */
     data object StopTrip : Command
+
+    /** Aim for [distanceM] more metres from now, optionally arriving by [arriveByUtc] (docs/plan.md §6). */
+    data class SetTarget(val distanceM: Double, val arriveByUtc: Long? = null) : Command
+
+    data object ClearTarget : Command
 }

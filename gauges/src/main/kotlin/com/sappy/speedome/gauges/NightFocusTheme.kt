@@ -65,6 +65,10 @@ object NightFocusTheme : GaugeTheme {
         val warnings = buildList {
             if (frame.gps == GpsDot.NONE) add("GPS SIGNAL LOST")
             if (frame.batteryLow) add("PHONE BATTERY LOW")
+            frame.target?.let { t ->
+                // The target only lights up when it needs attention: the last kilometre and arrival.
+                if (t.arrived) add("TARGET REACHED") else if (t.remainingM <= 1000) add("TARGET ${fmt(t.remainingM, 0)} M")
+            }
         }
         val s = l.stats
         val paint = assets.paint(assets.barlowSemi)

@@ -40,6 +40,20 @@ data class Stats(
     val gaps: Int = 0,
 )
 
+/** A distance target counted from [startDistanceM] (the session distance when it was set). */
+@Serializable
+data class Target(val distanceM: Double, val startDistanceM: Double, val arriveByUtc: Long? = null)
+
+/** Session distance at a moment; the last ~180 s of these give the arrival trend speed. */
+@Serializable
+data class TrendSample(val tNanos: Long, val distanceM: Double)
+
+/** Pairs the monotonic clock with wall time, so arrival times can be computed at any later instant. */
+@Serializable
+data class UtcAnchor(val tNanos: Long, val utcMillis: Long) {
+    fun utcAt(nanos: Long) = utcMillis + (nanos - tNanos) / 1_000_000
+}
+
 @Serializable
 data class CounterSample(val tNanos: Long, val total: Long)
 
@@ -71,6 +85,9 @@ data class EngineState(
     val stats: Stats = Stats(),
     val steps: StepState = StepState(),
     val range: RangeState = RangeState(),
+    val target: Target? = null,
+    val trend: List<TrendSample> = emptyList(),
+    val clock: UtcAnchor? = null,
 )
 
 /** GPS dot colour at [nowNanos]. */
@@ -115,6 +132,8 @@ fun EngineState.resumedAfter(gapMillis: Long, nowNanos: Long): EngineState {
         lastMeasureNanos = lastMeasureNanos?.let { then },
         lastMeasureOut = 0.0,
         lastEventNanos = nowNanos,
+        trend = emptyList(),
+        clock = null,
         session = session.copy(segment = session.segment + 1), // the route resumes as a new, dashed-joined segment
         stats = if (session.paused) stats else stats.copy(elapsedS = stats.elapsedS + gapMillis / 1000.0),
         steps = steps.copy(detectorTimes = emptyList(), counterSamples = emptyList(), lastStepNanos = null),

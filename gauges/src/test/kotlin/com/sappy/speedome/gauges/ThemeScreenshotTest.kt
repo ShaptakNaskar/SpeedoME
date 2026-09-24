@@ -62,7 +62,8 @@ class ThemeScreenshotTest {
     fun retro() = shoot(RetroTheme, standard() + Shot("cream", states.getValue("mid").copy(options = ThemeOptions(retroCream = true))) + noShader(states.getValue("mid")))
 
     @Test
-    fun modern() = shoot(ModernTheme, standard() + Shot("blue", states.getValue("mid").copy(options = ThemeOptions(accent = Color(0xFF4DA3FF)))) + noShader(states.getValue("mid")))
+    fun modern() = shoot(ModernTheme, standard() + Shot("blue", states.getValue("mid").copy(options = ThemeOptions(accent = Color(0xFF4DA3FF)))) + noShader(states.getValue("mid")) +
+        Shot("target", states.getValue("mid").copy(target = GaugeTarget(.62f, 3_800.0, false))))
 
     @Test
     fun digital() = shoot(
@@ -80,6 +81,7 @@ class ThemeScreenshotTest {
             Shot("warnings", GaugeFrame(needleKmh = 40f, readout = 40, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, gps = GpsDot.NONE, batteryLow = true)),
             Shot("landscape", GaugeFrame(needleKmh = 92f, readout = 92, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260), landscape = true),
             noShader(GaugeFrame(needleKmh = 92f, readout = 92, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, stats = trip)),
+            Shot("target", GaugeFrame(needleKmh = 70f, readout = 70, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, target = GaugeTarget(.93f, 640.0, false))),
         ),
     )
 
@@ -90,6 +92,7 @@ class ThemeScreenshotTest {
             Shot("mid", states.getValue("mid").copy(accelKmhS = 1.5f, headingDeg = 47f, altitudeM = 41.0)),
             Shot("braking", states.getValue("high").copy(accelKmhS = -4f, headingDeg = 312f, altitudeM = 120.0)),
             Shot("landscape", states.getValue("mid").copy(headingDeg = 47f, altitudeM = 41.0), landscape = true),
+            Shot("target", states.getValue("mid").copy(headingDeg = 47f, altitudeM = 41.0, gps = GpsDot.NONE, target = GaugeTarget(.4f, 7_300.0, false))),
         ),
     )
 

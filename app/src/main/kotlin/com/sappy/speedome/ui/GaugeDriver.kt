@@ -19,6 +19,7 @@ import com.sappy.speedome.engine.Mode
 import com.sappy.speedome.engine.view
 import com.sappy.speedome.gauges.GaugeFrame
 import com.sappy.speedome.gauges.GaugeStats
+import com.sappy.speedome.gauges.GaugeTarget
 import com.sappy.speedome.gauges.GaugeTheme
 import com.sappy.speedome.gauges.GpsDot
 import com.sappy.speedome.gauges.ThemeOptions
@@ -159,6 +160,7 @@ fun rememberGaugeDriver(
                     timeS = (now - start) / 1e9,
                     nightUpper = nightUpper.toFloat(),
                     scrollM = scroll.toFloat(),
+                    target = view.target?.let { GaugeTarget(it.progress, it.remainingM, it.arrived) },
                     headingDeg = currentHeading() ?: view.lastFix?.bearing?.toFloat(),
                     altitudeM = view.lastFix?.altM,
                     batteryLow = currentBattery(),

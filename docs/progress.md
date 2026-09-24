@@ -21,11 +21,13 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 | M4 Storage + resume + Trips | done 2026-09-24 | Verified on emulator: record → stop → summary sheet; Trips list (thumbnail) and detail (speed-coloured route, speed graph); Share GPX (chooser) and valid GPX 1.1 export; rename; delete; kill mid-trip → sticky service restarts and the same row continues with a new segment; kill with session aged 31 min → offer → Save & finish |
 | M5 Gauge toolkit + first themes | done 2026-09-24 | Retro, Modern and Digital themes on a cached static layer plus a per-frame dynamic pass; auto-range in the engine (10 tests); theme carousel (swipe and ‹ ›); startup sweep; landscape car-mount layout; new settings. 19 Roborazzi golden images verified by `check`. Verified on emulator: all themes in portrait and landscape, and settings take effect (cream dial, overall average, fixed dial) |
 | M6 Remaining themes + map + nerd | done | Night Focus, Speed Tape, Synthwave, Sunlight; Nerd page + info strip + heading/G switches; Map (MapLibre + OpenFreeMap dark, speed-coloured live route, puck, course/north-up, re-centre, speed card; verified offline from cache); AGSL effects (backlight glow, glass reflection, numeral bloom) with gradient fallbacks and a GPU effects setting. 41 goldens incl. 5 shader-off. |
-| M7 Target + step mode | todo | |
+| M7 Target + step mode | done | Engine target (SetTarget/ClearTarget, 180 s trend, ETA, arrive-by needed/ahead/LATE, arrival + distance past; carries over new sessions from zero; 9 tests). Target dialog (km presets, arrive-by time picker), target strip with haptic + flash on arrival, Modern ring, Night Focus last-km/reached warning, Tape annunciation, notification ProgressStyle (API 36+) / progress bar. Step mode moved from dev options to Settings → Mode. |
 | M8 Reliability + power + mock provider | todo | |
 | M9 Polish + release prep | todo | |
 
 ## Decisions made during implementation
+
+- **Target** lives only in the engine snapshot (no Room columns), so resume carries it. A target counts from the distance when it was set, and survives Reset/Start/Stop by rebasing to the new zero. The engine keeps a monotonic↔UTC anchor so ETA maths stays pure.
 
 - **AGSL effects** live in `gauges/Effects.kt`: dithered glow and domed-glass shaders on API 33+, gradients below or when the GPU effects setting is off. Robolectric's native graphics renders RuntimeShader, so both paths are screenshot-tested. The bloom fallback is plain text (a stroked halo looked like a double outline on thin fonts).
 
