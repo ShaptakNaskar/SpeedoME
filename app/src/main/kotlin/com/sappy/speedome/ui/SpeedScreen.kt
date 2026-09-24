@@ -123,7 +123,6 @@ fun SpeedScreen() {
         val all = SpeedThemes.all
         val next = all[(all.indexOf(entry) + delta + all.size) % all.size]
         scope.launch { app.settings.update { it.copy(theme = next.id) } }
-        if (settings.startupSweep && driver.frame.needleKmh < 1f) driver.sweep()
     }
     val onSwipe by rememberUpdatedState(::switchTheme)
 
@@ -135,7 +134,10 @@ fun SpeedScreen() {
         } else {
             (maxHeight - HEADER_HEIGHT - CONTROLS_HEIGHT - targetH - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(240.dp)
         }
-        Column(Modifier.fillMaxSize().background(chrome).verticalScroll(rememberScrollState())) {
+        // On the Map the page must not scroll or swipe: map pinches would otherwise reach the page and
+        // stretch the whole screen (Android's overscroll effect). Theme arrows still switch themes.
+        val mapShown = entry.id == SpeedThemes.MAP
+        Column(Modifier.fillMaxSize().background(chrome).verticalScroll(rememberScrollState(), enabled = !mapShown)) {
             Header(
                 height = if (landscape) HEADER_HEIGHT_LANDSCAPE else HEADER_HEIGHT,
                 ink = ink,
@@ -156,7 +158,8 @@ fun SpeedScreen() {
             Box(
                 Modifier.fillMaxWidth().height(gaugeHeight)
                     .then(if (gaugeDescription != null) Modifier.semantics { contentDescription = gaugeDescription } else Modifier)
-                    .pointerInput(Unit) {
+                    .pointerInput(mapShown) {
+                        if (mapShown) return@pointerInput
                     var dx = 0f
                     detectHorizontalDragGestures(
                         onDragStart = { dx = 0f },
@@ -249,8 +252,9 @@ private fun InfoStrip(settings: com.sappy.speedome.settings.AppSettings, view: T
             add(h?.let { "HDG ${it.toInt().toString().padStart(3, '0')}°${compassPoint(it)}" } ?: "HDG —")
         }
         if (settings.showGForce) {
-            val lat = view.speedMps * motion.yawRateRadS / 9.81
-            val fwd = view.accelMps2 / 9.81
+            val g = gForce(view, motion)
+            val lat = g.lateral
+            val fwd = g.forward
             add("G ${Fmt.decimal(kotlin.math.abs(lat), 2)} lat ${Fmt.decimal(fwd, 2)} fwd")
         }
     }

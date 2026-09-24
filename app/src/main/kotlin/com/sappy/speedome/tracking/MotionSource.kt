@@ -20,12 +20,26 @@ import kotlin.math.sqrt
  * Lateral G then comes from speed × yaw rate, and longitudinal G from the speed filter's acceleration.
  */
 class MotionSource(context: Context) : SensorEventListener {
-    data class Motion(val headingDeg: Float? = null, val headingAccuracy: Int = 0, val yawRateRadS: Float = 0f)
+    /**
+     * [accelEast]/[accelNorth]: horizontal linear acceleration (gravity removed) in m/s², rotated
+     * into the world frame so it doesn't depend on how the phone is mounted. Null without the sensor.
+     */
+    data class Motion(
+        val headingDeg: Float? = null,
+        val headingAccuracy: Int = 0,
+        val yawRateRadS: Float = 0f,
+        val accelEast: Float? = null,
+        val accelNorth: Float? = null,
+    )
 
     private val sm = context.applicationContext.getSystemService(SensorManager::class.java)
     private val rotation: Sensor? = sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
     private val gyro: Sensor? = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private val gravitySensor: Sensor? = sm.getDefaultSensor(Sensor.TYPE_GRAVITY)
+    private val linear: Sensor? = sm.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+    private var haveRotation = false
+    private var accE = 0f
+    private var accN = 0f
 
     private val _motion = MutableStateFlow(Motion())
     val motion: StateFlow<Motion> = _motion.asStateFlow()
@@ -67,7 +81,9 @@ class MotionSource(context: Context) : SensorEventListener {
             rotation?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
             gyro?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
             gravitySensor?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+            linear?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
         } else {
+            haveRotation = false
             sm.unregisterListener(this)
             _motion.value = Motion()
         }
@@ -77,6 +93,7 @@ class MotionSource(context: Context) : SensorEventListener {
         when (event.sensor.type) {
             Sensor.TYPE_ROTATION_VECTOR -> {
                 SensorManager.getRotationMatrixFromVector(rot, event.values)
+                haveRotation = true
                 // World frame: X east, Y north, Z up. Use whichever device axis lies flatter:
                 // the top edge (phone flat) or the back camera direction (phone upright in a mount).
                 val yE = rot[1]
@@ -90,6 +107,16 @@ class MotionSource(context: Context) : SensorEventListener {
                 _motion.value = _motion.value.copy(headingDeg = deg)
             }
             Sensor.TYPE_GRAVITY -> event.values.copyInto(gravity)
+            Sensor.TYPE_LINEAR_ACCELERATION -> if (haveRotation) {
+                // Device → world (east, north, up) with the rotation matrix; keep the horizontal part,
+                // low-passed (~0.3 s) so road buzz doesn't swamp braking and cornering.
+                val (x, y, z) = Triple(event.values[0], event.values[1], event.values[2])
+                val e = rot[0] * x + rot[1] * y + rot[2] * z
+                val n = rot[3] * x + rot[4] * y + rot[5] * z
+                accE += 0.12f * (e - accE)
+                accN += 0.12f * (n - accN)
+                _motion.value = _motion.value.copy(accelEast = accE, accelNorth = accN)
+            }
             Sensor.TYPE_GYROSCOPE -> {
                 val g = sqrt(gravity[0] * gravity[0] + gravity[1] * gravity[1] + gravity[2] * gravity[2]).coerceAtLeast(1e-3f)
                 val yaw = (event.values[0] * gravity[0] + event.values[1] * gravity[1] + event.values[2] * gravity[2]) / g

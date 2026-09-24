@@ -47,6 +47,7 @@ class SimulatorSource(
     private var rig: SimRig? = null
     private var spikePending = false
     private var lastTruth = 0L
+    private var lastSky = 0L
 
     fun start() {
         if (job != null) return
@@ -72,7 +73,10 @@ class SimulatorSource(
                 }
                 events.forEach(tracking::submit)
                 val now = SystemClock.elapsedRealtime()
-                if (now - lastTruth >= 1000) publishSky(r)
+                if (now - lastSky >= 1000) {
+                    lastSky = now
+                    publishSky(r)
+                }
                 if (now - lastTruth >= 250) { // the readout only needs a few updates a second
                     lastTruth = now
                     _truth.value = Truth(true, r.vehicle.v, r.vehicle.odometerM)
@@ -113,7 +117,8 @@ class SimulatorSource(
 
     private val sky = kotlin.random.Random(5).let { rnd ->
         listOf(android.location.GnssStatus.CONSTELLATION_GPS to 9, android.location.GnssStatus.CONSTELLATION_GLONASS to 7,
-            android.location.GnssStatus.CONSTELLATION_GALILEO to 7, android.location.GnssStatus.CONSTELLATION_BEIDOU to 8)
+            android.location.GnssStatus.CONSTELLATION_GALILEO to 7, android.location.GnssStatus.CONSTELLATION_BEIDOU to 8,
+            7 /* IRNSS (NavIC), API 29 */ to 4)
             .flatMap { (c, n) -> List(n) { Triple(c, 1 + rnd.nextInt(32), floatArrayOf(rnd.nextFloat() * 360, 8 + rnd.nextFloat() * 80, rnd.nextFloat() * 6)) } }
     }
 

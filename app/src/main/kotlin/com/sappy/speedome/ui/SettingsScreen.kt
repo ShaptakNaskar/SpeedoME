@@ -122,7 +122,7 @@ fun SettingsScreen() {
             if (com.sappy.speedome.gauges.Effects.available) "Glass reflections, backlight glow and numeral bloom." else "Needs Android 13; simpler gradients are used on this phone.",
             s.gpuEffects && com.sappy.speedome.gauges.Effects.available,
         ) { on -> if (com.sappy.speedome.gauges.Effects.available) edit { it.copy(gpuEffects = on) } }
-        ToggleRow("Startup sweep", "The needle sweeps to the top and back when the gauge appears.", s.startupSweep) { on -> edit { it.copy(startupSweep = on) } }
+        ToggleRow("Startup sweep", "The needle sweeps to the top and back once when the app starts.", s.startupSweep) { on -> edit { it.copy(startupSweep = on) } }
 
         Section("TRACKING")
         ToggleRow(

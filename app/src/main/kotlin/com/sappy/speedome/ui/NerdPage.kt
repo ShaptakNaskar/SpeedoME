@@ -37,7 +37,7 @@ private val CONSTELLATIONS = mapOf(
     GnssStatus.CONSTELLATION_GALILEO to Constellation("GAL", Color(0xFFF5C542)),
     GnssStatus.CONSTELLATION_BEIDOU to Constellation("BDS", Color(0xFF3FD49B)),
     GnssStatus.CONSTELLATION_QZSS to Constellation("QZS", Color(0xFFC77DFF)),
-    7 /* GnssStatus.CONSTELLATION_IRNSS, API 29 */ to Constellation("NAV", Color(0xFFFF9F43)),
+    7 /* GnssStatus.CONSTELLATION_IRNSS, API 29 */ to Constellation("NavIC", Color(0xFFFF9F43)),
     GnssStatus.CONSTELLATION_SBAS to Constellation("SBS", Color(0xFF9AA5A0)),
 )
 
@@ -67,8 +67,9 @@ fun NerdPage(modifier: Modifier = Modifier) {
     }
     val assets = rememberGaugeAssets()
     val v = remember(tick) { app.tracking.state.value.view(tick) }
-    val gLat = (v.speedMps * motion.yawRateRadS / 9.81).toFloat().coerceIn(-1.2f, 1.2f)
-    val gFwd = (v.accelMps2 / 9.81).toFloat().coerceIn(-1.2f, 1.2f)
+    val g = gForce(v, motion)
+    val gLat = g.lateral.toFloat().coerceIn(-1.2f, 1.2f)
+    val gFwd = g.forward.toFloat().coerceIn(-1.2f, 1.2f)
     LaunchedEffect(tick) {
         trail.addLast(Offset(gLat, gFwd))
         while (trail.size > 30) trail.removeFirst()
@@ -166,10 +167,12 @@ fun NerdPage(modifier: Modifier = Modifier) {
         drawLine(Color(0x40A0BEB4), Offset(gc.x, gc.y - gr), Offset(gc.x, gc.y + gr))
         trail.forEachIndexed { i, p -> drawCircle(Color(0xFFFFAA3C).copy(alpha = i / 30f * .6f), 2.dp.toPx(), Offset(gc.x + p.x * gr, gc.y - p.y * gr)) }
         drawCircle(Color(0xFFFFAE3C), 5.dp.toPx(), Offset(gc.x + gLat * gr, gc.y - gFwd * gr))
-        text("G ${Fmt.decimal(abs(gLat).toDouble(), 2)} lat · ${Fmt.decimal(gFwd.toDouble(), 2)} fwd", gc.x + gr + 14.dp.toPx(), gc.y - 8.dp.toPx(), mono, 11.dp.toPx(), ink, Align.LEFT)
+        text("G ${Fmt.decimal(abs(gLat).toDouble(), 2)} lat · ${Fmt.decimal(gFwd.toDouble(), 2)} fwd · ${g.source}", gc.x + gr + 14.dp.toPx(), gc.y - 8.dp.toPx(), mono, 11.dp.toPx(), ink, Align.LEFT)
         var bx = gc.x + gr + 14.dp.toPx()
         buildList {
             if (gnss.dualFrequency) add("L1+L5")
+            // NavIC is enabled (or not) in the phone's GNSS firmware; apps can only show it when reported.
+            if (gnss.satellites.any { it.constellation == 7 }) add("NavIC")
             gnss.hardwareModel?.let { add(it.take(18)) }
             if (f?.isMock == true) add("MOCK")
         }.forEach { b ->

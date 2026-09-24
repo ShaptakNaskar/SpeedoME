@@ -52,7 +52,20 @@ fun DevPanel(view: TrackView, frameInfo: String) {
         app.motion.acquire()
         onDispose { app.motion.release() }
     }
+    val settings by app.settings.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // The GAS / BRAKE pedals and presets appear once the simulator is on.
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Label("SIMULATOR")
+                Text(
+                    if (settings.simulator) "Simulated GPS: drive with GAS and BRAKE below." else "Turn on to drive with GAS / BRAKE pedals instead of real GPS.",
+                    color = SpeedoColors.Muted, fontSize = 12.sp,
+                )
+            }
+            androidx.compose.material3.Switch(settings.simulator, { on -> scope.launch { app.settings.update { it.copy(simulator = on) } } })
+        }
         if (truth.running) SimControls()
         if (BuildConfig.DEBUG) ResumeTests()
         ReplayControls()

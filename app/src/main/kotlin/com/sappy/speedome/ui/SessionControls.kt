@@ -2,6 +2,9 @@ package com.sappy.speedome.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,7 +45,7 @@ import com.sappy.speedome.ui.theme.SpeedoColors
 @Composable
 fun SessionControls(v: TrackView, onTarget: () -> Unit) {
     val app = LocalAppContainer.current
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
         when {
             v.sessionKind == SessionKind.LIVE -> {
                 Pill("● RECORD", Color(0xFFFF5B4E), "Record trip") { app.recorder.startTrip() }
@@ -63,20 +66,51 @@ fun SessionControls(v: TrackView, onTarget: () -> Unit) {
     }
 }
 
-/** A round "◎" button; amber while a target is set. */
+/** Target and Drive/Walk: icon buttons with a label, amber while active. */
 @Composable
 private fun TargetPill(v: TrackView, onClick: () -> Unit) {
-    Text(
-        "◎",
-        color = if (v.target != null) SpeedoColors.Accent else SpeedoColors.Text,
-        fontSize = 17.sp,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
+    IconButtonLabeled(TabIcons.Target, "TARGET", v.target != null, if (v.target != null) "Edit target" else "Set target", onClick)
+    ModeButton()
+}
+
+@Composable
+private fun ModeButton() {
+    val app = LocalAppContainer.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val s by app.settings.state.collectAsStateWithLifecycle()
+    val walk = s.mode == com.sappy.speedome.engine.Mode.STEP
+    IconButtonLabeled(
+        if (walk) TabIcons.Walk else TabIcons.Car, if (walk) "WALK" else "DRIVE", walk,
+        if (walk) "Walk and run mode. Switch to drive" else "Drive mode. Switch to walk and run",
+    ) {
+        scope.launch {
+            app.settings.update { it.copy(mode = if (walk) com.sappy.speedome.engine.Mode.DRIVE else com.sappy.speedome.engine.Mode.STEP) }
+        }
+    }
+}
+
+@Composable
+private fun IconButtonLabeled(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    active: Boolean,
+    description: String,
+    onClick: () -> Unit,
+) {
+    val color = if (active) SpeedoColors.Accent else SpeedoColors.Text
+    Column(
+        Modifier
+            .clip(RoundedCornerShape(14.dp))
             .background(Color.White.copy(alpha = 0.07f))
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = if (v.target != null) "Edit target" else "Set target" }
-            .padding(horizontal = 15.dp, vertical = 12.dp), // 48 dp touch target
-    )
+            .semantics(mergeDescendants = true) { contentDescription = description }
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+            .widthIn(min = 44.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        androidx.compose.material3.Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
+        Text(label, color = color, fontSize = 9.sp, letterSpacing = 1.sp, fontWeight = FontWeight.SemiBold)
+    }
 }
 
 @Composable
@@ -86,13 +120,13 @@ private fun Pill(label: String, color: Color, description: String? = null, onCli
         color = color,
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
-        letterSpacing = 2.sp,
+        letterSpacing = 1.5.sp,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(Color.White.copy(alpha = 0.07f))
             .clickable(role = Role.Button, onClick = onClick)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
-            .padding(horizontal = 20.dp, vertical = 15.dp), // 48 dp touch target
+            .padding(horizontal = 16.dp, vertical = 15.dp), // 48 dp touch target
     )
 }
 

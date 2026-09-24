@@ -30,6 +30,20 @@ class StepAndResumeTest {
     }
 
     @Test
+    fun `walking keeps one speed source instead of alternating`() {
+        val h = Harness()
+        h.rig.preset = SimPreset.WALK
+        h.run(60.0)
+        val withDoppler = (1..30).map { h.run(1.0); h.view.source }
+        assertTrue("sources $withDoppler", withDoppler.all { it == SpeedSource.DOPPLER })
+
+        h.rig.gnss.doppler = false // position-only chip: steps should lead, not position differencing
+        h.run(10.0)
+        val noDoppler = (1..30).map { h.run(1.0); h.view.source }
+        assertTrue("sources $noDoppler", noDoppler.all { it == SpeedSource.STEPS })
+    }
+
+    @Test
     fun `step counter handles a reboot reset`() {
         val cfg = EngineSettings(mode = Mode.STEP)
         var s = EngineState()
@@ -38,6 +52,33 @@ class StepAndResumeTest {
         s = Engine.reduce(s, StepCountEvent(3_000_000_000L, 3), cfg) // counter restarted
         s = Engine.reduce(s, StepCountEvent(4_000_000_000L, 10), cfg)
         assertEquals(19L, s.stats.steps)
+    }
+
+    @Test
+    fun `detector steps count live and a late batched counter report corrects them`() {
+        val cfg = EngineSettings(mode = Mode.STEP)
+        var s = Engine.reduce(EngineState(), StepCountEvent(1_000_000_000L, 10_000), cfg) // baseline at registration
+        // 40 detector steps; the counter (batched, like many Qualcomm phones) stays silent meanwhile.
+        for (i in 1..40) s = Engine.reduce(s, StepDetectedEvent(1_000_000_000L + i * 500_000_000L), cfg)
+        assertEquals(40L, s.stats.steps)
+        // Minutes later the counter reports 43 steps: the exact figure wins.
+        s = Engine.reduce(s, StepCountEvent(30_000_000_000L, 10_043), cfg)
+        assertEquals(43L, s.stats.steps)
+        // Detector steps keep counting on top of the corrected total.
+        s = Engine.reduce(s, StepDetectedEvent(31_000_000_000L), cfg)
+        assertEquals(44L, s.stats.steps)
+    }
+
+    @Test
+    fun `steps taken while paused are not counted after the counter catches up`() {
+        val cfg = EngineSettings(mode = Mode.STEP)
+        var s = Engine.reduce(EngineState(), StepCountEvent(1_000_000_000L, 500), cfg)
+        for (i in 1..10) s = Engine.reduce(s, StepDetectedEvent(1_000_000_000L + i * 500_000_000L), cfg)
+        s = Engine.reduce(s, CommandEvent(7_000_000_000L, 7_000L, Command.Pause), cfg)
+        for (i in 1..20) s = Engine.reduce(s, StepDetectedEvent(7_000_000_000L + i * 500_000_000L), cfg)
+        s = Engine.reduce(s, CommandEvent(20_000_000_000L, 20_000L, Command.Resume), cfg)
+        s = Engine.reduce(s, StepCountEvent(21_000_000_000L, 530), cfg) // covers the paused steps too: new baseline
+        assertEquals(10L, s.stats.steps)
     }
 
     @Test

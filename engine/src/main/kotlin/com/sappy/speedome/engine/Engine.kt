@@ -89,6 +89,9 @@ private fun EngineState.onFix(e: FixEvent, cfg: EngineSettings): EngineState {
             val sd = max(0.5, 0.15 * hAcc)
             Measurement(e.speed.toDouble(), sd * sd, SpeedSource.DOPPLER_NO_ACCURACY)
         }
+        // Walking with steps: cadence × stride beats position differencing, so weak-GPS position
+        // speed is ignored rather than fighting the step speed (that was the STEPS/POSITION flip-flop).
+        cfg.mode == Mode.STEP && steps.lastStepNanos?.let { (t - it) / 1e9 <= STEP_MOVING_WINDOW_S } == true -> null
         else -> positionSpeed(window, t)
     }
     var s = copy(
@@ -172,6 +175,11 @@ private fun EngineState.learnStride(chipSpeed: Double, t: Long): EngineState {
     )
 }
 
+/**
+ * The counter is exact but many phones deliver it in batches minutes apart, so the total runs on
+ * detector steps and each counter report corrects it: the counter's delta replaces the detector
+ * steps provisionally counted since its previous report.
+ */
 private fun EngineState.onStepCount(e: StepCountEvent): EngineState {
     val last = steps.lastCounter
     val rebooted = last != null && e.counterTotal < last
@@ -179,36 +187,44 @@ private fun EngineState.onStepCount(e: StepCountEvent): EngineState {
     val window = Tuning.CADENCE_WINDOW_S
     val sample = CounterSample(e.tNanos, e.counterTotal)
     val samples = if (rebooted) listOf(sample) else (steps.counterSamples + sample).filter { (e.tNanos - it.tNanos) / 1e9 <= window }
+    val correction = if (last == null || rebooted || session.paused) 0L else delta - steps.provisional
     return copy(
-        steps = steps.copy(lastCounter = e.counterTotal, counterSamples = samples, lastStepNanos = if (delta > 0) e.tNanos else steps.lastStepNanos),
-        stats = if (session.paused || delta == 0L) stats else stats.copy(steps = stats.steps + delta),
+        steps = steps.copy(
+            lastCounter = e.counterTotal, counterSamples = samples, provisional = 0,
+            lastStepNanos = if (delta > 0 && steps.detectorTimes.isEmpty()) e.tNanos else steps.lastStepNanos,
+        ),
+        stats = stats.copy(steps = (stats.steps + correction).coerceAtLeast(0)),
     )
 }
 
 private fun EngineState.onStepDetected(e: StepDetectedEvent): EngineState {
     val window = Tuning.CADENCE_WINDOW_S
     val times = (steps.detectorTimes + e.tNanos).filter { (e.tNanos - it) / 1e9 <= window }
-    // Without a step counter, the detector is the only step source.
-    val countIt = steps.lastCounter == null && !session.paused
+    if (session.paused) return copy(steps = steps.copy(detectorTimes = times, lastStepNanos = e.tNanos))
     return copy(
-        steps = steps.copy(detectorTimes = times, lastStepNanos = e.tNanos),
-        stats = if (countIt) stats.copy(steps = stats.steps + 1) else stats,
+        steps = steps.copy(detectorTimes = times, lastStepNanos = e.tNanos, provisional = steps.provisional + 1),
+        stats = stats.copy(steps = stats.steps + 1),
     )
 }
 
-/** In step mode, cadence × stride is a speed measurement; standing still with weak GPS reads as 0. */
+/**
+ * In step mode, cadence × stride is a speed measurement when GPS is weak or gone; standing still
+ * with weak GPS reads as 0. With good GPS the chip's Doppler speed leads on its own (it also
+ * teaches the stride), so the two sources don't take turns.
+ */
 private fun EngineState.onTick(e: TickEvent, cfg: EngineSettings): EngineState {
     if (cfg.mode != Mode.STEP) return this
     val t = e.tNanos
     val cadence = cadenceSpm(t)
     val gpsGood = quality(t) == GpsQuality.GOOD
+    if (gpsGood) return this
     val sinceStep = steps.lastStepNanos?.let { (t - it) / 1e9 } ?: Double.MAX_VALUE
     val z = when {
         cadence > 0 -> cadence / 60.0 * strideFor(cadence)
         sinceStep >= STILL_AFTER_S && !gpsGood -> 0.0
         else -> return this
     }
-    val u = filter.update(z, if (gpsGood) 0.36 else 0.09, t)
+    val u = filter.update(z, 0.09, t)
     return copy(filter = u.filter, lastSource = if (u.accepted) SpeedSource.STEPS else lastSource)
         .integrate(t, null, u.accepted, cfg)
 }
@@ -217,12 +233,17 @@ private fun EngineState.onCommand(e: CommandEvent): EngineState = when (e.comman
     Command.Reset -> freshSession(session.kind, e.utcMillis)
     Command.StartTrip -> freshSession(SessionKind.TRIP, e.utcMillis)
     Command.StopTrip -> freshSession(SessionKind.LIVE, e.utcMillis)
-    Command.Pause -> copy(session = session.copy(paused = true))
+    // Pause, Resume and new sessions restart the counter baseline so its next report can't bring
+    // back steps from outside the counted time.
+    Command.Pause -> copy(session = session.copy(paused = true), steps = steps.rebaselined())
     Command.Resume -> if (!session.paused) {
         this
     } else {
         // The pause is not a stop, so the arrival trend restarts rather than averaging it in.
-        copy(session = session.copy(paused = false, segment = session.segment + 1), lastMeasureNanos = null, lastGood = null, trend = emptyList())
+        copy(
+            session = session.copy(paused = false, segment = session.segment + 1), lastMeasureNanos = null, lastGood = null,
+            trend = emptyList(), steps = steps.rebaselined(),
+        )
     }
     is Command.SetTarget -> copy(target = Target(e.command.distanceM, stats.distanceM, e.command.arriveByUtc))
     Command.ClearTarget -> copy(target = null)
@@ -231,5 +252,7 @@ private fun EngineState.onCommand(e: CommandEvent): EngineState = when (e.comman
 /** A new session zeroes distance; a set target carries over and counts from the new zero. */
 private fun EngineState.freshSession(kind: SessionKind, utc: Long) = copy(
     session = Session(kind = kind, startedUtc = utc), stats = Stats(), lastMeasureNanos = null, lastGood = null,
-    trend = emptyList(), target = target?.copy(startDistanceM = 0.0),
+    trend = emptyList(), target = target?.copy(startDistanceM = 0.0), steps = steps.rebaselined(),
 )
+
+private fun StepState.rebaselined() = copy(lastCounter = null, provisional = 0)

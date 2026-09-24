@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,6 +49,9 @@ import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.gestures.MoveGestureDetector
+import org.maplibre.android.gestures.RotateGestureDetector
+import org.maplibre.android.gestures.StandardScaleGestureDetector
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapLibreMapOptions
 import org.maplibre.android.maps.MapView
@@ -82,6 +86,10 @@ fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier = Modifier
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var style by remember { mutableStateOf<Style?>(null) }
     var following by remember { mutableStateOf(true) }
+    // Pinch-zoom keeps following and remembers how far in/out you like it relative to the
+    // speed-based zoom; panning or rotating stops following until RE-CENTRE.
+    var zoomOffset by remember { mutableDoubleStateOf(0.0) }
+    var scaling by remember { mutableStateOf(false) }
 
     val mapView = remember {
         MapLibre.getInstance(context.applicationContext)
@@ -97,9 +105,31 @@ fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier = Modifier
                     attributionGravity = Gravity.BOTTOM or Gravity.END
                     setAttributionTintColor(SpeedoColors.Muted.toArgb())
                 }
-                m.addOnCameraMoveStartedListener { reason ->
-                    if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) following = false
-                }
+                m.setMinZoomPreference(3.0)
+                m.addOnMoveListener(object : MapLibreMap.OnMoveListener {
+                    override fun onMoveBegin(d: MoveGestureDetector) {
+                        if (d.pointersCount < 2) following = false // a two-finger drag is part of a pinch
+                    }
+                    override fun onMove(d: MoveGestureDetector) = Unit
+                    override fun onMoveEnd(d: MoveGestureDetector) = Unit
+                })
+                m.addOnRotateListener(object : MapLibreMap.OnRotateListener {
+                    override fun onRotateBegin(d: RotateGestureDetector) {
+                        following = false
+                    }
+                    override fun onRotate(d: RotateGestureDetector) = Unit
+                    override fun onRotateEnd(d: RotateGestureDetector) = Unit
+                })
+                m.addOnScaleListener(object : MapLibreMap.OnScaleListener {
+                    override fun onScaleBegin(d: StandardScaleGestureDetector) {
+                        scaling = true
+                    }
+                    override fun onScale(d: StandardScaleGestureDetector) = Unit
+                    override fun onScaleEnd(d: StandardScaleGestureDetector) {
+                        scaling = false
+                        zoomOffset = (m.cameraPosition.zoom - zoomFor(lastKmh)).coerceIn(-8.0, 4.0)
+                    }
+                })
                 m.setStyle(Style.Builder().fromUri(STYLE_URL)) { s ->
                     s.restyle()
                     s.addRouteLayers(resources.displayMetrics.density)
@@ -147,14 +177,15 @@ fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier = Modifier
         }
         s.getSourceAs<GeoJsonSource>("puck")?.setGeoJson(puck)
     }
-    LaunchedEffect(map, fix?.tNanos, following, northUp) {
+    lastKmh = view.speedMps * 3.6
+    LaunchedEffect(map, fix?.tNanos, following, northUp, zoomOffset) {
         val m = map ?: return@LaunchedEffect
         fix ?: return@LaunchedEffect
-        if (!following) return@LaunchedEffect
+        if (!following || scaling) return@LaunchedEffect
         val bearing = if (northUp) 0.0 else heading?.toDouble() ?: m.cameraPosition.bearing
         val camera = CameraPosition.Builder()
             .target(LatLng(fix.lat, fix.lon))
-            .zoom(zoomFor(view.speedMps * 3.6))
+            .zoom(zoomFor(view.speedMps * 3.6) + zoomOffset)
             .bearing(bearing)
             .padding(0.0, if (northUp) 0.0 else mapView.height * .35, 0.0, 0.0) // course-up: see more road ahead
             .build()
@@ -206,6 +237,10 @@ private fun courseOf(route: List<RoutePoint>): Double? {
 }
 
 /** Closer in when slow, further out on the motorway. */
+/** Latest speed for the gesture callbacks (they run outside composition). */
+@Volatile
+private var lastKmh = 0.0
+
 private fun zoomFor(kmh: Double): Double = when {
     kmh < 8 -> 17.0
     kmh > 120 -> 13.6

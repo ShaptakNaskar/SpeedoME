@@ -65,6 +65,8 @@ data class StepState(
     val lastStepNanos: Long? = null,
     val strideWalkM: Double = 0.74,
     val strideRunM: Double = 1.05,
+    /** Detector steps already added to the total since the counter last reported (reconciled then). */
+    val provisional: Long = 0,
 )
 
 /**

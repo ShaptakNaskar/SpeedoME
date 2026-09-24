@@ -53,6 +53,9 @@ class GaugeDriver {
 
 private const val SWEEP_S = 1.3
 
+/** Process-wide: the startup sweep has played. */
+private var sweptThisLaunch = false
+
 /** Night Focus speeds are chosen in km/h; in mph they become the nearest round 10 (260 → 160). */
 private fun displayRound(kmh: Int, units: SpeedUnit): Int =
     if (units == SpeedUnit.MPH) ((kmh * 0.621371 / 10).roundToInt() * 10) else kmh
@@ -81,7 +84,11 @@ fun rememberGaugeDriver(
     val currentBattery by rememberUpdatedState(batteryLow)
 
     LaunchedEffect(Unit) {
-        if (settings.startupSweep && !animationsOff) driver.sweep()
+        // Once per app launch: not again on theme swipes, tab switches or rotation.
+        if (!sweptThisLaunch) {
+            sweptThisLaunch = true
+            if (settings.startupSweep && !animationsOff) driver.sweep()
+        }
     }
     LaunchedEffect(engine) {
         var v = 0.0

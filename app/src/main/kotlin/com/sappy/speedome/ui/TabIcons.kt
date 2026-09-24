@@ -26,6 +26,25 @@ object TabIcons {
         fill { dot(9f, 7f, 2.4f); dot(15f, 12f, 2.4f); dot(7.5f, 17f, 2.4f) }
     }
 
+    val Target: ImageVector = icon("target") {
+        stroke { dot(12f, 12f, 8.5f) }
+        stroke { dot(12f, 12f, 4.5f) }
+        fill { dot(12f, 12f, 1.6f) }
+    }
+
+    val Car: ImageVector = icon("car") {
+        stroke { moveTo(4f, 16f); lineTo(4f, 12.5f); lineTo(6.5f, 7.5f); lineTo(17.5f, 7.5f); lineTo(20f, 12.5f); lineTo(20f, 16f); close() }
+        stroke { moveTo(5f, 12.5f); lineTo(19f, 12.5f) }
+        fill { dot(7.5f, 17.5f, 2f); dot(16.5f, 17.5f, 2f) }
+    }
+
+    val Walk: ImageVector = icon("walk") {
+        fill { dot(13.5f, 4.5f, 2f) }
+        stroke { moveTo(12.5f, 8.5f); lineTo(10.5f, 14f); lineTo(13.5f, 17f); lineTo(13f, 21f) }
+        stroke { moveTo(10.5f, 14f); lineTo(8f, 21f) }
+        stroke { moveTo(7.5f, 12f); lineTo(11.5f, 9f); lineTo(15.5f, 12.5f) }
+    }
+
     private class Scope(val builder: ImageVector.Builder) {
         fun stroke(block: PathBuilder.() -> Unit) {
             builder.path(stroke = SolidColor(Color.Black), strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round, pathBuilder = block)
