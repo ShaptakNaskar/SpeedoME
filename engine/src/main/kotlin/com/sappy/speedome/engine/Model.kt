@@ -10,9 +10,10 @@ enum class GpsQuality { GOOD, FALLBACK, NONE }
 
 enum class SessionKind { LIVE, TRIP }
 
-/** User settings the engine needs. Grows with later milestones (auto-range policy, units…). */
+/** User settings the engine needs. */
 data class EngineSettings(
     val mode: Mode = Mode.DRIVE,
+    val autoRange: AutoRangeSettings = AutoRangeSettings(),
 )
 
 /** Filter and bookkeeping constants, validated in docs/theme-lab.html. */

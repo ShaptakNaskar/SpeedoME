@@ -70,6 +70,7 @@ data class EngineState(
     val session: Session = Session(),
     val stats: Stats = Stats(),
     val steps: StepState = StepState(),
+    val range: RangeState = RangeState(),
 )
 
 /** GPS dot colour at [nowNanos]. */

@@ -7,6 +7,8 @@
 #   tools/emu.sh shot NAME          screenshot to $SHOTS/NAME.png
 #   tools/emu.sh tap "Text"         tap the first node whose text is exactly "Text"
 #   tools/emu.sh hold "Text" [ms]   long-press a node
+#   tools/emu.sh tapdesc "Desc"     tap a node by content description
+#   tools/emu.sh rotate 0|1|2|3     force rotation (1 = landscape)
 #   tools/emu.sh texts              list visible texts
 #   tools/emu.sh crashes            recent crash-buffer lines
 #   tools/emu.sh feed KMH SECONDS   drive the emulator GPS north-east at KMH (1 Hz geo fixes with speed)
@@ -23,7 +25,8 @@ mkdir -p "$SHOTS"
 a() { adb -s "$E" "$@"; }
 dump() { a shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; a shell cat /sdcard/ui.xml; }
 center_of() {
-  dump | grep -oE "text=\"$1\"[^>]*bounds=\"\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]\"" | head -1 \
+  local attr=${2:-text}
+  dump | grep -oE "$attr=\"$1\"[^>]*bounds=\"\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]\"" | head -1 \
     | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | sed -E 's/\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]/\1 \2 \3 \4/' \
     | awk '{printf "%d %d\n", ($1+$3)/2, ($2+$4)/2}'
 }
@@ -45,6 +48,8 @@ case "$cmd" in
   launch) a shell am start -W -n "$PKG/com.sappy.speedome.MainActivity" | grep -E "Status" ;;
   shot) a exec-out screencap -p >"$SHOTS/$1.png"; echo "$SHOTS/$1.png" ;;
   tap) c=$(center_of "$1"); [ -z "$c" ] && { echo "not found: $1"; exit 1; }; a shell input tap $c ;;
+  tapdesc) c=$(center_of "$1" content-desc); [ -z "$c" ] && { echo "not found: $1"; exit 1; }; a shell input tap $c ;;
+  rotate) a shell settings put system accelerometer_rotation 0; a shell settings put system user_rotation "${1:-1}" ;;
   hold) c=$(center_of "$1"); [ -z "$c" ] && { echo "not found: $1"; exit 1; }; set -- $c "${2:-3000}"; a shell input swipe "$1" "$2" "$1" "$2" "$3" ;;
   texts) dump | grep -oE 'text="[^"]+"' | sed -E 's/text="(.*)"/\1/' ;;
   crashes) a logcat -d -b crash | tail -"${1:-20}" ;;

@@ -1,5 +1,6 @@
 package com.sappy.speedome.ui
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,7 +63,9 @@ fun SpeedoApp() {
                 Tab.Settings -> SettingsScreen()
             }
         }
-        TabBar(selected = tab, onSelect = { tab = it })
+        // In landscape the Speed tab is a full-screen car-mount display (as in the Theme Lab).
+        val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        if (!(landscape && tab == Tab.Speed)) TabBar(selected = tab, onSelect = { tab = it })
     }
     // App-wide: resume decisions and the post-trip summary show on any tab.
     ResumeOfferDialog()

@@ -16,12 +16,26 @@ import kotlin.math.max
 object Engine {
     fun reduce(state: EngineState, event: EngineEvent, settings: EngineSettings): EngineState {
         val s = state.advanceClock(event.tNanos)
-        return when (event) {
+        val next = when (event) {
             is FixEvent -> s.onFix(event, settings)
             is StepCountEvent -> s.onStepCount(event)
             is StepDetectedEvent -> s.onStepDetected(event)
             is TickEvent -> s.onTick(event, settings)
             is CommandEvent -> s.onCommand(event)
+        }
+        return when (event) {
+            is FixEvent, is TickEvent -> next.copy(
+                range = AutoRange.update(
+                    next.range, next.filter.output * 3.6, if (next.filter.zero) 0.0 else next.filter.a * 3.6,
+                    event.tNanos, settings.mode, settings.autoRange,
+                ),
+            )
+            is CommandEvent -> if (event.command == Command.Pause || event.command == Command.Resume) {
+                next
+            } else {
+                next.copy(range = AutoRange.initial(settings.mode, settings.autoRange)) // a fresh session starts small
+            }
+            else -> next
         }
     }
 

@@ -40,7 +40,7 @@ import com.sappy.speedome.ui.theme.SpeedoColors
 @Composable
 fun SessionControls(v: TrackView) {
     val app = LocalAppContainer.current
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
         when {
             v.sessionKind == SessionKind.LIVE -> {
                 Pill("● RECORD", Color(0xFFFF5B4E)) { app.recorder.startTrip() }

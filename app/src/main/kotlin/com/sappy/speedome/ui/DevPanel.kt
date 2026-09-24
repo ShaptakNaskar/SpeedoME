@@ -45,8 +45,9 @@ import kotlinx.coroutines.launch
 
 /** Developer-only controls under the gauge: simulator driving, session commands and raw engine readout. */
 @Composable
-fun DevPanel(view: TrackView, truth: SimulatorSource.Truth) {
+fun DevPanel(view: TrackView) {
     val app = LocalAppContainer.current
+    val truth by app.simulator.truth.collectAsStateWithLifecycle()
     DisposableEffect(Unit) {
         app.motion.acquire()
         onDispose { app.motion.release() }

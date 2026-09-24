@@ -45,6 +45,7 @@ class SimulatorSource(
     private var job: Job? = null
     private var rig: SimRig? = null
     private var spikePending = false
+    private var lastTruth = 0L
 
     fun start() {
         if (job != null) return
@@ -69,7 +70,11 @@ class SimulatorSource(
                     }
                 }
                 events.forEach(tracking::submit)
-                _truth.value = Truth(true, r.vehicle.v, r.vehicle.odometerM)
+                val now = SystemClock.elapsedRealtime()
+                if (now - lastTruth >= 250) { // the readout only needs a few updates a second
+                    lastTruth = now
+                    _truth.value = Truth(true, r.vehicle.v, r.vehicle.odometerM)
+                }
                 delay(20)
             }
         }

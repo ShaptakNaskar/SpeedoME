@@ -5,7 +5,6 @@ import com.sappy.speedome.engine.Command
 import com.sappy.speedome.engine.CommandEvent
 import com.sappy.speedome.engine.Engine
 import com.sappy.speedome.engine.EngineEvent
-import com.sappy.speedome.engine.EngineSettings
 import com.sappy.speedome.engine.EngineState
 import com.sappy.speedome.engine.TickEvent
 import com.sappy.speedome.settings.AppSettings
@@ -39,7 +38,7 @@ class TrackingEngine(scope: CoroutineScope, private val settings: StateFlow<AppS
         scope.launch(engineThread) {
             for (m in inbox) {
                 _state.value = when (m) {
-                    is Msg.Event -> Engine.reduce(_state.value, m.event, EngineSettings(mode = settings.value.mode))
+                    is Msg.Event -> Engine.reduce(_state.value, m.event, settings.value.engine)
                     is Msg.Restore -> m.state
                 }
             }

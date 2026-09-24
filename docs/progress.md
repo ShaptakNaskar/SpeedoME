@@ -19,8 +19,8 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 | M2 Simulator + debug screen | done 2026-09-24 | Verified on emulator: City/Highway/Walk presets, spike rejected, signal loss → NO FIX, no speed field → POSITION, trip start/pause/resume/stop |
 | M3 Tracking service + sensors | done 2026-09-24 | Verified on emulator: permission dialogs chain (location → notifications), foreground `location` service with live notification, real LocationManager fixes (geo fix + velocity) → DOPPLER source, GnssStatus satellites, notification keeps updating with screen off, denied / coarse-only / step-permission cards |
 | M4 Storage + resume + Trips | done 2026-09-24 | Verified on emulator: record → stop → summary sheet; Trips list (thumbnail) and detail (speed-coloured route, speed graph); Share GPX (chooser) and valid GPX 1.1 export; rename; delete; kill mid-trip → sticky service restarts and the same row continues with a new segment; kill with session aged 31 min → offer → Save & finish |
-| M5 Gauge toolkit + first themes | in progress | |
-| M6 Remaining themes + map + nerd | todo | |
+| M5 Gauge toolkit + first themes | done 2026-09-24 | Retro, Modern and Digital themes on a cached static layer plus a per-frame dynamic pass; auto-range in the engine (10 tests); theme carousel (swipe and ‹ ›); startup sweep; landscape car-mount layout; new settings. 19 Roborazzi golden images verified by `check`. Verified on emulator: all themes in portrait and landscape, and settings take effect (cream dial, overall average, fixed dial) |
+| M6 Remaining themes + map + nerd | in progress | |
 | M7 Target + step mode | todo | |
 | M8 Reliability + power + mock provider | todo | |
 | M9 Polish + release prep | todo | |
@@ -44,3 +44,10 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
   - The adoption marker was cleared by the engine's initial blank state, so a resumed trip got a new row. The marker is now cleared only when used.
 - **Parked jitter:** while the speed reads 0 and the phone hasn't moved beyond `max(hAcc, 8 m)`, points aren't stored, so routes don't draw squiggles at stops.
 - **Developer resume tests:** the dev panel has "Kill app" and "Kill, 31 min later" (debug builds only).
+- **Auto-range lives in the engine:** `RangeState` in `EngineState`, updated on fixes and ticks, and reset by Reset / StartTrip / StopTrip. Pause and Resume don't reset it. The animated transition is UI-side (`GaugeDriver`, 450 ms ease).
+- **Gauge rendering:** `GaugeView` records `drawStatic` into a GraphicsLayer inside `drawWithCache`, keyed by `StaticKey` through `derivedStateOf`, and runs `drawDynamic` every frame. The frame provider goes through `rememberUpdatedState`.
+- **Text:** drawn with the native canvas using cached `Paint`s on the bundled OFL fonts, with variable weights set once per Paint.
+- **Emulator frame timings** (SwiftShader software GPU, 1344×2992): about 4 ms frame loop, 5–7 ms draw recording and 5–7 ms GPU. Per-frame recomposition was checked and there is none. Real-device numbers are for M9's Macrobenchmark.
+- **Landscape:** the Speed tab hides the tab bar, and the session controls move into the header (as in the Theme Lab).
+- **Screenshot tests:** `./gradlew :gauges:recordRoborazziDebug` re-records the goldens in `gauges/src/test/screenshots`, and `check` runs `verifyRoborazziDebug`.
+- **Emulator helper:** `tools/emu.sh tapdesc "Next theme"` taps by content description; `rotate 1|0` switches landscape and portrait.
