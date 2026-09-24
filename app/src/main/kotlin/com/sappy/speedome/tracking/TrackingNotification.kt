@@ -36,7 +36,7 @@ object TrackingNotification {
         val title = if (v.lastFix == null) {
             "Waiting for GPS…"
         } else {
-            "${Fmt.kmh(v.speedMps).roundToInt()} km/h · ${Fmt.km(v.distanceM)} km"
+            "${Fmt.speed(v.speedMps).roundToInt()} ${Fmt.speedUnit} · ${Fmt.dist(v.distanceM)} ${Fmt.distUnit}"
         }
         val state = when {
             v.sessionKind == SessionKind.TRIP && v.paused -> "Paused"

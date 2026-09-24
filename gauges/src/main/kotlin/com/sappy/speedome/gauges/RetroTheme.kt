@@ -51,7 +51,7 @@ object RetroTheme : GaugeTheme {
                 }
             }
         }
-        text("km/h", c.x, c.y - r * .3f, assets.paint(assets.oswald, 400), r * .075f, ink.copy(alpha = .7f))
+        text(frame.options.units.label, c.x, c.y - r * .3f, assets.paint(assets.oswald, 400), r * .075f, ink.copy(alpha = .7f))
         val brand = assets.paint(assets.oswald, 500).apply { textSkewX = -.22f }
         text("SPEEDO·ME", c.x, c.y + r * .66f, brand, r * .06f, ink.copy(alpha = .55f), spacingEm = .3f)
         brand.textSkewX = 0f
@@ -64,7 +64,7 @@ object RetroTheme : GaugeTheme {
         val c = l.center
         val r = l.radius
         val (drumTop, cell) = drumGeometry(c, r)
-        drum(drumTop, cell, frame.stats.distanceM / 1000, 6, assets, Color(0xFFEFE8D6), Color(0xFF141414), Color(0xFF141414), Color(0xFFE9E1CC))
+        drum(drumTop, cell, frame.stats.distanceM / frame.options.units.metresPerDistance, 6, assets, Color(0xFFEFE8D6), Color(0xFF141414), Color(0xFF141414), Color(0xFFE9E1CC))
 
         val a = angleRad(frame.needleKmh, frame.rangeKmh)
         needle(Offset(c.x, c.y + r * .02f), r * .9f, a, Color.Black.copy(alpha = .45f), tail = .2f, width = .04f)

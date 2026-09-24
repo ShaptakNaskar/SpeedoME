@@ -80,7 +80,7 @@ fun tripDate(t: SessionEntity): String =
 fun tripTitle(t: SessionEntity): String = t.name?.takeIf { it.isNotBlank() } ?: tripDate(t)
 
 fun tripSummary(t: SessionEntity): String {
-    val avg = if (t.movingS > 1) Fmt.kmh(t.distanceM / t.movingS) else 0.0
+    val avg = if (t.movingS > 1) Fmt.speed(t.distanceM / t.movingS) else 0.0
     val walk = if (t.mode == Mode.STEP.name) "Walk · " else ""
-    return "$walk${Fmt.km(t.distanceM)} km · ${Fmt.duration(t.elapsedS)} · avg ${Fmt.decimal(avg, 0)} · max ${Fmt.decimal(Fmt.kmh(t.maxMps), 0)}"
+    return "$walk${Fmt.dist(t.distanceM)} ${Fmt.distUnit} · ${Fmt.duration(t.elapsedS)} · avg ${Fmt.decimal(avg, 0)} · max ${Fmt.decimal(Fmt.speed(t.maxMps), 0)}"
 }

@@ -1,18 +1,30 @@
 package com.sappy.speedome.ui
 
+import com.sappy.speedome.engine.EngineSettings
 import com.sappy.speedome.engine.TargetView
+import com.sappy.speedome.gauges.SpeedUnit
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-/** Display formatting. The engine is SI; these convert at the edge. */
+/** Display formatting. The engine is SI; these convert at the edge, in the user's units. */
 object Fmt {
-    fun kmh(mps: Double): Double = mps * 3.6
+    /** Follows the Units setting (set by AppContainer); read from any thread. */
+    @Volatile
+    var units: SpeedUnit = SpeedUnit.KMH
 
-    fun km(metres: Double): String =
-        String.format(Locale.getDefault(), if (metres < 99_500) "%.1f" else "%.0f", metres / 1000)
+    val speedUnit: String get() = units.label
+    val distUnit: String get() = units.distanceLabel
+
+    fun speed(mps: Double): Double = mps * if (units == SpeedUnit.MPH) EngineSettings.MPH_PER_MPS else EngineSettings.KMH_PER_MPS
+
+    /** Distance in km or miles: one decimal below 100. */
+    fun dist(metres: Double): String {
+        val v = metres / units.metresPerDistance
+        return String.format(Locale.getDefault(), if (v < 99.95) "%.1f" else "%.0f", v)
+    }
 
     fun duration(seconds: Double): String {
         val s = seconds.toLong().coerceAtLeast(0)
@@ -29,8 +41,8 @@ object Fmt {
     fun decimal(value: Double, places: Int): String = String.format(Locale.getDefault(), "%.${places}f", value)
 
     fun pace(secPerKm: Double?): String = secPerKm?.let {
-        val s = it.toLong()
-        String.format(Locale.getDefault(), "%d:%02d /km", s / 60, s % 60)
+        val s = (it * units.metresPerDistance / 1000).toLong()
+        String.format(Locale.getDefault(), "%d:%02d /%s", s / 60, s % 60, distUnit)
     } ?: "–"
 
     /** "12 min", "2 h 14 min", "45 s" — for gaps. */
@@ -59,14 +71,14 @@ object Fmt {
 
     /** The target summary used by the strip under the gauge and the notification. */
     fun target(t: TargetView): List<String> = when {
-        t.arrived -> listOf("ARRIVED", "+${km(t.pastM)} km past")
+        t.arrived -> listOf("ARRIVED", "+${dist(t.pastM)} $distUnit past")
         else -> buildList {
-            add("${km(t.remainingM)} km left")
+            add("${dist(t.remainingM)} $distUnit left")
             add(t.etaUtc?.let { "ETA ${clock(it)}" } ?: "ETA —")
             if (t.late) {
                 add("LATE")
             } else {
-                t.neededMps?.let { add("need ${kmh(it).toInt()} km/h") }
+                t.neededMps?.let { add("need ${speed(it).toInt()} $speedUnit") }
                 t.aheadS?.let { add(ahead(it)) }
             }
         }

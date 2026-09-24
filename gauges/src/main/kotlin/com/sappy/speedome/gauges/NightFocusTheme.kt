@@ -47,7 +47,7 @@ object NightFocusTheme : GaugeTheme {
                 bloomText(fmt(v.toDouble(), 0), p.x, p.y, labels, r * .11f, green.copy(alpha = .95f * lit), frame.options, strength = .8f)
             }
         }
-        text("km/h", c.x, c.y - r * .32f, labels, r * .07f, green.copy(alpha = .55f * bright))
+        text(frame.options.units.label, c.x, c.y - r * .32f, labels, r * .07f, green.copy(alpha = .55f * bright))
     }
 
     override fun DrawScope.drawDynamic(frame: GaugeFrame, assets: GaugeAssets) {
@@ -67,7 +67,13 @@ object NightFocusTheme : GaugeTheme {
             if (frame.batteryLow) add("PHONE BATTERY LOW")
             frame.target?.let { t ->
                 // The target only lights up when it needs attention: the last kilometre and arrival.
-                if (t.arrived) add("TARGET REACHED") else if (t.remainingM <= 1000) add("TARGET ${fmt(t.remainingM, 0)} M")
+                val units = frame.options.units
+                when {
+                    t.arrived -> add("TARGET REACHED")
+                    t.remainingM > units.metresPerDistance -> Unit // the last km (or mile) only
+                    units == SpeedUnit.KMH -> add("TARGET ${fmt(t.remainingM, 0)} M")
+                    else -> add("TARGET ${frame.fmtDist(t.remainingM)} MI")
+                }
             }
         }
         val s = l.stats

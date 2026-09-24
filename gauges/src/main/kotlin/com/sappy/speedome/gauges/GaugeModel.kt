@@ -15,6 +15,12 @@ enum class DigitalColor(val on: Color, val glow: Color) {
 }
 
 /** Per-user look options for the themes (docs/plan.md §10 "Theme options"). */
+/** Display units. Frame speeds are already in [label] units; distances stay in metres. */
+enum class SpeedUnit(val label: String, val distanceLabel: String, val metresPerDistance: Double) {
+    KMH("km/h", "km", 1000.0),
+    MPH("mph", "mi", 1609.344),
+}
+
 data class ThemeOptions(
     val retroCream: Boolean = false,
     val digital: DigitalColor = DigitalColor.VFD,
@@ -27,6 +33,7 @@ data class ThemeOptions(
     val nightBrightness: Float = 1f,
     /** GPU effects (AGSL, Android 13+); off uses the gradient fallbacks. */
     val shaders: Boolean = true,
+    val units: SpeedUnit = SpeedUnit.KMH,
 )
 
 data class GaugeStats(
@@ -40,7 +47,8 @@ data class GaugeStats(
 )
 
 /**
- * Everything a theme needs to draw one frame. Speeds in km/h. [rangeKmh] is the animated dial
+ * Everything a theme needs to draw one frame. Speeds (the `…Kmh` fields) are in the display
+ * units of [ThemeOptions.units], km/h or mph; distances are in metres. [rangeKmh] is the animated dial
  * maximum; while auto-range changes it moves from [rangeFromKmh] to [rangeToKmh] ([rangeProgress] 0→1).
  */
 data class GaugeFrame(

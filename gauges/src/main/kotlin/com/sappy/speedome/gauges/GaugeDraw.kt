@@ -96,7 +96,11 @@ fun DrawScope.needle(center: Offset, length: Float, angle: Float, color: Color, 
 
 fun fmt(value: Double, places: Int): String = String.format(Locale.ROOT, "%.${places}f", value)
 
-fun fmtKm(metres: Double): String = fmt(metres / 1000, if (metres < 99_500) 1 else 0)
+/** Distance in the frame's units (km or mi), one decimal below 100. */
+fun GaugeFrame.fmtDist(metres: Double): String {
+    val v = metres / options.units.metresPerDistance
+    return fmt(v, if (v < 99.95) 1 else 0)
+}
 
 fun fmtDuration(seconds: Double): String {
     val s = seconds.toLong().coerceAtLeast(0)
@@ -111,7 +115,7 @@ fun GaugeFrame.statPairs(): List<Pair<String, String>> = buildList {
     if (options.average != AverageDisplay.OVERALL) add("MOVING AVG" to fmt(stats.avgMovingKmh, 0))
     if (options.average != AverageDisplay.MOVING) add("AVG" to fmt(stats.avgOverallKmh, 0))
     add("MAX" to fmt(stats.maxKmh, 0))
-    if (stats.stepMode) add("STEPS" to stats.steps.toString()) else add("TRIP" to fmtKm(stats.distanceM))
+    if (stats.stepMode) add("STEPS" to stats.steps.toString()) else add("TRIP" to fmtDist(stats.distanceM))
 }
 
 /**

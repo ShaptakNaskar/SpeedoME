@@ -60,7 +60,7 @@ object SpeedTapeTheme : GaugeTheme {
         drawRect(tapeBg, g.alt.topLeft, g.alt.size)
         drawRect(tapeBg, g.heading.topLeft, g.heading.size)
         val mono = assets.paint(assets.b612)
-        text("GS  KM/H", g.tape.center.x, g.ty - 12.dp.toPx(), mono, 11.dp.toPx(), green)
+        text("GS  ${frame.options.units.label.uppercase()}", g.tape.center.x, g.ty - 12.dp.toPx(), mono, 11.dp.toPx(), green)
         text("ALT M", g.alt.center.x, g.ty - 12.dp.toPx(), mono, 11.dp.toPx(), green)
         val tri = Path().apply {
             moveTo(g.w / 2 - 7.dp.toPx(), g.hy - 30.dp.toPx()); lineTo(g.w / 2 + 7.dp.toPx(), g.hy - 30.dp.toPx()); lineTo(g.w / 2, g.hy - 20.dp.toPx()); close()
@@ -142,13 +142,13 @@ object SpeedTapeTheme : GaugeTheme {
         val lines = listOf(
             "AVG ${fmt(frame.stats.avgOverallKmh, 0).padStart(3, '0')}" to green,
             "MAX ${fmt(frame.stats.maxKmh, 0).padStart(3, '0')}" to green,
-            (if (step) "STP ${frame.stats.steps}" else "TRP ${fmtKm(frame.stats.distanceM)}") to ink,
+            (if (step) "STP ${frame.stats.steps}" else "TRP ${frame.fmtDist(frame.stats.distanceM)}") to ink,
             "TIM ${fmtDuration(frame.stats.elapsedS)}" to ink,
         )
         lines.forEachIndexed { i, (s, col) -> text(s, ix, iy + i * 24.dp.toPx(), mono, 15.dp.toPx(), col, Align.LEFT) }
         val alerts = buildList {
             if (frame.gps == GpsDot.NONE) add("GPS LOST")
-            frame.target?.let { add(if (it.arrived) "TGT REACHED" else "TGT ${fmtKm(it.remainingM)}") }
+            frame.target?.let { add(if (it.arrived) "TGT REACHED" else "TGT ${frame.fmtDist(it.remainingM)}") }
         }
         alerts.forEachIndexed { i, s -> text(s, ix, iy + (lines.size + i) * 24.dp.toPx(), mono, 15.dp.toPx(), magenta, Align.LEFT) }
     }

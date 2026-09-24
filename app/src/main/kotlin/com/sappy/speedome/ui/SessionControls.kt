@@ -121,13 +121,13 @@ fun TripStatsGrid(t: SessionEntity) {
     val avgAll = if (t.elapsedS > 1) t.distanceM / t.elapsedS else 0.0
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Figure(Fmt.km(t.distanceM), "KM")
+            Figure(Fmt.dist(t.distanceM), Fmt.distUnit.uppercase())
             Figure(Fmt.duration(t.elapsedS), "TIME")
-            Figure(Fmt.decimal(Fmt.kmh(t.maxMps), 0), "MAX KM/H")
+            Figure(Fmt.decimal(Fmt.speed(t.maxMps), 0), "MAX ${Fmt.speedUnit.uppercase()}")
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Figure(Fmt.decimal(Fmt.kmh(avgMoving), 0), "MOVING AVG")
-            Figure(Fmt.decimal(Fmt.kmh(avgAll), 0), "AVG")
+            Figure(Fmt.decimal(Fmt.speed(avgMoving), 0), "MOVING AVG")
+            Figure(Fmt.decimal(Fmt.speed(avgAll), 0), "AVG")
             Figure(if (t.steps > 0) t.steps.toString() else Fmt.duration(t.movingS), if (t.steps > 0) "STEPS" else "MOVING")
         }
     }
@@ -152,7 +152,7 @@ fun ResumeOfferDialog() {
         AlertDialog(
             onDismissRequest = { },
             title = { Text("Unfinished trip") },
-            text = { Text("SpeedoME stopped $ago during a trip of ${Fmt.km(o.session.distanceM)} km.") },
+            text = { Text("SpeedoME stopped $ago during a trip of ${Fmt.dist(o.session.distanceM)} ${Fmt.distUnit}.") },
             confirmButton = { TextButton(onClick = { app.recorder.acceptOffer() }) { Text("Resume") } },
             dismissButton = {
                 Row {
@@ -165,7 +165,7 @@ fun ResumeOfferDialog() {
         AlertDialog(
             onDismissRequest = { },
             title = { Text("Continue the live meter?") },
-            text = { Text("It stopped $ago at ${Fmt.km(o.session.distanceM)} km.") },
+            text = { Text("It stopped $ago at ${Fmt.dist(o.session.distanceM)} ${Fmt.distUnit}.") },
             confirmButton = { TextButton(onClick = { app.recorder.acceptOffer() }) { Text("Continue") } },
             dismissButton = { TextButton(onClick = { app.recorder.discardOffer() }) { Text("Start fresh") } },
         )

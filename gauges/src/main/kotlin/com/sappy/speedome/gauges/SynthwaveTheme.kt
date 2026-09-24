@@ -100,13 +100,13 @@ object SynthwaveTheme : GaugeTheme {
         val sr = min(w, h) * if (land) .3f else .27f
         val (sz, ny) = digitsGeometry(w, h, land, hz, sr)
         chromeText(frame.readout.toString(), w / 2, ny, sz, assets)
-        text("KM/H", w / 2, ny + sz * .52f, assets.paint(assets.exoItalic, 800), sz * .13f, cyan, spacingEm = .3f)
+        text(frame.options.units.label.uppercase(), w / 2, ny + sz * .52f, assets.paint(assets.exoItalic, 800), sz * .13f, cyan, spacingEm = .3f)
         val bw = w * .7f
         val frac = (frame.needleKmh / frame.rangeKmh).coerceIn(0f, 1f)
         drawRect(cyan.copy(alpha = .35f), Offset((w - bw) / 2, ny + sz * .7f - 3.dp.toPx()), Size(bw * frac, 10.dp.toPx()))
         drawRect(cyan, Offset((w - bw) / 2, ny + sz * .7f), Size(bw * frac, 4.dp.toPx()))
         val info = "AVG ${fmt(frame.stats.avgOverallKmh, 0)}   MAX ${fmt(frame.stats.maxKmh, 0)}   " +
-            if (frame.stats.stepMode) "${frame.stats.steps} STEPS" else "${fmtKm(frame.stats.distanceM)} KM"
+            if (frame.stats.stepMode) "${frame.stats.steps} STEPS" else "${frame.fmtDist(frame.stats.distanceM)} ${frame.options.units.distanceLabel.uppercase()}"
         text(info, w / 2, h * if (land) .93f else .9f, assets.paint(assets.exoItalic, 800), 14.dp.toPx(), cyan, spacingEm = .12f)
     }
 

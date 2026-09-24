@@ -20,6 +20,7 @@ import com.sappy.speedome.engine.view
 import com.sappy.speedome.gauges.GaugeFrame
 import com.sappy.speedome.gauges.GaugeStats
 import com.sappy.speedome.gauges.GaugeTarget
+import com.sappy.speedome.gauges.SpeedUnit
 import com.sappy.speedome.gauges.GaugeTheme
 import com.sappy.speedome.gauges.GpsDot
 import com.sappy.speedome.gauges.ThemeOptions
@@ -47,6 +48,10 @@ class GaugeDriver {
 }
 
 private const val SWEEP_S = 1.3
+
+/** Night Focus speeds are chosen in km/h; in mph they become the nearest round 10 (260 → 160). */
+private fun displayRound(kmh: Int, units: SpeedUnit): Int =
+    if (units == SpeedUnit.MPH) ((kmh * 0.621371 / 10).roundToInt() * 10) else kmh
 private const val RANGE_ANIM_S = 0.45
 
 /**
@@ -91,7 +96,8 @@ fun rememberGaugeDriver(
                 val s = currentSettings
                 val view = engine.value.view(now)
                 val spring = currentTheme.spring
-                val target = view.displayTargetMps(now, s.predictNeedle) * 3.6
+                val u = s.engine.unitsPerMps // everything on the gauge is in display units
+                val target = view.displayTargetMps(now, s.predictNeedle) * u
                 val dt = if (last == 0L) 1.0 / 60 else ((frameNanos - last) / 1e9).coerceIn(0.0, 0.05)
                 last = frameNanos
                 repeat(2) {
@@ -102,10 +108,11 @@ fun rememberGaugeDriver(
                 }
                 if (abs(v - readout) > 0.6 || (v < 0.5 && readout != 0)) readout = v.roundToInt()
 
+                val nightFocus = displayRound(s.nightFocusKmh, s.units)
                 val options = ThemeOptions(
                     retroCream = s.retroCream, digital = s.digital, accent = Color(s.accent.argb), average = s.average,
-                    nightFocusKmh = s.nightFocusKmh, nightMaxKmh = s.nightMaxKmh, nightBrightness = s.nightBrightness,
-                    shaders = s.gpuEffects,
+                    nightFocusKmh = nightFocus, nightMaxKmh = displayRound(s.nightMaxKmh, s.units), nightBrightness = s.nightBrightness,
+                    shaders = s.gpuEffects, units = s.units,
                 )
                 val wanted = currentTheme.fixedRangeKmh(options) ?: view.rangeKmh
                 if (rangeTo < 0) {
@@ -127,12 +134,12 @@ fun rememberGaugeDriver(
                 }
 
                 val upperTarget = when {
-                    v >= s.nightFocusKmh - 5 -> 1.0
-                    v < s.nightFocusKmh - 10 -> 0.0
+                    v >= nightFocus - 5 -> 1.0
+                    v < nightFocus - 10 -> 0.0
                     else -> if (nightUpper > .5) 1.0 else 0.0
                 }
                 nightUpper += (upperTarget - nightUpper) * minOf(1.0, dt * 3.5)
-                scroll += v / 3.6 * dt
+                scroll += v / u * dt
 
                 driver.frame = GaugeFrame(
                     needleKmh = needle.toFloat(),
@@ -143,9 +150,9 @@ fun rememberGaugeDriver(
                     rangeProgress = p.toFloat(),
                     stats = GaugeStats(
                         distanceM = view.distanceM,
-                        avgMovingKmh = view.avgMovingMps * 3.6,
-                        avgOverallKmh = view.avgOverallMps * 3.6,
-                        maxKmh = view.maxMps * 3.6,
+                        avgMovingKmh = view.avgMovingMps * u,
+                        avgOverallKmh = view.avgOverallMps * u,
+                        maxKmh = view.maxMps * u,
                         elapsedS = view.elapsedS,
                         steps = view.steps,
                         stepMode = s.mode == Mode.STEP,
@@ -156,7 +163,7 @@ fun rememberGaugeDriver(
                         GpsQuality.NONE -> GpsDot.NONE
                     },
                     options = options,
-                    accelKmhS = (view.accelMps2 * 3.6).toFloat(),
+                    accelKmhS = (view.accelMps2 * u).toFloat(),
                     timeS = (now - start) / 1e9,
                     nightUpper = nightUpper.toFloat(),
                     scrollM = scroll.toFloat(),

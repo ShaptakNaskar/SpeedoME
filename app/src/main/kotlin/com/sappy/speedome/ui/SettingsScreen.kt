@@ -47,6 +47,7 @@ import com.sappy.speedome.engine.Mode
 import com.sappy.speedome.engine.ShrinkPolicy
 import com.sappy.speedome.gauges.AverageDisplay
 import com.sappy.speedome.gauges.DigitalColor
+import com.sappy.speedome.gauges.SpeedUnit
 import com.sappy.speedome.settings.Accent
 import com.sappy.speedome.settings.AppSettings
 import com.sappy.speedome.ui.theme.SpeedoColors
@@ -75,9 +76,9 @@ fun SettingsScreen() {
         Choices(listOf("Drive" to Mode.DRIVE, "Walk & run" to Mode.STEP), s.mode) { v -> edit { it.copy(mode = v) } }
         Text(
             if (s.mode == Mode.STEP) {
-                "Counts steps, shows pace and cadence, and uses your steps for speed when GPS is weak. The dial starts at 0–10 km/h."
+                "Counts steps, shows pace and cadence, and uses your steps for speed when GPS is weak. The dial starts at 0–10 ${s.units.label}."
             } else {
-                "Speed from GPS, dial from 0–20 km/h upward."
+                "Speed from GPS, dial from 0–20 ${s.units.label} upward."
             },
             color = SpeedoColors.Muted, fontSize = 13.sp,
         )
@@ -88,7 +89,7 @@ fun SettingsScreen() {
         Choices(
             listOf("VFD cyan" to DigitalColor.VFD, "LED red" to DigitalColor.LED, "LCD amber" to DigitalColor.LCD), s.digital, title = "Digital",
         ) { v -> edit { it.copy(digital = v) } }
-        Choices(listOf(60, 80, 100, 120, 140, 160).map { "$it" to it }, s.nightFocusKmh, title = "Night Focus: lit up to (km/h)") { v -> edit { it.copy(nightFocusKmh = v) } }
+        Choices(listOf(60, 80, 100, 120, 140, 160).map { "$it" to it }, s.nightFocusKmh, title = "Night Focus: lit up to (km/h${if (s.units == SpeedUnit.MPH) ", shown as the nearest mph" else ""})") { v -> edit { it.copy(nightFocusKmh = v) } }
         Choices(listOf(200, 240, 260).map { "0–$it" to it }, s.nightMaxKmh, title = "Night Focus: dial") { v -> edit { it.copy(nightMaxKmh = v) } }
         Choices(listOf("Dim" to .45f, "Mid" to .7f, "Full" to 1f), s.nightBrightness, title = "Night Focus: brightness") { v -> edit { it.copy(nightBrightness = v) } }
         Choices(listOf("Travel direction up" to false, "North up" to true), s.mapNorthUp, title = "Map") { v -> edit { it.copy(mapNorthUp = v) } }
@@ -106,6 +107,7 @@ fun SettingsScreen() {
         }
 
         Section("DISPLAY")
+        Choices(listOf("km/h" to SpeedUnit.KMH, "mph" to SpeedUnit.MPH), s.units, title = "Units") { v -> edit { it.copy(units = v) } }
         Choices(
             listOf("Both averages" to AverageDisplay.BOTH, "Moving" to AverageDisplay.MOVING, "Overall" to AverageDisplay.OVERALL), s.average,
             title = "Average speed",
@@ -142,7 +144,7 @@ fun SettingsScreen() {
                 ShrinkPolicy.WITH_DELAY -> "The dial grows as you speed up and shrinks one step after 15 s well below the smaller range."
                 ShrinkPolicy.ONLY_GROW -> "The dial only grows during a session; Reset or a new trip starts it small again."
                 ShrinkPolicy.IMMEDIATE -> "The dial always uses the smallest range that fits your speed."
-                ShrinkPolicy.OFF -> "A fixed dial. Step mode always uses 0–20 km/h."
+                ShrinkPolicy.OFF -> "A fixed dial. Step mode always uses 0–20 ${s.units.label}."
             },
             color = SpeedoColors.Muted, fontSize = 13.sp,
         )

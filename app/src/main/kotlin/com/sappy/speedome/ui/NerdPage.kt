@@ -126,8 +126,8 @@ fun NerdPage(modifier: Modifier = Modifier) {
             "LON" to (f?.let { deg(it.lon, "E", "W") } ?: "—"),
             "ALT" to (f?.altM?.let { "${Fmt.decimal(it, 1)} m ±${f.vAcc?.let { a -> Fmt.decimal(a, 0) } ?: "?"}" } ?: "—"),
             "H.ACC" to (f?.let { "±${Fmt.decimal(it.hAcc, 1)} m" } ?: "—"),
-            "SPD RAW" to (f?.rawSpeed?.let { "${Fmt.decimal(it * 3.6, 1)} ±${f.speedAcc?.let { a -> Fmt.decimal(a * 3.6, 1) } ?: "?"}" } ?: "no speed field"),
-            "SPD FILT" to "${Fmt.decimal(v.speedMps * 3.6, 1)} km/h",
+            "SPD RAW" to (f?.rawSpeed?.let { "${Fmt.decimal(Fmt.speed(it), 1)} ±${f.speedAcc?.let { a -> Fmt.decimal(Fmt.speed(a), 1) } ?: "?"}" } ?: "no speed field"),
+            "SPD FILT" to "${Fmt.decimal(Fmt.speed(v.speedMps), 1)} ${Fmt.speedUnit}",
             "SOURCE" to when (v.source) {
                 SpeedSource.DOPPLER -> "DOPPLER"
                 SpeedSource.DOPPLER_NO_ACCURACY -> "DOPPLER (no acc)"

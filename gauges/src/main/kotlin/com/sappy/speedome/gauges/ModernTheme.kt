@@ -40,7 +40,7 @@ object ModernTheme : GaugeTheme {
                 v += step.label
             }
         }
-        text("KM/H", c.x, c.y + r * .42f, assets.paint(assets.outfit, 600), r * .07f, accent, spacingEm = .4f)
+        text(frame.options.units.label.uppercase(), c.x, c.y + r * .42f, assets.paint(assets.outfit, 600), r * .07f, accent, spacingEm = .4f)
     }
 
     override fun DrawScope.drawDynamic(frame: GaugeFrame, assets: GaugeAssets) {

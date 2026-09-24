@@ -102,6 +102,19 @@ class TargetTest {
     }
 
     @Test
+    fun `auto-range works in display units`() {
+        fun rangeAt(units: Double): Int {
+            val c = EngineSettings(unitsPerMps = units)
+            var s = EngineState()
+            // 100 km/h = 27.8 m/s = 62 mph.
+            for (t in 0..30) s = Engine.reduce(s, FixEvent(t * sec, utc0 + t * 1000L, 0.0, t * 2.5e-4, 4f, speed = 27.78f, speedAcc = .3f), c)
+            return s.range.maxKmh
+        }
+        assertEquals(120, rangeAt(EngineSettings.KMH_PER_MPS))
+        assertEquals(80, rangeAt(EngineSettings.MPH_PER_MPS))
+    }
+
+    @Test
     fun `setting a target keeps the auto-range dial`() {
         var s = EngineState()
         for (t in 0..30) s = Engine.reduce(s, FixEvent(t * sec, utc0 + t * 1000L, 0.0, t * 3e-4, 4f, speed = 33f, speedAcc = .3f), cfg)

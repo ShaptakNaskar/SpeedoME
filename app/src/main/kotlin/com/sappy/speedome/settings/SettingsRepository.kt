@@ -15,6 +15,7 @@ import com.sappy.speedome.engine.Mode
 import com.sappy.speedome.engine.ShrinkPolicy
 import com.sappy.speedome.gauges.AverageDisplay
 import com.sappy.speedome.gauges.DigitalColor
+import com.sappy.speedome.gauges.SpeedUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -55,9 +56,18 @@ data class AppSettings(
     val liveAutoStop: Boolean = true,
     val reliabilityOffered: Boolean = false,
     val fastAutoStop: Boolean = false,
+    val units: SpeedUnit = defaultUnits(),
 ) {
-    val engine: EngineSettings get() = EngineSettings(mode = mode, autoRange = AutoRangeSettings(shrink, fixedKmh))
+    val engine: EngineSettings get() = EngineSettings(
+        mode = mode,
+        autoRange = AutoRangeSettings(shrink, fixedKmh),
+        unitsPerMps = if (units == SpeedUnit.MPH) EngineSettings.MPH_PER_MPS else EngineSettings.KMH_PER_MPS,
+    )
 }
+
+/** mph where road signs use it (US, UK, Liberia, Myanmar); km/h elsewhere. Users can switch either way. */
+fun defaultUnits(): SpeedUnit =
+    if (java.util.Locale.getDefault().country in setOf("US", "GB", "LR", "MM")) SpeedUnit.MPH else SpeedUnit.KMH
 
 private val Context.settingsStore by preferencesDataStore(name = "settings")
 
@@ -89,6 +99,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val liveAutoStop = booleanPreferencesKey("live_auto_stop")
         val reliabilityOffered = booleanPreferencesKey("reliability_offered")
         val fastAutoStop = booleanPreferencesKey("fast_auto_stop")
+        val units = stringPreferencesKey("units")
     }
 
     val state: StateFlow<AppSettings> = store.data
@@ -129,6 +140,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             liveAutoStop = this[Keys.liveAutoStop] ?: d.liveAutoStop,
             reliabilityOffered = this[Keys.reliabilityOffered] ?: d.reliabilityOffered,
             fastAutoStop = this[Keys.fastAutoStop] ?: d.fastAutoStop,
+            units = this[Keys.units].enumOr(d.units),
         )
     }
 
@@ -157,5 +169,6 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         this[Keys.liveAutoStop] = s.liveAutoStop
         this[Keys.reliabilityOffered] = s.reliabilityOffered
         this[Keys.fastAutoStop] = s.fastAutoStop
+        this[Keys.units] = s.units.name
     }
 }

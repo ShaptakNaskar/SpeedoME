@@ -35,7 +35,7 @@ object SunlightTheme : GaugeTheme {
     override fun DrawScope.drawStatic(frame: GaugeFrame, assets: GaugeAssets) {
         val g = geo(assets)
         drawRect(Color.White)
-        text("KM/H", g.numberX, g.numberY + g.digit * .5f, assets.paint(assets.outfit, 800), g.digit * .1f, Color.Black, spacingEm = .2f)
+        text(frame.options.units.label.uppercase(), g.numberX, g.numberY + g.digit * .5f, assets.paint(assets.outfit, 800), g.digit * .1f, Color.Black, spacingEm = .2f)
         drawRect(Color(0xFFE4E4E4), Offset(g.barX, g.barY), Size(g.barW, g.barH))
         val labels = assets.paint(assets.outfit, 700)
         for (set in frame.scaleSets()) for (q in 0..4) {

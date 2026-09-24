@@ -14,7 +14,17 @@ enum class SessionKind { LIVE, TRIP }
 data class EngineSettings(
     val mode: Mode = Mode.DRIVE,
     val autoRange: AutoRangeSettings = AutoRangeSettings(),
-)
+    /**
+     * Display units per m/s: 3.6 for km/h, 2.2369 for mph. The auto-range ladder works in display
+     * units, so an mph dial gets round 0–60 / 0–80 scales too.
+     */
+    val unitsPerMps: Double = KMH_PER_MPS,
+) {
+    companion object {
+        const val KMH_PER_MPS = 3.6
+        const val MPH_PER_MPS = 2.2369362920544
+    }
+}
 
 /** Filter and bookkeeping constants, validated in docs/theme-lab.html. */
 object Tuning {

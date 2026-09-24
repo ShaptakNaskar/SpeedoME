@@ -26,7 +26,7 @@ object Engine {
         return when (event) {
             is FixEvent, is TickEvent -> next.sampleTrend(event.tNanos).copy(
                 range = AutoRange.update(
-                    next.range, next.filter.output * 3.6, if (next.filter.zero) 0.0 else next.filter.a * 3.6,
+                    next.range, next.filter.output * settings.unitsPerMps, if (next.filter.zero) 0.0 else next.filter.a * settings.unitsPerMps,
                     event.tNanos, settings.mode, settings.autoRange,
                 ),
             )

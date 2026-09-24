@@ -131,7 +131,8 @@ fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier = Modifier
 
     val rangeKmh = driver.frame.rangeKmh
     LaunchedEffect(style, route, (rangeKmh / 10).toInt()) {
-        style?.getSourceAs<GeoJsonSource>("route")?.setGeoJson(routeFeatures(route, rangeKmh / 3.6f))
+        // The dial range is in display units; the route colours scale to it in m/s.
+        style?.getSourceAs<GeoJsonSource>("route")?.setGeoJson(routeFeatures(route, (rangeKmh / Fmt.speed(1.0)).toFloat()))
     }
     val fix = view.lastFix
     val moving = view.speedMps > 1.5
@@ -187,10 +188,10 @@ private fun SpeedCard(driver: GaugeDriver, view: com.sappy.speedome.engine.Track
     ) {
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("${driver.frame.readout}", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold, lineHeight = 40.sp)
-            Text("km/h", color = SpeedoColors.Muted, fontSize = 13.sp, modifier = Modifier.padding(bottom = 6.dp))
+            Text(Fmt.speedUnit, color = SpeedoColors.Muted, fontSize = 13.sp, modifier = Modifier.padding(bottom = 6.dp))
         }
         Text(
-            "${Fmt.decimal(view.distanceM / 1000, 2)} km · avg ${Fmt.decimal(view.avgOverallMps * 3.6, 0)} · max ${Fmt.decimal(view.maxMps * 3.6, 0)}",
+            "${Fmt.dist(view.distanceM)} ${Fmt.distUnit} · avg ${Fmt.decimal(Fmt.speed(view.avgOverallMps), 0)} · max ${Fmt.decimal(Fmt.speed(view.maxMps), 0)}",
             color = SpeedoColors.Text, fontSize = 12.sp,
         )
     }

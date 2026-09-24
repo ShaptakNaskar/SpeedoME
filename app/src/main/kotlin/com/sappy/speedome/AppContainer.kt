@@ -43,6 +43,9 @@ class AppContainer(app: Application) {
             }
         }
         appScope.launch {
+            settings.state.collect { com.sappy.speedome.ui.Fmt.units = it.units }
+        }
+        appScope.launch {
             settings.state.map { it.devMode && it.rawLog }.distinctUntilChanged().collect(rawLogger::setEnabled)
         }
         appScope.launch {

@@ -115,7 +115,7 @@ private fun DebugCard(v: TrackView, truth: SimulatorSource.Truth) {
     val f = v.lastFix
     val now = SystemClock.elapsedRealtimeNanos()
     val lines = buildList {
-        add("speed   ${Fmt.decimal(Fmt.kmh(v.speedMps), 1)} km/h  raw ${v.rawSpeedMps?.let { Fmt.decimal(Fmt.kmh(it), 1) } ?: "–"}")
+        add("speed   ${Fmt.decimal(Fmt.speed(v.speedMps), 1)} ${Fmt.speedUnit}  raw ${v.rawSpeedMps?.let { Fmt.decimal(Fmt.speed(it), 1) } ?: "–"}")
         add("source  ${v.source}  quality ${v.quality}  rejects ${v.rejectTotal}")
         add("accel   ${Fmt.decimal(v.accelMps2, 2)} m/s²  zero ${v.zero}")
         add("dist    ${Fmt.decimal(v.distanceM, 1)} m  gaps ${v.gaps}")
@@ -128,7 +128,7 @@ private fun DebugCard(v: TrackView, truth: SimulatorSource.Truth) {
         }
         add("sats    ${gnss.usedCount} used / ${gnss.satellites.size} in view${if (gnss.dualFrequency) "  L1+L5" else ""}  ${gnss.hardwareModel ?: ""}")
         add("heading ${motion.headingDeg?.let { Fmt.decimal(it.toDouble(), 0) + "°" } ?: "–"}  yaw ${Fmt.decimal(motion.yawRateRadS.toDouble(), 2)} rad/s")
-        if (truth.running) add("truth   ${Fmt.decimal(Fmt.kmh(truth.speedMps), 1)} km/h  odo ${Fmt.decimal(truth.odometerM, 1)} m")
+        if (truth.running) add("truth   ${Fmt.decimal(Fmt.speed(truth.speedMps), 1)} ${Fmt.speedUnit}  odo ${Fmt.decimal(truth.odometerM, 1)} m")
     }
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(SpeedoColors.Raised).padding(12.dp),

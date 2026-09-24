@@ -81,7 +81,7 @@ object DigitalTheme : GaugeTheme {
         // Phosphor glow on the glass behind the big digits.
         backlightGlow(Offset(g.dx + g.total / 2, g.dy + g.dh / 2), g.total * .62f, frame.options.digital.glow, .09f, frame.options)
         for (i in 0 until g.digits) seg7(g.bigCell(i), g.big, g.dh, '8', on, .06f, null, ghostOnly = true)
-        text("KM/H", g.dx + g.total + g.dw * .15f, g.dy + g.dh * .85f, assets.paint(assets.b612Bold), g.dh * .09f, on, Align.LEFT)
+        text(frame.options.units.label.uppercase(), g.dx + g.total + g.dw * .15f, g.dy + g.dh * .85f, assets.paint(assets.b612Bold), g.dh * .09f, on, Align.LEFT)
         val labels = listOf(if (frame.stats.stepMode) "STEPS" else "TRIP", "AVG", "MAX")
         labels.forEachIndexed { group, k ->
             text(k, g.pad + g.cellW * group + 2, g.rowY - 10.dp.toPx(), assets.paint(assets.b612Bold), 10.dp.toPx(), on.copy(alpha = .7f), Align.LEFT, spacingEm = .2f)
@@ -102,11 +102,11 @@ object DigitalTheme : GaugeTheme {
         frame.readout.coerceAtMost(9999).toString().padStart(g.digits, ' ').takeLast(g.digits).forEachIndexed { i, ch ->
             seg7(g.bigCell(i), g.big, g.dh, ch, on, 0f, glow)
         }
-        // Trip in tenths of a km (a dot before the last cell) or steps; then average and max.
+        // Trip in tenths of a km or mile (a dot before the last cell) or steps; then average and max.
         val trip = if (frame.stats.stepMode) {
             (frame.stats.steps % 100_000).toString().padStart(TRIP_CELLS)
         } else {
-            (frame.stats.distanceM / 100).toLong().coerceAtMost(99_999).toString().padStart(2, '0').padStart(TRIP_CELLS)
+            (frame.stats.distanceM / frame.options.units.metresPerDistance * 10).toLong().coerceAtMost(99_999).toString().padStart(2, '0').padStart(TRIP_CELLS)
         }
         trip.forEachIndexed { i, ch -> seg7(g.smallCell(0, i), g.small, g.sh, ch, on, 0f, glow) }
         if (!frame.stats.stepMode) {

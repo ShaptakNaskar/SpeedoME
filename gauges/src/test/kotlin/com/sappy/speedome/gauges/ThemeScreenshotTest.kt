@@ -59,7 +59,8 @@ class ThemeScreenshotTest {
     private fun noShader(frame: GaugeFrame) = Shot("noshader", frame.copy(options = frame.options.copy(shaders = false)))
 
     @Test
-    fun retro() = shoot(RetroTheme, standard() + Shot("cream", states.getValue("mid").copy(options = ThemeOptions(retroCream = true))) + noShader(states.getValue("mid")))
+    fun retro() = shoot(RetroTheme, standard() + Shot("cream", states.getValue("mid").copy(options = ThemeOptions(retroCream = true))) + noShader(states.getValue("mid")) +
+        Shot("mph", states.getValue("mid").copy(options = ThemeOptions(units = SpeedUnit.MPH))))
 
     @Test
     fun modern() = shoot(ModernTheme, standard() + Shot("blue", states.getValue("mid").copy(options = ThemeOptions(accent = Color(0xFF4DA3FF)))) + noShader(states.getValue("mid")) +
@@ -69,7 +70,8 @@ class ThemeScreenshotTest {
     fun digital() = shoot(
         DigitalTheme,
         standard() + Shot("led", states.getValue("mid").copy(options = ThemeOptions(digital = DigitalColor.LED))) +
-            Shot("steps", states.getValue("mid").copy(stats = trip.copy(stepMode = true, steps = 4312))) + noShader(states.getValue("mid")),
+            Shot("steps", states.getValue("mid").copy(stats = trip.copy(stepMode = true, steps = 4312))) + noShader(states.getValue("mid")) +
+            Shot("mph", states.getValue("mid").copy(options = ThemeOptions(units = SpeedUnit.MPH))),
     )
 
     @Test
@@ -97,7 +99,7 @@ class ThemeScreenshotTest {
     )
 
     @Test
-    fun synth() = shoot(SynthwaveTheme, (standard() + noShader(states.getValue("mid"))).map { it.copy(frame = it.frame.copy(scrollM = 123f, timeS = 4.0)) })
+    fun synth() = shoot(SynthwaveTheme, (standard() + noShader(states.getValue("mid")) + Shot("mph", states.getValue("mid").copy(options = ThemeOptions(units = SpeedUnit.MPH)))).map { it.copy(frame = it.frame.copy(scrollM = 123f, timeS = 4.0)) })
 
     @Test
     fun sun() = shoot(SunlightTheme, standard())
