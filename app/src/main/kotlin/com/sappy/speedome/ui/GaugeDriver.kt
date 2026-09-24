@@ -53,7 +53,13 @@ private const val RANGE_ANIM_S = 0.45
  * integer readout, animated auto-range changes and the startup sweep.
  */
 @Composable
-fun rememberGaugeDriver(engine: StateFlow<EngineState>, theme: GaugeTheme, settings: AppSettings): GaugeDriver {
+fun rememberGaugeDriver(
+    engine: StateFlow<EngineState>,
+    theme: GaugeTheme,
+    settings: AppSettings,
+    heading: () -> Float? = { null },
+    batteryLow: () -> Boolean = { false },
+): GaugeDriver {
     val driver = remember { GaugeDriver() }
     val context = LocalContext.current
     val animationsOff = remember {
@@ -61,6 +67,8 @@ fun rememberGaugeDriver(engine: StateFlow<EngineState>, theme: GaugeTheme, setti
     }
     val currentTheme by rememberUpdatedState(theme)
     val currentSettings by rememberUpdatedState(settings)
+    val currentHeading by rememberUpdatedState(heading)
+    val currentBattery by rememberUpdatedState(batteryLow)
 
     LaunchedEffect(Unit) {
         if (settings.startupSweep && !animationsOff) driver.sweep()
@@ -73,6 +81,8 @@ fun rememberGaugeDriver(engine: StateFlow<EngineState>, theme: GaugeTheme, setti
         var rangeFrom = -1
         var rangeTo = -1
         var rangeAt = 0L
+        var nightUpper = 0.0
+        var scroll = 0.0
         val start = SystemClock.elapsedRealtimeNanos()
         while (true) {
             withFrameNanos { frameNanos ->
@@ -91,7 +101,11 @@ fun rememberGaugeDriver(engine: StateFlow<EngineState>, theme: GaugeTheme, setti
                 }
                 if (abs(v - readout) > 0.6 || (v < 0.5 && readout != 0)) readout = v.roundToInt()
 
-                val wanted = view.rangeKmh
+                val options = ThemeOptions(
+                    retroCream = s.retroCream, digital = s.digital, accent = Color(s.accent.argb), average = s.average,
+                    nightFocusKmh = s.nightFocusKmh, nightMaxKmh = s.nightMaxKmh, nightBrightness = s.nightBrightness,
+                )
+                val wanted = currentTheme.fixedRangeKmh(options) ?: view.rangeKmh
                 if (rangeTo < 0) {
                     rangeFrom = wanted
                     rangeTo = wanted
@@ -109,6 +123,14 @@ fun rememberGaugeDriver(engine: StateFlow<EngineState>, theme: GaugeTheme, setti
                     val t = (now - t0) / 1e9
                     if (t in 0.0..SWEEP_S) needle = max(v, rangeNow * sin(PI * t / SWEEP_S)) else driver.sweepStartNanos = null
                 }
+
+                val upperTarget = when {
+                    v >= s.nightFocusKmh - 5 -> 1.0
+                    v < s.nightFocusKmh - 10 -> 0.0
+                    else -> if (nightUpper > .5) 1.0 else 0.0
+                }
+                nightUpper += (upperTarget - nightUpper) * minOf(1.0, dt * 3.5)
+                scroll += v / 3.6 * dt
 
                 driver.frame = GaugeFrame(
                     needleKmh = needle.toFloat(),
@@ -131,14 +153,14 @@ fun rememberGaugeDriver(engine: StateFlow<EngineState>, theme: GaugeTheme, setti
                         GpsQuality.FALLBACK -> GpsDot.FALLBACK
                         GpsQuality.NONE -> GpsDot.NONE
                     },
-                    options = ThemeOptions(
-                        retroCream = s.retroCream,
-                        digital = s.digital,
-                        accent = Color(s.accent.argb),
-                        average = s.average,
-                    ),
+                    options = options,
                     accelKmhS = (view.accelMps2 * 3.6).toFloat(),
                     timeS = (now - start) / 1e9,
+                    nightUpper = nightUpper.toFloat(),
+                    scrollM = scroll.toFloat(),
+                    headingDeg = currentHeading() ?: view.lastFix?.bearing?.toFloat(),
+                    altitudeM = view.lastFix?.altM,
+                    batteryLow = currentBattery(),
                 )
             }
         }

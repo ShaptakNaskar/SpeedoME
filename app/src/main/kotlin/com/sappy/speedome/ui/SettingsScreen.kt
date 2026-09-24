@@ -78,6 +78,9 @@ fun SettingsScreen() {
         Choices(
             listOf("VFD cyan" to DigitalColor.VFD, "LED red" to DigitalColor.LED, "LCD amber" to DigitalColor.LCD), s.digital, title = "Digital",
         ) { v -> edit { it.copy(digital = v) } }
+        Choices(listOf(60, 80, 100, 120, 140, 160).map { "$it" to it }, s.nightFocusKmh, title = "Night Focus: lit up to (km/h)") { v -> edit { it.copy(nightFocusKmh = v) } }
+        Choices(listOf(200, 240, 260).map { "0–$it" to it }, s.nightMaxKmh, title = "Night Focus: dial") { v -> edit { it.copy(nightMaxKmh = v) } }
+        Choices(listOf("Dim" to .45f, "Mid" to .7f, "Full" to 1f), s.nightBrightness, title = "Night Focus: brightness") { v -> edit { it.copy(nightBrightness = v) } }
         Text("Accent (Modern)", color = SpeedoColors.Text, fontSize = 15.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Accent.entries.forEach { a ->

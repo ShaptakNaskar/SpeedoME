@@ -1,5 +1,8 @@
 package com.sappy.speedome.ui
 
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.SystemClock
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
@@ -23,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -33,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -78,7 +83,29 @@ fun SpeedScreen() {
     val simRunning by remember { app.simulator.truth.map { it.running }.distinctUntilChanged() }.collectAsStateWithLifecycle(false)
     val view = rememberTrackView(app.tracking.state)
     val theme = GaugeThemes.byId(settings.theme)
-    val driver = rememberGaugeDriver(app.tracking.state, theme, settings)
+    val needsCompass = theme.id == "tape" || settings.showHeading
+    DisposableEffect(needsCompass) {
+        if (needsCompass) app.motion.acquire()
+        onDispose { if (needsCompass) app.motion.release() }
+    }
+    val context = LocalContext.current
+    val batteryLow by produceState(false) {
+        while (true) {
+            val i = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val level = i?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = i?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+            val charging = (i?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
+            value = !charging && level >= 0 && level * 100 / scale.coerceAtLeast(1) < 15
+            delay(30_000)
+        }
+    }
+    val driver = rememberGaugeDriver(
+        app.tracking.state, theme, settings,
+        heading = { if (needsCompass) app.motion.motion.value.headingDeg else null },
+        batteryLow = { batteryLow },
+    )
+    val chrome = if (theme.light) Color.White else Color.Black
+    val ink = if (theme.light) Color(0xFF111111) else SpeedoColors.Text
     val permissions = rememberPermissions()
     val scope = rememberCoroutineScope()
 
@@ -98,8 +125,9 @@ fun SpeedScreen() {
         } else {
             (maxHeight - HEADER_HEIGHT - CONTROLS_HEIGHT).coerceAtLeast(240.dp)
         }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxSize().background(chrome).verticalScroll(rememberScrollState())) {
             Header(
+                ink = ink,
                 view.quality, simRunning, theme.title, onPrev = { switchTheme(-1) }, onNext = { switchTheme(1) },
                 controls = if (landscape) ({ SessionControls(view) }) else null,
             )
@@ -118,7 +146,7 @@ fun SpeedScreen() {
                     GaugeView(t, { driver.frame }, Modifier.fillMaxSize())
                 }
             }
-            if (!landscape) Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth(), contentAlignment = Alignment.Center) { SessionControls(view) }
+            if (!landscape) Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth().background(Color.Black), contentAlignment = Alignment.Center) { SessionControls(view) }
             Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (view.lastFix == null && permissions.state.canTrack && !simRunning) {
                     Caption("Waiting for GPS. The first fix is quickest outdoors or near a window.")
@@ -132,6 +160,7 @@ fun SpeedScreen() {
 
 @Composable
 private fun Header(
+    ink: Color,
     quality: GpsQuality,
     simulated: Boolean,
     title: String,
@@ -152,19 +181,19 @@ private fun Header(
             modifier = Modifier.padding(start = 8.dp).weight(1f),
         )
         if (controls != null) Box(Modifier.weight(1.4f)) { controls() }
-        Arrow("‹", "Previous theme", onPrev)
+        Arrow("‹", "Previous theme", ink, onPrev)
         Text(
-            title, color = SpeedoColors.Text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.5.sp,
+            title, color = ink, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.5.sp,
             textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 96.dp),
         )
-        Arrow("›", "Next theme", onNext)
+        Arrow("›", "Next theme", ink, onNext)
     }
 }
 
 @Composable
-private fun Arrow(glyph: String, description: String, onClick: () -> Unit) {
+private fun Arrow(glyph: String, description: String, ink: Color, onClick: () -> Unit) {
     Box(
         Modifier.size(40.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
-    ) { Text(glyph, color = SpeedoColors.Text, fontSize = 22.sp) }
+    ) { Text(glyph, color = ink, fontSize = 22.sp) }
 }

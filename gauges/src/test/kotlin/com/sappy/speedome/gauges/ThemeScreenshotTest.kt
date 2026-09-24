@@ -67,4 +67,31 @@ class ThemeScreenshotTest {
         standard() + Shot("led", states.getValue("mid").copy(options = ThemeOptions(digital = DigitalColor.LED))) +
             Shot("steps", states.getValue("mid").copy(stats = trip.copy(stepMode = true, steps = 4312))),
     )
+
+    @Test
+    fun night() = shoot(
+        NightFocusTheme,
+        listOf(
+            Shot("cruise", GaugeFrame(needleKmh = 92f, readout = 92, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, stats = trip)),
+            Shot("upper_lit", GaugeFrame(needleKmh = 150f, readout = 150, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, nightUpper = 1f, stats = trip)),
+            Shot("warnings", GaugeFrame(needleKmh = 40f, readout = 40, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, gps = GpsDot.NONE, batteryLow = true)),
+            Shot("landscape", GaugeFrame(needleKmh = 92f, readout = 92, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260), landscape = true),
+        ),
+    )
+
+    @Test
+    fun tape() = shoot(
+        SpeedTapeTheme,
+        listOf(
+            Shot("mid", states.getValue("mid").copy(accelKmhS = 1.5f, headingDeg = 47f, altitudeM = 41.0)),
+            Shot("braking", states.getValue("high").copy(accelKmhS = -4f, headingDeg = 312f, altitudeM = 120.0)),
+            Shot("landscape", states.getValue("mid").copy(headingDeg = 47f, altitudeM = 41.0), landscape = true),
+        ),
+    )
+
+    @Test
+    fun synth() = shoot(SynthwaveTheme, standard().map { it.copy(frame = it.frame.copy(scrollM = 123f, timeS = 4.0)) })
+
+    @Test
+    fun sun() = shoot(SunlightTheme, standard())
 }

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -42,6 +43,12 @@ data class AppSettings(
     val retroCream: Boolean = false,
     val digital: DigitalColor = DigitalColor.VFD,
     val accent: Accent = Accent.AMBER,
+    val nightFocusKmh: Int = 140,
+    val nightMaxKmh: Int = 260,
+    val nightBrightness: Float = 1f,
+    val nerdStrip: Boolean = false,
+    val showHeading: Boolean = false,
+    val showGForce: Boolean = false,
 ) {
     val engine: EngineSettings get() = EngineSettings(mode = mode, autoRange = AutoRangeSettings(shrink, fixedKmh))
 }
@@ -64,6 +71,12 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val retroCream = booleanPreferencesKey("retro_cream")
         val digital = stringPreferencesKey("digital")
         val accent = stringPreferencesKey("accent")
+        val nightFocus = intPreferencesKey("night_focus")
+        val nightMax = intPreferencesKey("night_max")
+        val nightBright = floatPreferencesKey("night_bright")
+        val nerdStrip = booleanPreferencesKey("nerd_strip")
+        val showHeading = booleanPreferencesKey("show_heading")
+        val showG = booleanPreferencesKey("show_g")
     }
 
     val state: StateFlow<AppSettings> = store.data
@@ -92,6 +105,12 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             retroCream = this[Keys.retroCream] ?: d.retroCream,
             digital = this[Keys.digital].enumOr(d.digital),
             accent = this[Keys.accent].enumOr(d.accent),
+            nightFocusKmh = this[Keys.nightFocus] ?: d.nightFocusKmh,
+            nightMaxKmh = this[Keys.nightMax] ?: d.nightMaxKmh,
+            nightBrightness = this[Keys.nightBright] ?: d.nightBrightness,
+            nerdStrip = this[Keys.nerdStrip] ?: d.nerdStrip,
+            showHeading = this[Keys.showHeading] ?: d.showHeading,
+            showGForce = this[Keys.showG] ?: d.showGForce,
         )
     }
 
@@ -108,5 +127,11 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         this[Keys.retroCream] = s.retroCream
         this[Keys.digital] = s.digital.name
         this[Keys.accent] = s.accent.name
+        this[Keys.nightFocus] = s.nightFocusKmh
+        this[Keys.nightMax] = s.nightMaxKmh
+        this[Keys.nightBright] = s.nightBrightness
+        this[Keys.nerdStrip] = s.nerdStrip
+        this[Keys.showHeading] = s.showHeading
+        this[Keys.showG] = s.showGForce
     }
 }

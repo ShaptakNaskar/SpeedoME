@@ -20,6 +20,11 @@ data class ThemeOptions(
     val digital: DigitalColor = DigitalColor.VFD,
     val accent: Color = Color(0xFFE8A33D),
     val average: AverageDisplay = AverageDisplay.BOTH,
+    /** Night Focus: the dial is lit up to this speed (docs/plan.md §6). */
+    val nightFocusKmh: Int = 140,
+    val nightMaxKmh: Int = 260,
+    /** Night Focus brightness 0.45 (dim) … 1 (full). */
+    val nightBrightness: Float = 1f,
 )
 
 data class GaugeStats(
@@ -49,6 +54,13 @@ data class GaugeFrame(
     val accelKmhS: Float = 0f,
     /** Seconds since the gauge appeared; drives ambient motion. */
     val timeS: Double = 0.0,
+    /** Night Focus: 0 → 1 as the scale above the focus speed lights up. */
+    val nightUpper: Float = 0f,
+    /** Integrated displayed speed (metres); scrolls the Synthwave grid at your real speed. */
+    val scrollM: Float = 0f,
+    val headingDeg: Float? = null,
+    val altitudeM: Double? = null,
+    val batteryLow: Boolean = false,
 )
 
 /** Needle feel per theme: natural frequency ω (rad/s) and damping ζ (docs/plan.md §9). */
@@ -64,6 +76,9 @@ interface GaugeTheme {
 
     /** True when the theme wants the light app chrome (Sunlight). */
     val light: Boolean get() = false
+
+    /** A theme with its own fixed scale returns it here; auto-range is ignored (Night Focus). */
+    fun fixedRangeKmh(options: ThemeOptions): Int? = null
 
     /**
      * Everything that only depends on the dial scale and options (face, ticks, labels). It is
@@ -83,17 +98,20 @@ data class StaticKey(
     val rangeProgress: Float,
     val options: ThemeOptions,
     val stepMode: Boolean,
+    val nightUpper: Float,
 ) {
     fun toFrame() = GaugeFrame(
         rangeKmh = rangeKmh, rangeFromKmh = rangeFromKmh, rangeToKmh = rangeToKmh, rangeProgress = rangeProgress,
-        options = options, stats = GaugeStats(stepMode = stepMode),
+        options = options, stats = GaugeStats(stepMode = stepMode), nightUpper = nightUpper,
     )
 }
 
-fun GaugeFrame.staticKey() = StaticKey(rangeKmh, rangeFromKmh, rangeToKmh, rangeProgress, options, stats.stepMode)
+/** Night Focus fades are quantised so the static layer re-records at most ~25 times per fade. */
+fun GaugeFrame.staticKey() =
+    StaticKey(rangeKmh, rangeFromKmh, rangeToKmh, rangeProgress, options, stats.stepMode, (nightUpper * 25).toInt() / 25f)
 
 object GaugeThemes {
-    val all: List<GaugeTheme> = listOf(RetroTheme, ModernTheme, DigitalTheme)
+    val all: List<GaugeTheme> = listOf(RetroTheme, ModernTheme, DigitalTheme, NightFocusTheme, SpeedTapeTheme, SynthwaveTheme, SunlightTheme)
 
     fun byId(id: String?): GaugeTheme = all.firstOrNull { it.id == id } ?: all.first()
 }
