@@ -139,7 +139,10 @@ fun SpeedScreen() {
                 view.quality, simRunning, entry.title, onPrev = { switchTheme(-1) }, onNext = { switchTheme(1) },
                 controls = if (landscape) ({ SessionControls(view) { targetDialog = true } }) else null,
             )
-            Box(Modifier.padding(horizontal = 16.dp)) { PermissionCards(permissions, settings.mode) }
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                PermissionCards(permissions, settings.mode)
+                ReliabilityOfferCard(permissions, recording = view.sessionKind == com.sappy.speedome.engine.SessionKind.TRIP)
+            }
             Box(
                 Modifier.fillMaxWidth().height(gaugeHeight).pointerInput(Unit) {
                     var dx = 0f

@@ -21,9 +21,10 @@ class SourceManager(
     settings: StateFlow<AppSettings>,
     tracking: TrackingEngine,
     gnss: GnssRepository,
+    raw: RawLogger,
 ) {
     private val appContext = context.applicationContext
-    private val gps = GpsSource(appContext, tracking, gnss)
+    private val gps = GpsSource(appContext, tracking, gnss, raw)
     private val steps = StepSource(appContext, tracking)
     private val serviceActive = MutableStateFlow(false)
     private val permissionEpoch = MutableStateFlow(0)
@@ -49,7 +50,21 @@ class SourceManager(
         permissionEpoch.value++
     }
 
-    fun setNmeaEnabled(on: Boolean) = gps.setNmeaEnabled(on)
+    private var nmeaWanted = false
+    private var visible = true
+
+    /** NMEA is parsed only while the nerd page is on screen and the app is visible. */
+    @Synchronized
+    fun setNmeaEnabled(on: Boolean) {
+        nmeaWanted = on
+        gps.setNmeaEnabled(nmeaWanted && visible)
+    }
+
+    @Synchronized
+    fun setVisible(visible: Boolean) {
+        this.visible = visible
+        gps.setNmeaEnabled(nmeaWanted && visible)
+    }
 
     private fun apply(w: Wanted) {
         val p = PermissionState.of(appContext)

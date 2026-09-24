@@ -120,6 +120,18 @@ fun SettingsScreen() {
         ) { on -> if (com.sappy.speedome.gauges.Effects.available) edit { it.copy(gpuEffects = on) } }
         ToggleRow("Startup sweep", "The needle sweeps to the top and back when the gauge appears.", s.startupSweep) { on -> edit { it.copy(startupSweep = on) } }
 
+        Section("TRACKING")
+        ToggleRow(
+            "Live meter auto-stop",
+            "Without a recorded trip, stop tracking after 15 minutes parked with SpeedoME in the background. Trips never stop on their own.",
+            s.liveAutoStop,
+        ) { on -> edit { it.copy(liveAutoStop = on) } }
+        val nav = LocalNavigator.current
+        Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { nav.openReliability() }.padding(vertical = 4.dp)) {
+            Text("Background reliability  ›", color = SpeedoColors.Text, fontSize = 16.sp)
+            Text("Keep tracking when the screen is off or Android closes apps.", color = SpeedoColors.Muted, fontSize = 13.sp)
+        }
+
         Section("AUTO-RANGE")
         Choices(
             listOf("With delay" to ShrinkPolicy.WITH_DELAY, "Only grow" to ShrinkPolicy.ONLY_GROW, "Immediate" to ShrinkPolicy.IMMEDIATE, "Off" to ShrinkPolicy.OFF),
@@ -176,6 +188,8 @@ private fun <T> Choices(options: List<Pair<String, T>>, selected: T, title: Stri
 private fun DeveloperSection(s: AppSettings, edit: ((AppSettings) -> AppSettings) -> Unit) {
     Section("DEVELOPER")
     ToggleRow("Simulator", "Drive with simulated GPS instead of the real receiver.", s.simulator) { on -> edit { it.copy(simulator = on) } }
+    ToggleRow("Raw GPS log", "Writes every raw fix and satellite count to Android/data/…/files/rawlogs for replay tests.", s.rawLog) { on -> edit { it.copy(rawLog = on) } }
+    ToggleRow("Fast auto-stop", "Test the live-meter auto-stop after 20 s instead of 15 min.", s.fastAutoStop) { on -> edit { it.copy(fastAutoStop = on) } }
     ToggleRow("Needle prediction", "Between fixes the needle follows speed plus acceleration.", s.predictNeedle) { on -> edit { it.copy(predictNeedle = on) } }
     OutlinedButton(onClick = { edit { it.copy(devMode = false, simulator = false) } }) { Text("Turn off developer options") }
 }

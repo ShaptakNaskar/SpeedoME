@@ -31,23 +31,46 @@ class MotionSource(context: Context) : SensorEventListener {
     val motion: StateFlow<Motion> = _motion.asStateFlow()
 
     private var holders = 0
+    private var visible = true
+    private var registered = false
     private val rot = FloatArray(9)
     private val gravity = floatArrayOf(0f, 0f, 9.81f)
     private var yawSmoothed = 0f
 
     @Synchronized
     fun acquire() {
-        if (holders++ > 0) return
-        rotation?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
-        gyro?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        gravitySensor?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        holders++
+        update()
     }
 
     @Synchronized
     fun release() {
-        if (holders == 0 || --holders > 0) return
-        sm.unregisterListener(this)
-        _motion.value = Motion()
+        if (holders > 0) holders--
+        update()
+    }
+
+    /**
+     * Screens stay composed while the app is in the background, so their holds alone would keep
+     * the sensors on with the screen off; they only run while the app is also visible.
+     */
+    @Synchronized
+    fun setVisible(visible: Boolean) {
+        this.visible = visible
+        update()
+    }
+
+    private fun update() {
+        val want = holders > 0 && visible
+        if (want == registered) return
+        registered = want
+        if (want) {
+            rotation?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+            gyro?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+            gravitySensor?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        } else {
+            sm.unregisterListener(this)
+            _motion.value = Motion()
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent) {

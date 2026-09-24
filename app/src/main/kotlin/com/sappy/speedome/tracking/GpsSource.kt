@@ -20,6 +20,7 @@ class GpsSource(
     context: Context,
     private val tracking: TrackingEngine,
     private val gnss: GnssRepository,
+    private val raw: RawLogger,
 ) {
     private val appContext = context.applicationContext
     private val lm = appContext.getSystemService(LocationManager::class.java)
@@ -28,10 +29,15 @@ class GpsSource(
     private var running = false
     private var nmeaOn = false
 
-    private val listener = LocationListener { loc -> tracking.submit(loc.toFixEvent()) }
+    private val listener = LocationListener { loc ->
+        val e = loc.toFixEvent()
+        raw.fix(e)
+        tracking.submit(e)
+    }
 
     private val statusCallback = object : GnssStatus.Callback() {
         override fun onSatelliteStatusChanged(status: GnssStatus) {
+            raw.satellites(android.os.SystemClock.elapsedRealtimeNanos(), (0 until status.satelliteCount).count { status.usedInFix(it) }, status.satelliteCount)
             gnss.onSatellites(
                 (0 until status.satelliteCount).map { i ->
                     Satellite(

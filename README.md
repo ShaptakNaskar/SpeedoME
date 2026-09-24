@@ -2,9 +2,9 @@
 
 An Android GPS speedometer and trip computer that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
 
-> **Status: early development.** GPS tracking, saved trips and eight of the nine themes (including the live map) work; the AGSL effects, target/ETA, reliability and polish milestones are next. The roadmap is in [`docs/plan.md`](docs/plan.md) and progress in [`docs/progress.md`](docs/progress.md).
+> **Status: feature-complete preview.** Tracking, trips, all nine themes, targets and background reliability work; the final polish and release-prep milestone is next. The roadmap is in [`docs/plan.md`](docs/plan.md) and progress in [`docs/progress.md`](docs/progress.md).
 
-## Planned features
+## Features
 
 - **Honest speed:** uses the GPS chip's own Doppler speed, cleaned by a Kalman filter that rejects impossible jumps but never real high speeds (trains and planes included).
 - **Auto-range dial** that grows as you speed up and shrinks back afterwards. How it shrinks is configurable, and it can be switched off.
@@ -35,6 +35,18 @@ Copy `keystore.properties.example` to `keystore.properties`, which is git-ignore
 ./gradlew :app:assembleRelease   # app/build/outputs/apk/release/app-release.apk
 ```
 
+## Testing with fake GPS
+
+The debug build can act as Android's mock location provider, so every theme can be driven from a PC:
+
+```sh
+tools/mockstream.py --synthetic 60           # a 60 km/h loop (grants the mock-location app-op first)
+tools/mockstream.py drive.gpx --rate 2       # replay a GPX track; CSV rows of lat,lon[,kmh[,acc]] also work
+tools/mockstream.py --synthetic 6 --nospeed  # no Doppler speed: exercises the position fallback
+```
+
+Single fixes go through the adb hook: `adb shell am broadcast -p com.sappy.SpeedoMe.debug -a speedome.MOCK_FIX --es latS 52.52 --es lonS 13.40 --ef kmh 48`, and `-a speedome.MOCK_STOP` removes the test provider. Developer options (tap Version seven times in Settings) add the in-app simulator and a raw GPS logger whose files replay into engine tests.
+
 ## Project layout
 
 | Path | What lives there |
@@ -43,6 +55,7 @@ Copy `keystore.properties.example` to `keystore.properties`, which is git-ignore
 | `gauges/` | Jetpack Compose gauge toolkit and themes. |
 | `app/` | The Android app: tracking service, sensors, storage and screens. |
 | `docs/` | The design and implementation plan, and the Theme Lab mockup. |
+| `tools/` | Emulator helper (`emu.sh`) and the mock GPS streamer (`mockstream.py`). |
 
 ## License
 

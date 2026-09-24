@@ -23,6 +23,9 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         manifestPlaceholders["appLabel"] = "SpeedoME"
+        // Store-policy switches for the two optional reliability upgrades (docs/plan.md §8).
+        buildConfigField("boolean", "BACKGROUND_LOCATION_ENABLED", "true")
+        buildConfigField("boolean", "BATTERY_EXEMPTION_DIALOG", "true")
     }
 
     signingConfigs {

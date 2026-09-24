@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.sappy.speedome.LocalAppContainer
 import com.sappy.speedome.engine.Mode
 import com.sappy.speedome.tracking.PermissionState
@@ -150,6 +152,32 @@ private fun openAppSettings(context: Context) {
     context.startActivity(
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),
     )
+}
+
+/** Once, when the first recording starts: offer the background reliability walkthrough (docs/plan.md §8). */
+@Composable
+fun ReliabilityOfferCard(permissions: PermissionHolder, recording: Boolean) {
+    val app = LocalAppContainer.current
+    val nav = LocalNavigator.current
+    val settings by app.settings.state.collectAsStateWithLifecycle()
+    val offerable = com.sappy.speedome.BuildConfig.BACKGROUND_LOCATION_ENABLED || com.sappy.speedome.BuildConfig.BATTERY_EXEMPTION_DIALOG
+    if (!recording || settings.reliabilityOffered || permissions.state.canSelfRestart || !offerable) return
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    fun dismiss() = scope.launch { app.settings.update { it.copy(reliabilityOffered = true) } }
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 6.dp).clip(RoundedCornerShape(14.dp)).background(SpeedoColors.Raised).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text("Keep recording if Android closes the app", color = SpeedoColors.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text("Two optional settings let a trip carry on with the screen off, even if Android stops SpeedoME.", color = SpeedoColors.Muted, fontSize = 14.sp)
+        androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilledTonalButton(onClick = {
+                dismiss()
+                nav.openReliability()
+            }) { Text("Set up") }
+            androidx.compose.material3.TextButton(onClick = { dismiss() }) { Text("Not now") }
+        }
+    }
 }
 
 @Composable

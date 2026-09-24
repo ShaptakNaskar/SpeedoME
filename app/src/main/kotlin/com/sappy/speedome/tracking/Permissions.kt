@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.content.ContextCompat
 
 /** What SpeedoME is allowed to do right now (docs/plan.md §8, permissions 1–3). */
@@ -14,8 +15,14 @@ data class PermissionState(
     val locationServicesOn: Boolean,
     val notifications: Boolean,
     val activityRecognition: Boolean,
+    /** "Allow all the time" (always true below Android 10, where foreground location covers it). */
+    val backgroundLocation: Boolean,
+    val batteryExempt: Boolean,
 ) {
     val canTrack: Boolean get() = fineLocation && locationServicesOn
+
+    /** A killed service may restart itself in the background only with both upgrades (docs/plan.md §8). */
+    val canSelfRestart: Boolean get() = canTrack && backgroundLocation && batteryExempt
 
     companion object {
         fun of(context: Context): PermissionState {
@@ -30,6 +37,8 @@ data class PermissionState(
                 locationServicesOn = servicesOn,
                 notifications = Build.VERSION.SDK_INT < 33 || granted(Manifest.permission.POST_NOTIFICATIONS),
                 activityRecognition = Build.VERSION.SDK_INT < 29 || granted(Manifest.permission.ACTIVITY_RECOGNITION),
+                backgroundLocation = fine && (Build.VERSION.SDK_INT < 29 || granted(Manifest.permission.ACCESS_BACKGROUND_LOCATION)),
+                batteryExempt = context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName),
             )
         }
     }

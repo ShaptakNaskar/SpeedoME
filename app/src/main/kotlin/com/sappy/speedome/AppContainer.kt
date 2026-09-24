@@ -20,18 +20,31 @@ import kotlinx.coroutines.launch
 /** Hand-wired app singletons (D26: no DI framework). */
 class AppContainer(app: Application) {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** True while an activity is started (on screen); the live meter only auto-stops when false. */
+    val visible = kotlinx.coroutines.flow.MutableStateFlow(false)
     val settings = SettingsRepository(app, appScope)
     val tracking = TrackingEngine(appScope, settings.state)
     val gnss = GnssRepository()
     val simulator = SimulatorSource(appScope, tracking, settings.state, gnss)
     val motion = MotionSource(app)
-    val sources = SourceManager(app, appScope, settings.state, tracking, gnss)
+    val rawLogger = com.sappy.speedome.tracking.RawLogger(app)
+    val sources = SourceManager(app, appScope, settings.state, tracking, gnss, rawLogger)
     val db = SpeedoDatabase.create(app)
     val liveRoute = com.sappy.speedome.tracking.LiveRoute(appScope, tracking.state)
     val recorder = SessionRecorder(appScope, db.trips(), tracking, settings.state)
 
     init {
         recorder.start()
+        appScope.launch(Dispatchers.Main) {
+            visible.collect { v ->
+                motion.setVisible(v)
+                sources.setVisible(v)
+            }
+        }
+        appScope.launch {
+            settings.state.map { it.devMode && it.rawLog }.distinctUntilChanged().collect(rawLogger::setEnabled)
+        }
         appScope.launch {
             settings.state.map { it.devMode && it.simulator }.distinctUntilChanged().collect { on ->
                 if (on) simulator.start() else simulator.stop()

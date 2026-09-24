@@ -68,6 +68,24 @@ class StepAndResumeTest {
     }
 
     @Test
+    fun `a resume gap that teleports is counted as a gap without distance`() {
+        val cfg = EngineSettings()
+        val before = listOf(
+            FixEvent(1_000_000_000L, 1_000L, 35.68, 139.76, hAcc = 4f, speed = 0f, speedAcc = 0.3f),
+            FixEvent(2_000_000_000L, 2_000L, 35.68, 139.76, hAcc = 4f, speed = 0f, speedAcc = 0.3f),
+        )
+        val s1 = Engine.reduceAll(EngineState(), before, cfg)
+        val resumed = s1.resumedAfter(gapMillis = 120_000, nowNanos = 200_000_000_000L)
+        // Two minutes later the next fix is in Berlin (a mock source took over): 8900 km in 2 min.
+        val s2 = Engine.reduce(resumed, FixEvent(201_000_000_000L, 122_000L, 52.5163, 13.3777, hAcc = 4f, speed = 0f, speedAcc = 0.3f), cfg)
+        assertEquals(1, s2.stats.gaps)
+        assertTrue("distance ${s2.stats.distanceM}", s2.stats.distanceM < 1.0)
+        // Tracking continues normally from the new position.
+        val s3 = Engine.reduce(s2, FixEvent(202_000_000_000L, 123_000L, 52.51639, 13.3777, hAcc = 4f, speed = 10f, speedAcc = 0.3f), cfg)
+        assertTrue(s3.stats.distanceM < 20.0)
+    }
+
+    @Test
     fun `resuming after a reboot re-bases the clock`() {
         val cfg = EngineSettings()
         val s0 = EngineState()

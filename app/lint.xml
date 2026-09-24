@@ -6,4 +6,8 @@
     </issue>
     <!-- targetSdk 36 is deliberate until Android 17 behaviour changes are reviewed (docs/plan.md, M9). -->
     <issue id="OldTargetApi" severity="ignore" />
+    <!-- The battery-exemption request is an opt-in reliability upgrade behind BuildConfig.BATTERY_EXEMPTION_DIALOG (docs/plan.md §8, D17). -->
+    <issue id="BatteryLife" severity="ignore" />
+    <!-- A dependency ships Timber's lint rules; the app logs sparingly with android.util.Log and doesn't use Timber. -->
+    <issue id="LogNotTimber" severity="ignore" />
 </lint>

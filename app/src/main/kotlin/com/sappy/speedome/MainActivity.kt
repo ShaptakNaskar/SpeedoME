@@ -34,7 +34,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        (application as SpeedoApplication).container.visible.value = true
         // Starting the location service while visible keeps GPS alive in the background later.
         if (PermissionState.of(this).canTrack) TrackingService.start(this)
+    }
+
+    override fun onStop() {
+        (application as SpeedoApplication).container.visible.value = false
+        super.onStop()
     }
 }

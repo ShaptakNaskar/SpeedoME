@@ -51,6 +51,10 @@ data class AppSettings(
     val showGForce: Boolean = false,
     val mapNorthUp: Boolean = false,
     val gpuEffects: Boolean = true,
+    val rawLog: Boolean = false,
+    val liveAutoStop: Boolean = true,
+    val reliabilityOffered: Boolean = false,
+    val fastAutoStop: Boolean = false,
 ) {
     val engine: EngineSettings get() = EngineSettings(mode = mode, autoRange = AutoRangeSettings(shrink, fixedKmh))
 }
@@ -81,6 +85,10 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val showG = booleanPreferencesKey("show_g")
         val mapNorthUp = booleanPreferencesKey("map_north_up")
         val gpuEffects = booleanPreferencesKey("gpu_effects")
+        val rawLog = booleanPreferencesKey("raw_log")
+        val liveAutoStop = booleanPreferencesKey("live_auto_stop")
+        val reliabilityOffered = booleanPreferencesKey("reliability_offered")
+        val fastAutoStop = booleanPreferencesKey("fast_auto_stop")
     }
 
     val state: StateFlow<AppSettings> = store.data
@@ -117,6 +125,10 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             showGForce = this[Keys.showG] ?: d.showGForce,
             mapNorthUp = this[Keys.mapNorthUp] ?: d.mapNorthUp,
             gpuEffects = this[Keys.gpuEffects] ?: d.gpuEffects,
+            rawLog = this[Keys.rawLog] ?: d.rawLog,
+            liveAutoStop = this[Keys.liveAutoStop] ?: d.liveAutoStop,
+            reliabilityOffered = this[Keys.reliabilityOffered] ?: d.reliabilityOffered,
+            fastAutoStop = this[Keys.fastAutoStop] ?: d.fastAutoStop,
         )
     }
 
@@ -141,5 +153,9 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         this[Keys.showG] = s.showGForce
         this[Keys.mapNorthUp] = s.mapNorthUp
         this[Keys.gpuEffects] = s.gpuEffects
+        this[Keys.rawLog] = s.rawLog
+        this[Keys.liveAutoStop] = s.liveAutoStop
+        this[Keys.reliabilityOffered] = s.reliabilityOffered
+        this[Keys.fastAutoStop] = s.fastAutoStop
     }
 }

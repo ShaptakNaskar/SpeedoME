@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Optional upgrades that let a killed service restart itself mid-trip (docs/plan.md §8). -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Map tiles for the Map theme (the only network use). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Step mode: hardware step counter and detector. -->
@@ -19,6 +22,14 @@
     <uses-feature
         android:name="android.hardware.sensor.stepcounter"
         android:required="false" />
+
+    <!-- Lets the reliability screen check whether the direct battery-exemption dialog exists. -->
+    <queries>
+        <intent>
+            <action android:name="android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+            <data android:scheme="package" />
+        </intent>
+    </queries>
 
     <application
         android:name=".SpeedoApplication"

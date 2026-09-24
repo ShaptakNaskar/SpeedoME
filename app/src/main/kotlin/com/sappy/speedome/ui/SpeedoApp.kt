@@ -37,6 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sappy.speedome.ui.theme.SpeedoColors
 
+/** App-level navigation that screens can trigger (e.g. the Speed tab's reliability card). */
+class Navigator(val openReliability: () -> Unit)
+
+val LocalNavigator = androidx.compose.runtime.staticCompositionLocalOf { Navigator {} }
+
 enum class Tab(val label: String, val icon: ImageVector) {
     Speed("Speed", TabIcons.Speed),
     Trips("Trips", TabIcons.Trips),
@@ -46,6 +51,13 @@ enum class Tab(val label: String, val icon: ImageVector) {
 @Composable
 fun SpeedoApp() {
     var tab by rememberSaveable { mutableStateOf(Tab.Speed) }
+    var reliability by rememberSaveable { mutableStateOf(false) }
+    val navigator = androidx.compose.runtime.remember {
+        Navigator {
+            tab = Tab.Settings
+            reliability = true
+        }
+    }
     Column(
         Modifier
             .fillMaxSize()
@@ -57,15 +69,23 @@ fun SpeedoApp() {
                 .fillMaxWidth()
                 .statusBarsPadding(),
         ) {
-            when (tab) {
-                Tab.Speed -> SpeedScreen()
-                Tab.Trips -> com.sappy.speedome.ui.trips.TripsScreen()
-                Tab.Settings -> SettingsScreen()
+            androidx.compose.runtime.CompositionLocalProvider(LocalNavigator provides navigator) {
+                when {
+                    tab == Tab.Speed -> SpeedScreen()
+                    tab == Tab.Trips -> com.sappy.speedome.ui.trips.TripsScreen()
+                    reliability -> ReliabilityScreen(onBack = { reliability = false })
+                    else -> SettingsScreen()
+                }
             }
         }
         // In landscape the Speed tab is a full-screen car-mount display (as in the Theme Lab).
         val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-        if (!(landscape && tab == Tab.Speed)) TabBar(selected = tab, onSelect = { tab = it })
+        if (!(landscape && tab == Tab.Speed)) {
+            TabBar(selected = tab, onSelect = {
+                if (it == Tab.Settings && tab == Tab.Settings) reliability = false
+                tab = it
+            })
+        }
     }
     // App-wide: resume decisions and the post-trip summary show on any tab.
     ResumeOfferDialog()

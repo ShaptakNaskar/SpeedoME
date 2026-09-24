@@ -136,6 +136,11 @@ private fun EngineState.integrate(t: Long, goodPos: PosSample?, accepted: Boolea
             st = st.copy(distanceM = st.distanceM + vm * dt, movingS = st.movingS + if (isMoving(vm, t, cfg)) dt else 0.0)
         } else if (goodPos != null && lastGood != null) {
             val d = Geo.distanceM(lastGood.lat, lastGood.lon, goodPos.lat, goodPos.lon)
+            // A bridge faster than any ground vehicle is a position jump (mock source switch, bad
+            // fix, device moved while off): count the gap but not the distance.
+            if (d / dt > Tuning.BRIDGE_MAX_MPS) {
+                return copy(stats = st.copy(gaps = st.gaps + 1), lastMeasureNanos = t, lastMeasureOut = out, lastGood = goodPos)
+            }
             st = st.copy(
                 distanceM = st.distanceM + d,
                 movingS = st.movingS + if (d / dt > MOVING_DRIVE_MPS) dt else 0.0,

@@ -22,6 +22,9 @@ object Tuning {
 
     // Target arrival (docs/plan.md §6): trend = average over the last 180 s, stops included.
     const val TREND_WINDOW_S = 180.0
+
+    /** Gap bridges implying more than 360 km/h are rejected as position jumps. */
+    const val BRIDGE_MAX_MPS = 100.0
     const val TREND_MIN_S = 15.0
     const val TREND_MIN_MPS = 0.3
 
