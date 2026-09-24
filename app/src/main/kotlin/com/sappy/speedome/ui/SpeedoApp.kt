@@ -57,12 +57,16 @@ fun SpeedoApp() {
         ) {
             when (tab) {
                 Tab.Speed -> SpeedScreen()
-                Tab.Trips -> TripsScreen()
+                Tab.Trips -> com.sappy.speedome.ui.trips.TripsScreen()
                 Tab.Settings -> SettingsScreen()
             }
         }
         TabBar(selected = tab, onSelect = { tab = it })
     }
+    // App-wide: resume decisions and the post-trip summary show on any tab.
+    ResumeOfferDialog()
+    ResumedNotice()
+    TripSummarySheet()
 }
 
 @Composable
@@ -90,12 +94,7 @@ private fun TabBar(selected: Tab, onSelect: (Tab) -> Unit) {
 }
 
 @Composable
-private fun TripsScreen() {
-    EmptyState(title = "No trips yet", body = "Press Record on the Speed tab and your trips will be listed here.")
-}
-
-@Composable
-private fun EmptyState(title: String, body: String) {
+fun EmptyState(title: String, body: String) {
     Column(
         Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

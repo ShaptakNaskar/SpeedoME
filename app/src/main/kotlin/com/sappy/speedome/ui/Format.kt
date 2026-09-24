@@ -27,4 +27,20 @@ object Fmt {
         val s = it.toLong()
         String.format(Locale.getDefault(), "%d:%02d /km", s / 60, s % 60)
     } ?: "–"
+
+    /** "12 min", "2 h 14 min", "45 s" — for gaps. */
+    fun gap(millis: Long): String {
+        val s = millis / 1000
+        return when {
+            s < 60 -> "$s s"
+            s < 3600 -> "${s / 60} min"
+            else -> "${s / 3600} h ${s % 3600 / 60} min"
+        }
+    }
+
+    /** "12 min ago", "2 h 14 min ago", "3 days ago". */
+    fun ago(millis: Long): String {
+        val days = millis / 86_400_000
+        return if (days >= 1) "$days day${if (days > 1) "s" else ""} ago" else "${gap(millis)} ago"
+    }
 }

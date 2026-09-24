@@ -64,6 +64,7 @@ class StepAndResumeTest {
         assertTrue("distance error ${err * 100}%", err < 0.02)
         assertEquals(1, h.state.stats.gaps)
         assertEquals(110.0, h.state.stats.elapsedS, 2.0)
+        assertEquals(1, h.state.session.segment)
     }
 
     @Test

@@ -71,6 +71,8 @@ fun SpeedScreen() {
         Text("KM/H", color = SpeedoColors.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 3.sp)
         Spacer(Modifier.height(16.dp))
         StatsRow(view)
+        Spacer(Modifier.height(12.dp))
+        SessionControls(view)
         Spacer(Modifier.height(16.dp))
         if (view.lastFix == null && permissions.state.canTrack && !simTruth.running) {
             Caption("Waiting for GPS. The first fix is quickest outdoors or near a window.")

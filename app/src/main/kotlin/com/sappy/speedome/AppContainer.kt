@@ -2,9 +2,11 @@ package com.sappy.speedome
 
 import android.app.Application
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.sappy.speedome.data.SpeedoDatabase
 import com.sappy.speedome.settings.SettingsRepository
 import com.sappy.speedome.tracking.GnssRepository
 import com.sappy.speedome.tracking.MotionSource
+import com.sappy.speedome.tracking.SessionRecorder
 import com.sappy.speedome.tracking.SimulatorSource
 import com.sappy.speedome.tracking.SourceManager
 import com.sappy.speedome.tracking.TrackingEngine
@@ -24,8 +26,11 @@ class AppContainer(app: Application) {
     val gnss = GnssRepository()
     val motion = MotionSource(app)
     val sources = SourceManager(app, appScope, settings.state, tracking, gnss)
+    val db = SpeedoDatabase.create(app)
+    val recorder = SessionRecorder(appScope, db.trips(), tracking, settings.state)
 
     init {
+        recorder.start()
         appScope.launch {
             settings.state.map { it.devMode && it.simulator }.distinctUntilChanged().collect { on ->
                 if (on) simulator.start() else simulator.stop()

@@ -1,6 +1,8 @@
 package com.sappy.speedome.engine
 
 import com.sappy.speedome.engine.replay.Gpx
+import com.sappy.speedome.engine.replay.GpxPoint
+import com.sappy.speedome.engine.replay.GpxWriter
 import com.sappy.speedome.engine.replay.Nmea
 import com.sappy.speedome.engine.replay.RawLog
 import com.sappy.speedome.engine.replay.Replay
@@ -76,5 +78,22 @@ class ReplayTest {
         assertEquals(32.40 * 0.514444, f.speed!!.toDouble(), 1e-3)
         assertEquals(41.2, f.altM!!, 1e-9)
         assertTrue(abs(f.hAcc!! - 3.2f) < 1e-4)
+    }
+
+    @Test
+    fun `gpx export round-trips through the reader with segments and speed`() {
+        val pts = listOf(
+            GpxPoint(1_790_000_000_000L, 35.6812, 139.7671, 40.0, 13.9, segment = 0),
+            GpxPoint(1_790_000_001_000L, 35.6813, 139.7672, 40.5, 14.1, segment = 0),
+            GpxPoint(1_790_000_060_000L, 35.6900, 139.7700, null, null, segment = 1),
+        )
+        val xml = GpxWriter.write("Morning <drive> & back", pts)
+        assertTrue(xml.contains("Morning &lt;drive&gt; &amp; back"))
+        assertEquals(2, Regex("<trkseg>").findAll(xml).count())
+        val back = Gpx.parse(xml)
+        assertEquals(3, back.size)
+        assertEquals(35.6813, back[1].lat, 1e-7)
+        assertEquals(14.1f, back[1].speed!!, 1e-4f)
+        assertEquals(60_000L, back[2].utcMillis - back[0].utcMillis)
     }
 }

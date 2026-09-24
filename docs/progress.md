@@ -6,9 +6,8 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 
 1. Re-read this file, then `plan.md` §4–§11 for the milestone at hand.
 2. Run `./gradlew check` and make sure it passes before changing anything.
-3. Start the emulator headless for visual checks:
-   `~/Android/Sdk/emulator/emulator -avd Phone_67_A16 -no-window -no-audio -no-boot-anim -no-snapshot-save -gpu swiftshader_indirect -port 5584`
-   Then wait for `sys.boot_completed`, install the debug APK and use `screencap` / `uiautomator dump`.
+3. Use `tools/emu.sh` for emulator checks: `start`, `install`, `setup-dev` (grants permissions, turns on developer options and the simulator), `tap "Text"`, `texts`, `shot NAME` (to /tmp/speedome-shots), `feed KMH SECONDS`, `crashes`. uiautomator escapes `&` as `&amp;` in texts.
+   To inspect the database: `adb exec-out run-as com.sappy.SpeedoMe.debug cat databases/speedome.db` (also copy `-wal` and `-shm`), then open it with `sqlite3` from platform-tools.
 4. Take library versions from `gradle/libs.versions.toml`. For new libraries use the latest stable releases (looked up 2026-09-24): serialization-json 1.11.0, coroutines 1.11.0, Room 2.8.5 + KSP 2.3.12, DataStore 1.2.1, MapLibre 13.6.1, Roborazzi 1.75.0, Robolectric 4.17, Turbine 1.2.1, benchmark 1.5.0, profileinstaller 1.4.1, androidx.test.ext:junit 1.3.0, uiautomator 2.4.0.
 
 ## Milestones
@@ -19,8 +18,8 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 | M1 Engine core | done 2026-09-24 | 28 JVM tests: filter, spikes, trains, no-Doppler, parked, tunnel, city distance, 10 Hz, pause, trips, steps, snapshot, resume (same boot + reboot), replay formats |
 | M2 Simulator + debug screen | done 2026-09-24 | Verified on emulator: City/Highway/Walk presets, spike rejected, signal loss → NO FIX, no speed field → POSITION, trip start/pause/resume/stop |
 | M3 Tracking service + sensors | done 2026-09-24 | Verified on emulator: permission dialogs chain (location → notifications), foreground `location` service with live notification, real LocationManager fixes (geo fix + velocity) → DOPPLER source, GnssStatus satellites, notification keeps updating with screen off, denied / coarse-only / step-permission cards |
-| M4 Storage + resume + Trips | in progress | |
-| M5 Gauge toolkit + first themes | todo | |
+| M4 Storage + resume + Trips | done 2026-09-24 | Verified on emulator: record → stop → summary sheet; Trips list (thumbnail) and detail (speed-coloured route, speed graph); Share GPX (chooser) and valid GPX 1.1 export; rename; delete; kill mid-trip → sticky service restarts and the same row continues with a new segment; kill with session aged 31 min → offer → Save & finish |
+| M5 Gauge toolkit + first themes | in progress | |
 | M6 Remaining themes + map + nerd | todo | |
 | M7 Target + step mode | todo | |
 | M8 Reliability + power + mock provider | todo | |
@@ -40,3 +39,8 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 - **Emulator GPS feed:** `scratchpad/feed.sh <kmh> <seconds>` drives `adb emu geo fix lon lat alt sats knots` at 1 Hz. The velocity argument arrives as `Location.speed`, so the engine sees DOPPLER.
 - **Service lifecycle:** `TrackingService` starts from `MainActivity.onStart()` (and after permission grants) when location is allowed. "Stop tracking" resets the live meter and stops the service. `SourceManager` runs GPS and step sensors only while the service is active, and never while the simulator is on.
 - **Motion:** `MotionSource` is on-demand (acquire/release). Heading comes from the rotation vector, using the flatter of the top-edge and back-camera axes. Yaw rate is the gyro · gravity, so it's independent of how the phone is mounted.
+- **Recorder bugs caught by device verification (both fixed):**
+  - The "last stored fix" sentinel `Long.MIN_VALUE` overflowed in a subtraction, so no points were saved. It's now nullable.
+  - The adoption marker was cleared by the engine's initial blank state, so a resumed trip got a new row. The marker is now cleared only when used.
+- **Parked jitter:** while the speed reads 0 and the phone hasn't moved beyond `max(hAcc, 8 m)`, points aren't stored, so routes don't draw squiggles at stops.
+- **Developer resume tests:** the dev panel has "Kill app" and "Kill, 31 min later" (debug builds only).

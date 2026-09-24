@@ -35,9 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sappy.speedome.BuildConfig
 import com.sappy.speedome.LocalAppContainer
-import com.sappy.speedome.engine.Command
-import com.sappy.speedome.engine.SessionKind
 import com.sappy.speedome.engine.TrackView
 import com.sappy.speedome.engine.sim.SimPreset
 import com.sappy.speedome.tracking.SimulatorSource
@@ -54,7 +53,7 @@ fun DevPanel(view: TrackView, truth: SimulatorSource.Truth) {
     }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (truth.running) SimControls()
-        SessionButtons(view)
+        if (BuildConfig.DEBUG) ResumeTests()
         DebugCard(view, truth)
     }
 }
@@ -94,18 +93,15 @@ private fun SimControls() {
     }
 }
 
+/** Kills the process mid-session so both resume paths can be tested on a device. */
 @Composable
-private fun SessionButtons(v: TrackView) {
-    val tracking = LocalAppContainer.current.tracking
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(onClick = { tracking.command(Command.Reset) }) { Text("Reset") }
-        if (v.sessionKind == SessionKind.LIVE) {
-            OutlinedButton(onClick = { tracking.command(Command.StartTrip) }) { Text("Start trip") }
-        } else {
-            OutlinedButton(onClick = { tracking.command(if (v.paused) Command.Resume else Command.Pause) }) {
-                Text(if (v.paused) "Resume" else "Pause")
-            }
-            OutlinedButton(onClick = { tracking.command(Command.StopTrip) }) { Text("Stop trip") }
+private fun ResumeTests() {
+    val app = LocalAppContainer.current
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Label("TEST RESUME")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { app.recorder.debugKill(0) }) { Text("Kill app") }
+            OutlinedButton(onClick = { app.recorder.debugKill(31) }) { Text("Kill, 31 min later") }
         }
     }
 }

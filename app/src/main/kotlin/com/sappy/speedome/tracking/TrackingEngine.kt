@@ -25,13 +25,24 @@ import kotlinx.coroutines.launch
  */
 class TrackingEngine(scope: CoroutineScope, private val settings: StateFlow<AppSettings>) {
     private val engineThread = Dispatchers.Default.limitedParallelism(1)
-    private val inbox = Channel<EngineEvent>(Channel.UNLIMITED)
+    private sealed interface Msg {
+        class Event(val event: EngineEvent) : Msg
+
+        class Restore(val state: EngineState) : Msg
+    }
+
+    private val inbox = Channel<Msg>(Channel.UNLIMITED)
     private val _state = MutableStateFlow(EngineState())
     val state: StateFlow<EngineState> = _state.asStateFlow()
 
     init {
         scope.launch(engineThread) {
-            for (e in inbox) _state.value = Engine.reduce(_state.value, e, EngineSettings(mode = settings.value.mode))
+            for (m in inbox) {
+                _state.value = when (m) {
+                    is Msg.Event -> Engine.reduce(_state.value, m.event, EngineSettings(mode = settings.value.mode))
+                    is Msg.Restore -> m.state
+                }
+            }
         }
         scope.launch {
             while (isActive) {
@@ -42,7 +53,12 @@ class TrackingEngine(scope: CoroutineScope, private val settings: StateFlow<AppS
     }
 
     fun submit(event: EngineEvent) {
-        inbox.trySend(event)
+        inbox.trySend(Msg.Event(event))
+    }
+
+    /** Replaces the whole engine state (resuming a saved session), in order with other events. */
+    fun restore(state: EngineState) {
+        inbox.trySend(Msg.Restore(state))
     }
 
     fun command(command: Command) =

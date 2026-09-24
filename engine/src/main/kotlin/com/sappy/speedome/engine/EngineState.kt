@@ -114,6 +114,7 @@ fun EngineState.resumedAfter(gapMillis: Long, nowNanos: Long): EngineState {
         lastMeasureNanos = lastMeasureNanos?.let { then },
         lastMeasureOut = 0.0,
         lastEventNanos = nowNanos,
+        session = session.copy(segment = session.segment + 1), // the route resumes as a new, dashed-joined segment
         stats = if (session.paused) stats else stats.copy(elapsedS = stats.elapsedS + gapMillis / 1000.0),
         steps = steps.copy(detectorTimes = emptyList(), counterSamples = emptyList(), lastStepNanos = null),
     )
