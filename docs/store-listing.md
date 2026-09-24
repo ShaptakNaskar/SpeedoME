@@ -34,8 +34,8 @@ SpeedoME shows the speed your GPS chip actually measures. It uses the receiver's
 
 Free and open source (GPL-3.0): github.com/ShaptakNaskar/SpeedoME
 
-**Category:** Maps & Navigation. **Tags:** speedometer, GPS, HUD, trip computer.
+**Category:** Maps & Navigation. **Tags:** speedometer, GPS, trip computer, satellites.
 
 ## Screenshots
 
-`docs/store/` holds phone screenshots taken from the emulator with the mock GPS stream (`tools/mockstream.py`). They show Retro, Modern, Night Focus, Map, Nerd, Synthwave, the Trips list and Settings.
+`docs/store/` holds phone screenshots (JPEG, 720 px wide) taken from the emulator with the mock GPS stream (`tools/mockstream.py`). They cover all nine themes, the trip summary, the Trips list, trip detail and Settings.

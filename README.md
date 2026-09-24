@@ -2,7 +2,15 @@
 
 An Android GPS speedometer and trip computer that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
 
-> **Status: feature-complete preview.** Tracking, trips, all nine themes, targets and background reliability work; the final polish and release-prep milestone is next. The roadmap is in [`docs/plan.md`](docs/plan.md) and progress in [`docs/progress.md`](docs/progress.md).
+> **Status: 0.9, feature-complete.** All planned milestones are implemented and verified on the emulator. What's left before 1.0 is the on-phone checks (screen-off drives, battery, Doze) listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md). The roadmap is in [`docs/plan.md`](docs/plan.md) and progress in [`docs/progress.md`](docs/progress.md).
+
+<p>
+  <img src="docs/store/retro.jpg" width="160" alt="Retro theme">
+  <img src="docs/store/modern.jpg" width="160" alt="Modern theme">
+  <img src="docs/store/map.jpg" width="160" alt="Map theme">
+  <img src="docs/store/synthwave.jpg" width="160" alt="Synthwave theme">
+  <img src="docs/store/nerd.jpg" width="160" alt="Nerd page">
+</p>
 
 ## Features
 

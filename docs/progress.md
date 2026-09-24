@@ -23,9 +23,22 @@ The working log for building SpeedoME milestone by milestone (plan: [`plan.md`](
 | M6 Remaining themes + map + nerd | done | Night Focus, Speed Tape, Synthwave, Sunlight; Nerd page + info strip + heading/G switches; Map (MapLibre + OpenFreeMap dark, speed-coloured live route, puck, course/north-up, re-centre, speed card; verified offline from cache); AGSL effects (backlight glow, glass reflection, numeral bloom) with gradient fallbacks and a GPU effects setting. 41 goldens incl. 5 shader-off. |
 | M7 Target + step mode | done | Engine target (SetTarget/ClearTarget, 180 s trend, ETA, arrive-by needed/ahead/LATE, arrival + distance past; carries over new sessions from zero; 9 tests). Target dialog (km presets, arrive-by time picker), target strip with haptic + flash on arrival, Modern ring, Night Focus last-km/reached warning, Tape annunciation, notification ProgressStyle (API 36+) / progress bar. Step mode moved from dev options to Settings → Mode. |
 | M8 Reliability + power + mock provider | done | Background reliability screen (ticks, "Allow all the time" with explanation, battery exemption, OEM instructions + deep links for Xiaomi/Samsung/OnePlus-OPPO-Realme/Vivo/Huawei-Honor), one-time offer card on first recording, build flags. Sticky restart only with both upgrades (verified: kill → FGS back in ~1.4 s and trip continues; without exemption the restart is skipped and the trip auto-resumes on reopen). Live meter auto-stop after 15 min parked in background (dev: 20 s; verified). Sensor audit: compass/gyro and NMEA now also gated on app visibility. Debug mock provider + adb hook + `tools/mockstream.py` (verified driving Map/Nerd with MOCK badge). Raw GPS logger (dev). Engine: gap bridges > 360 km/h rejected as teleports. |
-| M9 Polish + release prep | todo | |
+| M9 Polish + release prep | done | mph units (engine auto-range in display units, gauges, screens; locale default); accessibility (TalkBack descriptions for canvas gauges/Nerd, labelled glyph buttons, 48 dp controls, contrast ≥ 5:1); ABI splits (arm64 15 MB); Baseline Profile (generator module + shipped wildcard profile); dev file replay + frame timing; About (privacy, licences, source); docs/privacy.md, docs/play-declarations.md, docs/store-listing.md, 13 store screenshots; v0.9.0. |
+
+## Before 1.0: on-phone checks (owner)
+
+These need a real phone and can't be done on the emulator (docs/plan.md §11):
+1. A 30 min screen-off drive (per available brand), with and without "Allow all the time" plus the battery exemption.
+2. Force-kill mid-trip on the phone (Developer options → Kill app, or swipe away) and confirm the resume or restart path.
+3. Battery use per hour, screen on and screen off.
+4. Doze: park for 1 h with the screen off, then drive off, and check that the live meter auto-stopped and tracking restarts on open.
+5. Optional: `./gradlew :app:generateReleaseBaselineProfile` with the phone connected, to replace the wildcard profile with a measured one.
+6. Review the Android 17 (API 37) behaviour changes, then raise targetSdk from 36.
 
 ## Decisions made during implementation
+
+- **Baseline Profile:** the generator run makes the rooted userdebug emulator reboot (twice, reproducibly), so the APK ships a wildcard profile for our own classes. Compose and the other AndroidX libraries bring their own.
+- **mph:** the auto-range ladder runs on display-unit speed, so mph dials get round rungs. Night Focus settings stay in km/h and map to the nearest round mph.
 
 - **Reliability:** a background FGS start needs the battery exemption, and background location is needed for it to receive fixes, so the sticky restart requires both. Otherwise the service stops and the snapshot resumes on reopen. `mockstream.py` runs adb in its own session, because Ctrl+C and `timeout` signal the whole process group, and the MOCK_STOP cleanup must still reach the phone.
 
