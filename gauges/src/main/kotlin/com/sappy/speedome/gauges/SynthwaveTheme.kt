@@ -43,7 +43,7 @@ object SynthwaveTheme : GaugeTheme {
         val sr = min(w, h) * if (land) .3f else .27f
         val sun = Offset(w / 2, hz - sr * .15f)
         clipRect(0f, 0f, w, hz) {
-            drawCircle(Color(0xFFFF5C9A).copy(alpha = .18f), sr * 1.25f, sun)
+            backlightGlow(sun, sr * 1.7f, Color(0xFFFF5C9A), .42f, frame.options)
             drawCircle(Brush.verticalGradient(0f to Color(0xFFFFE66D), .55f to Color(0xFFFF8A5C), 1f to Color(0xFFFF2E88), startY = sun.y - sr, endY = sun.y + sr), sr, sun)
             for (i in 0 until 7) {
                 val y = sun.y + sr * (.08f + i * .13f)

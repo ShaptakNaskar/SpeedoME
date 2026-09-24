@@ -33,6 +33,8 @@ object RetroTheme : GaugeTheme {
         val faceA = if (cream) Color(0xFFF3EAD2) else Color(0xFF24221E)
         val faceB = if (cream) Color(0xFFD2C29C) else Color(0xFF0C0B0A)
         drawCircle(Brush.radialGradient(listOf(faceA, faceB), Offset(c.x, c.y - r * .3f), r * 1.05f), r, c)
+        // Warm incandescent backlight bleeding through the black face around the numerals.
+        if (!cream) backlightGlow(c, r * .98f, Color(0xFFFFB060), .07f, frame.options)
 
         val ink = ink(cream)
         val labelPaint = assets.paint(assets.oswald, 500)
@@ -71,13 +73,7 @@ object RetroTheme : GaugeTheme {
             Brush.radialGradient(listOf(Color(0xFF5A5A58), Color(0xFF0D0D0C)), Offset(c.x - r * .03f, c.y - r * .03f), r * .1f)
         }
         drawCircle(cap, r * .09f, c)
-        val glass = assets.memo("retro-glass", size) {
-            Brush.linearGradient(
-                0f to Color.White.copy(alpha = .13f), .5f to Color.Transparent,
-                start = Offset(c.x - r, c.y - r), end = Offset(c.x + r * .2f, c.y + r * .2f),
-            )
-        }
-        drawCircle(glass, r, c)
+        glassReflection(c, r, frame.options)
         stats(frame, l, assets)
     }
 

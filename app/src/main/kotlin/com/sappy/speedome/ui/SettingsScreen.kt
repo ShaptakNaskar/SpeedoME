@@ -102,6 +102,11 @@ fun SettingsScreen() {
         ToggleRow("Nerd strip", "Satellites, accuracy, position and altitude under any gauge.", s.nerdStrip) { on -> edit { it.copy(nerdStrip = on) } }
         ToggleRow("Heading", "Compass heading under the gauge.", s.showHeading) { on -> edit { it.copy(showHeading = on) } }
         ToggleRow("G-force", "Sideways and forward G under the gauge.", s.showGForce) { on -> edit { it.copy(showGForce = on) } }
+        ToggleRow(
+            "GPU effects",
+            if (com.sappy.speedome.gauges.Effects.available) "Glass reflections, backlight glow and numeral bloom." else "Needs Android 13; simpler gradients are used on this phone.",
+            s.gpuEffects && com.sappy.speedome.gauges.Effects.available,
+        ) { on -> if (com.sappy.speedome.gauges.Effects.available) edit { it.copy(gpuEffects = on) } }
         ToggleRow("Startup sweep", "The needle sweeps to the top and back when the gauge appears.", s.startupSweep) { on -> edit { it.copy(startupSweep = on) } }
 
         Section("AUTO-RANGE")

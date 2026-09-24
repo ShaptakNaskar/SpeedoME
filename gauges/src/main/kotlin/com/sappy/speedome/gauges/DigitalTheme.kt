@@ -78,6 +78,8 @@ object DigitalTheme : GaugeTheme {
             if (v > frame.rangeKmh * 1.001f) break
             text(fmt(v.toDouble(), 0), g.pad + g.bw * v / frame.rangeKmh, g.top + g.bh + 14.dp.toPx(), mono, 11.dp.toPx(), on.copy(alpha = .6f * set.alpha))
         }
+        // Phosphor glow on the glass behind the big digits.
+        backlightGlow(Offset(g.dx + g.total / 2, g.dy + g.dh / 2), g.total * .62f, frame.options.digital.glow, .09f, frame.options)
         for (i in 0 until g.digits) seg7(g.bigCell(i), g.big, g.dh, '8', on, .06f, null, ghostOnly = true)
         text("KM/H", g.dx + g.total + g.dw * .15f, g.dy + g.dh * .85f, assets.paint(assets.b612Bold), g.dh * .09f, on, Align.LEFT)
         val labels = listOf(if (frame.stats.stepMode) "STEPS" else "TRIP", "AVG", "MAX")

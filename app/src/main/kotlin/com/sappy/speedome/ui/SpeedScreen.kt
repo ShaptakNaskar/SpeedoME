@@ -75,7 +75,7 @@ fun rememberTrackView(engine: StateFlow<EngineState>, periodMs: Long = 250): Tra
 
 private val HEADER_HEIGHT = 44.dp
 private val CONTROLS_HEIGHT = 64.dp
-private val STRIP_HEIGHT = 30.dp
+private val STRIP_HEIGHT = 40.dp // room for two lines when every switch is on
 
 @Composable
 fun SpeedScreen() {
@@ -217,23 +217,26 @@ private fun InfoStrip(settings: com.sappy.speedome.settings.AppSettings, view: T
         if (settings.nerdStrip) {
             add("SATS ${gnss.usedCount}/${gnss.satellites.size}")
             view.lastFix?.let { f ->
-                add("±${Fmt.decimal(f.hAcc, 0)} m")
-                add("${Fmt.decimal(f.lat, 5)}, ${Fmt.decimal(f.lon, 5)}")
-                f.altM?.let { add("ALT ${Fmt.decimal(it, 0)} m") }
+                add("±${Fmt.decimal(f.hAcc, 0)}m")
+                add("${Fmt.decimal(f.lat, 4)},${Fmt.decimal(f.lon, 4)}")
+                f.altM?.let { add("ALT ${Fmt.decimal(it, 0)}m") }
             }
         }
         if (settings.showHeading) {
             val h = motion.headingDeg ?: view.lastFix?.bearing?.toFloat()
-            add(h?.let { "HDG ${it.toInt().toString().padStart(3, '0')}° ${compassPoint(it)}" } ?: "HDG —")
+            add(h?.let { "HDG ${it.toInt().toString().padStart(3, '0')}°${compassPoint(it)}" } ?: "HDG —")
         }
         if (settings.showGForce) {
             val lat = view.speedMps * motion.yawRateRadS / 9.81
             val fwd = view.accelMps2 / 9.81
-            add("G ${Fmt.decimal(kotlin.math.abs(lat), 2)} lat · ${Fmt.decimal(fwd, 2)} fwd")
+            add("G ${Fmt.decimal(kotlin.math.abs(lat), 2)} lat ${Fmt.decimal(fwd, 2)} fwd")
         }
     }
     Box(Modifier.fillMaxWidth().height(STRIP_HEIGHT).background(Color.Black), contentAlignment = Alignment.Center) {
-        Text(parts.joinToString("   ·   "), color = SpeedoColors.Muted, fontSize = 11.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, maxLines = 1)
+        Text(
+            parts.joinToString(" · ") { it.replace(' ', '\u00A0') }, color = SpeedoColors.Muted, fontSize = 10.sp, lineHeight = 13.sp, textAlign = TextAlign.Center,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, maxLines = 2, modifier = Modifier.padding(horizontal = 12.dp),
+        )
     }
 }
 

@@ -104,6 +104,7 @@ fun rememberGaugeDriver(
                 val options = ThemeOptions(
                     retroCream = s.retroCream, digital = s.digital, accent = Color(s.accent.argb), average = s.average,
                     nightFocusKmh = s.nightFocusKmh, nightMaxKmh = s.nightMaxKmh, nightBrightness = s.nightBrightness,
+                    shaders = s.gpuEffects,
                 )
                 val wanted = currentTheme.fixedRangeKmh(options) ?: view.rangeKmh
                 if (rangeTo < 0) {

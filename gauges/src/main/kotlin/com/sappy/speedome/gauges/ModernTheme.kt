@@ -23,7 +23,7 @@ object ModernTheme : GaugeTheme {
         val accent = frame.options.accent
         drawRect(Color.Black)
         val haloCenter = Offset(c.x, c.y + r * .4f)
-        drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = .10f), Color.Transparent), haloCenter, r * 1.6f), r * 1.6f, haloCenter)
+        backlightGlow(haloCenter, r * 1.6f, accent, .11f, frame.options)
         drawArc(
             Color(0xFF151718), DIAL_START_DEG, DIAL_SWEEP_DEG, false, Offset(c.x - r, c.y - r), Size(2 * r, 2 * r),
             style = Stroke(r * .085f, cap = StrokeCap.Round),
@@ -64,7 +64,7 @@ object ModernTheme : GaugeTheme {
             }
             drawCircle(Color.White, lw * .32f, polar(c, r, angleRad(frame.needleKmh, frame.rangeKmh)))
         }
-        text(frame.readout.toString(), c.x, c.y + r * .02f, assets.paint(assets.outfit, 200), r * .6f, Color.White)
+        bloomText(frame.readout.toString(), c.x, c.y + r * .02f, assets.paint(assets.outfit, 200), r * .6f, Color.White, frame.options, strength = .45f)
         stats(frame, l, assets)
     }
 

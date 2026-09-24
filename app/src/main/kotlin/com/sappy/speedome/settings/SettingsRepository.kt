@@ -50,6 +50,7 @@ data class AppSettings(
     val showHeading: Boolean = false,
     val showGForce: Boolean = false,
     val mapNorthUp: Boolean = false,
+    val gpuEffects: Boolean = true,
 ) {
     val engine: EngineSettings get() = EngineSettings(mode = mode, autoRange = AutoRangeSettings(shrink, fixedKmh))
 }
@@ -79,6 +80,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val showHeading = booleanPreferencesKey("show_heading")
         val showG = booleanPreferencesKey("show_g")
         val mapNorthUp = booleanPreferencesKey("map_north_up")
+        val gpuEffects = booleanPreferencesKey("gpu_effects")
     }
 
     val state: StateFlow<AppSettings> = store.data
@@ -114,6 +116,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             showHeading = this[Keys.showHeading] ?: d.showHeading,
             showGForce = this[Keys.showG] ?: d.showGForce,
             mapNorthUp = this[Keys.mapNorthUp] ?: d.mapNorthUp,
+            gpuEffects = this[Keys.gpuEffects] ?: d.gpuEffects,
         )
     }
 
@@ -137,5 +140,6 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         this[Keys.showHeading] = s.showHeading
         this[Keys.showG] = s.showGForce
         this[Keys.mapNorthUp] = s.mapNorthUp
+        this[Keys.gpuEffects] = s.gpuEffects
     }
 }

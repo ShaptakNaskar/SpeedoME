@@ -55,17 +55,20 @@ class ThemeScreenshotTest {
 
     private fun standard() = states.map { (name, frame) -> Shot(name, frame) } + Shot("landscape", states.getValue("mid"), landscape = true)
 
-    @Test
-    fun retro() = shoot(RetroTheme, standard() + Shot("cream", states.getValue("mid").copy(options = ThemeOptions(retroCream = true))))
+    /** The same frame on the gradient fallback path (Android < 13, or effects turned off). */
+    private fun noShader(frame: GaugeFrame) = Shot("noshader", frame.copy(options = frame.options.copy(shaders = false)))
 
     @Test
-    fun modern() = shoot(ModernTheme, standard() + Shot("blue", states.getValue("mid").copy(options = ThemeOptions(accent = Color(0xFF4DA3FF)))))
+    fun retro() = shoot(RetroTheme, standard() + Shot("cream", states.getValue("mid").copy(options = ThemeOptions(retroCream = true))) + noShader(states.getValue("mid")))
+
+    @Test
+    fun modern() = shoot(ModernTheme, standard() + Shot("blue", states.getValue("mid").copy(options = ThemeOptions(accent = Color(0xFF4DA3FF)))) + noShader(states.getValue("mid")))
 
     @Test
     fun digital() = shoot(
         DigitalTheme,
         standard() + Shot("led", states.getValue("mid").copy(options = ThemeOptions(digital = DigitalColor.LED))) +
-            Shot("steps", states.getValue("mid").copy(stats = trip.copy(stepMode = true, steps = 4312))),
+            Shot("steps", states.getValue("mid").copy(stats = trip.copy(stepMode = true, steps = 4312))) + noShader(states.getValue("mid")),
     )
 
     @Test
@@ -76,6 +79,7 @@ class ThemeScreenshotTest {
             Shot("upper_lit", GaugeFrame(needleKmh = 150f, readout = 150, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, nightUpper = 1f, stats = trip)),
             Shot("warnings", GaugeFrame(needleKmh = 40f, readout = 40, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, gps = GpsDot.NONE, batteryLow = true)),
             Shot("landscape", GaugeFrame(needleKmh = 92f, readout = 92, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260), landscape = true),
+            noShader(GaugeFrame(needleKmh = 92f, readout = 92, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, stats = trip)),
         ),
     )
 
@@ -90,7 +94,7 @@ class ThemeScreenshotTest {
     )
 
     @Test
-    fun synth() = shoot(SynthwaveTheme, standard().map { it.copy(frame = it.frame.copy(scrollM = 123f, timeS = 4.0)) })
+    fun synth() = shoot(SynthwaveTheme, (standard() + noShader(states.getValue("mid"))).map { it.copy(frame = it.frame.copy(scrollM = 123f, timeS = 4.0)) })
 
     @Test
     fun sun() = shoot(SunlightTheme, standard())

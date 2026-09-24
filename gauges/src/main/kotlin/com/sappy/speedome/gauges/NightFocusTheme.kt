@@ -44,7 +44,7 @@ object NightFocusTheme : GaugeTheme {
             drawLine(green.copy(alpha = .9f * lit), polar(c, r, a), polar(c, inner, a), strokeWidth = w)
             if (major) {
                 val p = polar(c, r * .7f, a)
-                text(fmt(v.toDouble(), 0), p.x, p.y, labels, r * .11f, green.copy(alpha = .95f * lit))
+                bloomText(fmt(v.toDouble(), 0), p.x, p.y, labels, r * .11f, green.copy(alpha = .95f * lit), frame.options, strength = .8f)
             }
         }
         text("km/h", c.x, c.y - r * .32f, labels, r * .07f, green.copy(alpha = .55f * bright))

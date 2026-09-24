@@ -25,6 +25,8 @@ data class ThemeOptions(
     val nightMaxKmh: Int = 260,
     /** Night Focus brightness 0.45 (dim) … 1 (full). */
     val nightBrightness: Float = 1f,
+    /** GPU effects (AGSL, Android 13+); off uses the gradient fallbacks. */
+    val shaders: Boolean = true,
 )
 
 data class GaugeStats(
