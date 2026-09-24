@@ -24,6 +24,7 @@ class SimulatorSource(
     private val scope: CoroutineScope,
     private val tracking: TrackingEngine,
     private val settings: StateFlow<AppSettings>,
+    private val gnss: GnssRepository,
 ) {
     data class Controls(
         val preset: SimPreset? = SimPreset.CITY,
@@ -71,6 +72,7 @@ class SimulatorSource(
                 }
                 events.forEach(tracking::submit)
                 val now = SystemClock.elapsedRealtime()
+                if (now - lastTruth >= 1000) publishSky(r)
                 if (now - lastTruth >= 250) { // the readout only needs a few updates a second
                     lastTruth = now
                     _truth.value = Truth(true, r.vehicle.v, r.vehicle.odometerM)
@@ -82,6 +84,7 @@ class SimulatorSource(
 
     fun stop() {
         job?.cancel()
+        gnss.clearSatellites()
         job = null
         rig = null
         _truth.value = Truth()
@@ -106,5 +109,30 @@ class SimulatorSource(
             r.gnss.injectSpike()
             spikePending = false
         }
+    }
+
+    private val sky = kotlin.random.Random(5).let { rnd ->
+        listOf(android.location.GnssStatus.CONSTELLATION_GPS to 9, android.location.GnssStatus.CONSTELLATION_GLONASS to 7,
+            android.location.GnssStatus.CONSTELLATION_GALILEO to 7, android.location.GnssStatus.CONSTELLATION_BEIDOU to 8)
+            .flatMap { (c, n) -> List(n) { Triple(c, 1 + rnd.nextInt(32), floatArrayOf(rnd.nextFloat() * 360, 8 + rnd.nextFloat() * 80, rnd.nextFloat() * 6)) } }
+    }
+
+    /** Pretend satellites and NMEA so the Nerd page works with the simulator. */
+    private fun publishSky(r: SimRig) {
+        val c = _controls.value
+        gnss.onHardware("SpeedoME simulator")
+        gnss.onSatellites(sky.map { (con, id, p) ->
+            val cn0 = if (c.signal) 30 + p[1] * .18f + p[2] else 10f
+            Satellite(con, id, cn0, p[0], p[1], c.signal && cn0 > 30 && p[1] > 12, if (id % 3 == 0) 1_176_450_000f else 1_575_420_000f)
+        })
+        if (!c.signal) return
+        val t = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC)
+        val hms = "%02d%02d%02d.00".format(java.util.Locale.ROOT, t.hour, t.minute, t.second)
+        val lat = r.vehicle.lat
+        val lon = r.vehicle.lon
+        fun dm(v: Double, w: Int) = "%0${w}d%07.4f".format(java.util.Locale.ROOT, kotlin.math.abs(v).toInt(), (kotlin.math.abs(v) % 1) * 60)
+        val body = "GNRMC,$hms,A,${dm(lat, 2)},${if (lat >= 0) "N" else "S"},${dm(lon, 3)},${if (lon >= 0) "E" else "W"},%.2f,%.1f,%02d%02d%02d,,,A"
+            .format(java.util.Locale.ROOT, r.vehicle.v * 1.943844, Math.toDegrees(r.vehicle.heading), t.dayOfMonth, t.monthValue, t.year % 100)
+        gnss.onNmea("$" + body + "*" + com.sappy.speedome.engine.replay.Nmea.checksum(body))
     }
 }

@@ -51,7 +51,7 @@ import com.sappy.speedome.engine.EngineState
 import com.sappy.speedome.engine.GpsQuality
 import com.sappy.speedome.engine.TrackView
 import com.sappy.speedome.engine.view
-import com.sappy.speedome.gauges.GaugeThemes
+import com.sappy.speedome.gauges.RetroTheme
 import com.sappy.speedome.gauges.GaugeView
 import com.sappy.speedome.ui.theme.SpeedoColors
 import kotlinx.coroutines.delay
@@ -75,6 +75,7 @@ fun rememberTrackView(engine: StateFlow<EngineState>, periodMs: Long = 250): Tra
 
 private val HEADER_HEIGHT = 44.dp
 private val CONTROLS_HEIGHT = 64.dp
+private val STRIP_HEIGHT = 30.dp
 
 @Composable
 fun SpeedScreen() {
@@ -82,8 +83,10 @@ fun SpeedScreen() {
     val settings by app.settings.state.collectAsStateWithLifecycle()
     val simRunning by remember { app.simulator.truth.map { it.running }.distinctUntilChanged() }.collectAsStateWithLifecycle(false)
     val view = rememberTrackView(app.tracking.state)
-    val theme = GaugeThemes.byId(settings.theme)
-    val needsCompass = theme.id == "tape" || settings.showHeading
+    val entry = SpeedThemes.byId(settings.theme)
+    val theme = entry.gauge ?: RetroTheme
+    val showStrip = entry.gauge != null && theme.id != "night" && (settings.nerdStrip || settings.showHeading || settings.showGForce)
+    val needsCompass = theme.id == "tape" || settings.showHeading || settings.showGForce
     DisposableEffect(needsCompass) {
         if (needsCompass) app.motion.acquire()
         onDispose { if (needsCompass) app.motion.release() }
@@ -110,8 +113,8 @@ fun SpeedScreen() {
     val scope = rememberCoroutineScope()
 
     fun switchTheme(delta: Int) {
-        val all = GaugeThemes.all
-        val next = all[(all.indexOf(theme) + delta + all.size) % all.size]
+        val all = SpeedThemes.all
+        val next = all[(all.indexOf(entry) + delta + all.size) % all.size]
         scope.launch { app.settings.update { it.copy(theme = next.id) } }
         if (settings.startupSweep && driver.frame.needleKmh < 1f) driver.sweep()
     }
@@ -121,14 +124,14 @@ fun SpeedScreen() {
         // Landscape (car mount): the gauge takes the full height and the controls move into the header.
         val landscape = maxWidth > maxHeight
         val gaugeHeight = if (landscape) {
-            (maxHeight - HEADER_HEIGHT).coerceAtLeast(160.dp)
+            (maxHeight - HEADER_HEIGHT - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(160.dp)
         } else {
-            (maxHeight - HEADER_HEIGHT - CONTROLS_HEIGHT).coerceAtLeast(240.dp)
+            (maxHeight - HEADER_HEIGHT - CONTROLS_HEIGHT - if (showStrip) STRIP_HEIGHT else 0.dp).coerceAtLeast(240.dp)
         }
         Column(Modifier.fillMaxSize().background(chrome).verticalScroll(rememberScrollState())) {
             Header(
                 ink = ink,
-                view.quality, simRunning, theme.title, onPrev = { switchTheme(-1) }, onNext = { switchTheme(1) },
+                view.quality, simRunning, entry.title, onPrev = { switchTheme(-1) }, onNext = { switchTheme(1) },
                 controls = if (landscape) ({ SessionControls(view) }) else null,
             )
             Box(Modifier.padding(horizontal = 16.dp)) { PermissionCards(permissions, settings.mode) }
@@ -142,10 +145,12 @@ fun SpeedScreen() {
                     )
                 },
             ) {
-                Crossfade(theme, animationSpec = tween(250), label = "theme") { t ->
-                    GaugeView(t, { driver.frame }, Modifier.fillMaxSize())
+                Crossfade(entry, animationSpec = tween(250), label = "theme") { e ->
+                    val gauge = e.gauge
+                    if (gauge != null) GaugeView(gauge, { driver.frame }, Modifier.fillMaxSize()) else NerdPage(Modifier.fillMaxSize())
                 }
             }
+            if (showStrip) InfoStrip(settings, view, driver)
             if (!landscape) Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth().background(Color.Black), contentAlignment = Alignment.Center) { SessionControls(view) }
             Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (view.lastFix == null && permissions.state.canTrack && !simRunning) {
@@ -197,3 +202,35 @@ private fun Arrow(glyph: String, description: String, ink: Color, onClick: () ->
         contentAlignment = Alignment.Center,
     ) { Text(glyph, color = ink, fontSize = 22.sp) }
 }
+
+/** Compact data strip under any gauge: nerd readouts, heading and G-force, per the Settings switches. */
+@Composable
+private fun InfoStrip(settings: com.sappy.speedome.settings.AppSettings, view: TrackView, driver: GaugeDriver) {
+    val app = LocalAppContainer.current
+    val gnss by app.gnss.snapshot.collectAsStateWithLifecycle()
+    val motion by app.motion.motion.collectAsStateWithLifecycle()
+    val parts = buildList {
+        if (settings.nerdStrip) {
+            add("SATS ${gnss.usedCount}/${gnss.satellites.size}")
+            view.lastFix?.let { f ->
+                add("±${Fmt.decimal(f.hAcc, 0)} m")
+                add("${Fmt.decimal(f.lat, 5)}, ${Fmt.decimal(f.lon, 5)}")
+                f.altM?.let { add("ALT ${Fmt.decimal(it, 0)} m") }
+            }
+        }
+        if (settings.showHeading) {
+            val h = motion.headingDeg ?: view.lastFix?.bearing?.toFloat()
+            add(h?.let { "HDG ${it.toInt().toString().padStart(3, '0')}° ${compassPoint(it)}" } ?: "HDG —")
+        }
+        if (settings.showGForce) {
+            val lat = view.speedMps * motion.yawRateRadS / 9.81
+            val fwd = view.accelMps2 / 9.81
+            add("G ${Fmt.decimal(kotlin.math.abs(lat), 2)} lat · ${Fmt.decimal(fwd, 2)} fwd")
+        }
+    }
+    Box(Modifier.fillMaxWidth().height(STRIP_HEIGHT).background(Color.Black), contentAlignment = Alignment.Center) {
+        Text(parts.joinToString("   ·   "), color = SpeedoColors.Muted, fontSize = 11.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, maxLines = 1)
+    }
+}
+
+private fun compassPoint(deg: Float): String = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")[(((deg % 360) + 360) % 360 / 45f + .5f).toInt() % 8]

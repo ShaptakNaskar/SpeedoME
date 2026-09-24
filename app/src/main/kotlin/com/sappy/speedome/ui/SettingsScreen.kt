@@ -47,7 +47,6 @@ import com.sappy.speedome.engine.Mode
 import com.sappy.speedome.engine.ShrinkPolicy
 import com.sappy.speedome.gauges.AverageDisplay
 import com.sappy.speedome.gauges.DigitalColor
-import com.sappy.speedome.gauges.GaugeThemes
 import com.sappy.speedome.settings.Accent
 import com.sappy.speedome.settings.AppSettings
 import com.sappy.speedome.ui.theme.SpeedoColors
@@ -73,7 +72,7 @@ fun SettingsScreen() {
         Text("Settings", style = MaterialTheme.typography.headlineSmall, color = SpeedoColors.Text)
 
         Section("THEME")
-        Choices(GaugeThemes.all.map { it.title.lowercase().replaceFirstChar(Char::uppercase) to it.id }, s.theme) { id -> edit { it.copy(theme = id) } }
+        Choices(SpeedThemes.all.map { it.title.lowercase().replaceFirstChar(Char::uppercase) to it.id }, s.theme) { id -> edit { it.copy(theme = id) } }
         Choices(listOf("Black dial" to false, "Cream dial" to true), s.retroCream, title = "Retro") { v -> edit { it.copy(retroCream = v) } }
         Choices(
             listOf("VFD cyan" to DigitalColor.VFD, "LED red" to DigitalColor.LED, "LCD amber" to DigitalColor.LCD), s.digital, title = "Digital",
@@ -99,6 +98,9 @@ fun SettingsScreen() {
             listOf("Both averages" to AverageDisplay.BOTH, "Moving" to AverageDisplay.MOVING, "Overall" to AverageDisplay.OVERALL), s.average,
             title = "Average speed",
         ) { v -> edit { it.copy(average = v) } }
+        ToggleRow("Nerd strip", "Satellites, accuracy, position and altitude under any gauge.", s.nerdStrip) { on -> edit { it.copy(nerdStrip = on) } }
+        ToggleRow("Heading", "Compass heading under the gauge.", s.showHeading) { on -> edit { it.copy(showHeading = on) } }
+        ToggleRow("G-force", "Sideways and forward G under the gauge.", s.showGForce) { on -> edit { it.copy(showGForce = on) } }
         ToggleRow("Startup sweep", "The needle sweeps to the top and back when the gauge appears.", s.startupSweep) { on -> edit { it.copy(startupSweep = on) } }
 
         Section("AUTO-RANGE")
