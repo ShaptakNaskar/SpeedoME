@@ -32,12 +32,12 @@ These need a real phone and can't be done on the emulator (docs/plan.md §11):
 2. Force-kill mid-trip on the phone (Developer options → Kill app, or swipe away) and confirm the resume or restart path.
 3. Battery use per hour, screen on and screen off.
 4. Doze: park for 1 h with the screen off, then drive off, and check that the live meter auto-stopped and tracking restarts on open.
-5. Optional: `./gradlew :app:generateReleaseBaselineProfile` with the phone connected, to replace the wildcard profile with a measured one.
+5. ~~Measured Baseline Profile~~: done on the Nothing Phone 2 (24 Sep 2026).
 6. Review the Android 17 (API 37) behaviour changes, then raise targetSdk from 36.
 
 ## Decisions made during implementation
 
-- **Baseline Profile:** the generator run makes the rooted userdebug emulator reboot (twice, reproducibly), so the APK ships a wildcard profile for our own classes. Compose and the other AndroidX libraries bring their own.
+- **Baseline Profile:** measured on the Nothing Phone 2 over wireless adb: 20k rules, with a wildcard rule kept for SpeedoME code the run didn't reach. The generator reboots the rooted userdebug emulator, so use a real phone. With `includeInStartupProfile` the library writes only `*-startup-prof.txt`, and the plugin's copy step then fails the Gradle task even though the test passes. Copy that file into `app/src/main/baseline-prof.txt` by hand.
 - **mph:** the auto-range ladder runs on display-unit speed, so mph dials get round rungs. Night Focus settings stay in km/h and map to the nearest round mph.
 
 - **Reliability:** a background FGS start needs the battery exemption, and background location is needed for it to receive fixes, so the sticky restart requires both. Otherwise the service stops and the snapshot resumes on reopen. `mockstream.py` runs adb in its own session, because Ctrl+C and `timeout` signal the whole process group, and the MOCK_STOP cleanup must still reach the phone.
