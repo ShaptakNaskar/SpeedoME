@@ -7,7 +7,6 @@ import com.sappy.speedome.gauges.NightFocusTheme
 import com.sappy.speedome.gauges.RetroTheme
 import com.sappy.speedome.gauges.SpeedTapeTheme
 import com.sappy.speedome.gauges.SunlightTheme
-import com.sappy.speedome.gauges.SynthwaveTheme
 
 /**
  * The Speed-tab carousel in plan order (docs/plan.md §9). Canvas themes come from :gauges; the Map
@@ -22,9 +21,10 @@ object SpeedThemes {
     val all: List<SpeedThemeEntry> = listOf(
         RetroTheme.entry(), ModernTheme.entry(), DigitalTheme.entry(), NightFocusTheme.entry(),
         SpeedThemeEntry(MAP, "MAP", null), SpeedThemeEntry(NERD, "NERD", null),
-        SpeedTapeTheme.entry(), SynthwaveTheme.entry(), SunlightTheme.entry(),
+        SpeedTapeTheme.entry(), SunlightTheme.entry(),
     )
 
+    /** Unknown ids (such as the removed Synthwave theme) fall back to Retro. */
     fun byId(id: String?) = all.firstOrNull { it.id == id } ?: all.first()
 
     private fun GaugeTheme.entry() = SpeedThemeEntry(id, title, this)

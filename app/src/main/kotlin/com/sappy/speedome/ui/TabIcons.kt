@@ -45,6 +45,23 @@ object TabIcons {
         stroke { moveTo(7.5f, 12f); lineTo(11.5f, 9f); lineTo(15.5f, 12.5f) }
     }
 
+    /** The "end of speed limit" road sign: a ring with a slash. */
+    val NoLimit: ImageVector = icon("no-limit") {
+        stroke { dot(12f, 12f, 8.5f) }
+        stroke { moveTo(17.5f, 6.5f); lineTo(6.5f, 17.5f) }
+    }
+
+    /** Frame the whole route: four corners around a dot. */
+    val Fit: ImageVector = icon("fit") {
+        stroke {
+            moveTo(4f, 9f); lineTo(4f, 4f); lineTo(9f, 4f)
+            moveTo(15f, 4f); lineTo(20f, 4f); lineTo(20f, 9f)
+            moveTo(20f, 15f); lineTo(20f, 20f); lineTo(15f, 20f)
+            moveTo(9f, 20f); lineTo(4f, 20f); lineTo(4f, 15f)
+        }
+        fill { dot(12f, 12f, 2.4f) }
+    }
+
     private class Scope(val builder: ImageVector.Builder) {
         fun stroke(block: PathBuilder.() -> Unit) {
             builder.path(stroke = SolidColor(Color.Black), strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round, pathBuilder = block)

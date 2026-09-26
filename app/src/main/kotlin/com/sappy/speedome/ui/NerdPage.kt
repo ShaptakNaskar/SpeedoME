@@ -16,7 +16,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.sappy.speedome.LocalAppContainer
 import com.sappy.speedome.engine.SpeedSource
 import com.sappy.speedome.engine.view
@@ -59,10 +62,13 @@ fun NerdPage(modifier: Modifier = Modifier) {
     val nmea by app.gnss.nmea.collectAsStateWithLifecycle()
     val motion by app.motion.motion.collectAsStateWithLifecycle()
     val trail = remember { ArrayDeque<Offset>() }
-    val tick by produceState(0L) {
-        while (true) {
-            delay(100)
-            value = SystemClock.elapsedRealtimeNanos()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val tick by produceState(0L, lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                delay(100)
+                value = SystemClock.elapsedRealtimeNanos()
+            }
         }
     }
     val assets = rememberGaugeAssets()

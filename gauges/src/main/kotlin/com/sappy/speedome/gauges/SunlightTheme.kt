@@ -37,9 +37,10 @@ object SunlightTheme : GaugeTheme {
         drawRect(Color.White)
         text(frame.options.units.label.uppercase(), g.numberX, g.numberY + g.digit * .5f, assets.paint(assets.outfit, 800), g.digit * .1f, Color.Black, spacingEm = .2f)
         drawRect(Color(0xFFE4E4E4), Offset(g.barX, g.barY), Size(g.barW, g.barH))
+        // Speed limit: the track is red from the limit on.
+        frame.limitFraction()?.let { f -> drawRect(Color(0xFFFFB1AA), Offset(g.barX + g.barW * f, g.barY), Size(g.barW * (1 - f), g.barH)) }
         val labels = assets.paint(assets.outfit, 700)
-        for (set in frame.scaleSets()) for (q in 0..4) {
-            val v = set.max * q / 4
+        for (set in frame.scaleSets()) for (v in barLabels(set.max)) {
             if (v > frame.rangeKmh * 1.001f) break
             text(fmt(v.toDouble(), 0), g.barX + g.barW * v / frame.rangeKmh, g.barY + g.barH + 14.dp.toPx(), labels, 13.dp.toPx(), Color.Black.copy(alpha = set.alpha))
         }
@@ -47,8 +48,10 @@ object SunlightTheme : GaugeTheme {
 
     override fun DrawScope.drawDynamic(frame: GaugeFrame, assets: GaugeAssets) {
         val g = geo(assets)
-        text(frame.readout.toString(), g.numberX, g.numberY, assets.paint(assets.outfit, 800), g.digit, Color.Black)
-        drawRect(Color.Black, Offset(g.barX, g.barY), Size(g.barW * (frame.needleKmh / frame.rangeKmh).coerceIn(0f, 1f), g.barH))
+        // A deeper red than the dark themes' keeps the contrast on white.
+        val ink = frame.warned(Color.Black, Color(0xFFD01716))
+        text(frame.readout.toString(), g.numberX, g.numberY, assets.paint(assets.outfit, 800), g.digit, ink)
+        drawRect(ink, Offset(g.barX, g.barY), Size(g.barW * (frame.needleKmh / frame.rangeKmh).coerceIn(0f, 1f), g.barH))
         val value = assets.paint(assets.outfit, 800)
         val label = assets.paint(assets.outfit, 700)
         val valueSize = minOf(40.dp.toPx(), g.rowH * .55f)

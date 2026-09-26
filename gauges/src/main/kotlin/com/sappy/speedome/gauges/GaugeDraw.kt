@@ -6,9 +6,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.lerp
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.cos
@@ -28,16 +30,57 @@ fun angleRad(value: Float, max: Float): Float {
 
 fun polar(c: Offset, r: Float, a: Float) = Offset(c.x + cos(a) * r, c.y + sin(a) * r)
 
+/** The speed-limit red: the red zone on every scale, and what gauges fade to as you near the limit. */
+val LIMIT_RED = Color(0xFFFF3B30)
+
+/** [base] faded toward [alert] as the speed nears the limit ([GaugeFrame.limitWarn]). */
+fun GaugeFrame.warned(base: Color, alert: Color = LIMIT_RED): Color = if (limitWarn <= 0f) base else lerp(base, alert, limitWarn)
+
+/** Where the limit sits on a 0–[max] scale (0–1); null when there's no limit or it's off the scale. */
+fun GaugeFrame.limitFraction(max: Float = rangeKmh): Float? = limitKmh?.let { it / max }?.takeIf { it < 1f }
+
+/** True for scale values in the red zone (at or above the limit). */
+fun GaugeFrame.inRedZone(value: Float): Boolean = limitKmh?.let { value >= it - 1e-3f } ?: false
+
+/** An arc of the 270° dial from [from] to [to] on a 0–[max] scale. */
+fun DrawScope.scaleArc(center: Offset, radius: Float, width: Float, from: Float, to: Float, max: Float, color: Color) {
+    val a0 = DIAL_SWEEP_DEG * (from / max).coerceIn(0f, 1f)
+    val a1 = DIAL_SWEEP_DEG * (to / max).coerceIn(0f, 1f)
+    if (a1 <= a0) return
+    drawArc(color, DIAL_START_DEG + a0, a1 - a0, false, Offset(center.x - radius, center.y - radius), Size(2 * radius, 2 * radius), style = Stroke(width))
+}
+
+/** The red zone of a round dial: from the limit to the end of the 0–[max] scale, like a rev counter's redline. */
+fun DrawScope.limitArc(frame: GaugeFrame, center: Offset, radius: Float, width: Float, color: Color, max: Float = frame.rangeKmh) {
+    val limit = frame.limitKmh ?: return
+    scaleArc(center, radius, width, limit, max, max, color)
+}
+
 /** Label and minor-tick spacing for a dial maximum. */
 data class Step(val label: Float, val minor: Float)
 
+/** Scale steps by dial maximum; the keys are the auto-range rungs (and Night Focus's dials). */
+private val STEPS = listOf(
+    10f to Step(1f, .5f), 20f to Step(2f, 1f), 40f to Step(5f, 1f), 60f to Step(10f, 2f), 80f to Step(10f, 2f),
+    120f to Step(20f, 5f), 160f to Step(20f, 5f), 200f to Step(20f, 10f), 240f to Step(20f, 10f), 260f to Step(20f, 10f),
+    320f to Step(40f, 10f), 500f to Step(50f, 10f), 1000f to Step(100f, 20f),
+)
+
 fun niceStep(max: Float): Step {
-    val table = listOf(
-        10f to Step(1f, .5f), 20f to Step(2f, 1f), 40f to Step(5f, 1f), 60f to Step(10f, 2f), 80f to Step(10f, 2f),
-        120f to Step(20f, 5f), 160f to Step(20f, 5f), 200f to Step(20f, 10f), 240f to Step(20f, 10f), 260f to Step(20f, 10f),
-        320f to Step(40f, 10f), 500f to Step(50f, 10f), 1000f to Step(100f, 20f),
-    )
-    return table.firstOrNull { max <= it.first + 1e-3f }?.second ?: Step(100f, 20f)
+    val s = STEPS.firstOrNull { max <= it.first + 1e-3f }?.second ?: Step(100f, 20f)
+    // A scale between rungs (a speed-limit scale such as 0–65) ticks every 5, so its end gets a tick.
+    val ticks = max / s.minor
+    return if (kotlin.math.abs(ticks - ticks.roundToLong()) < 1e-3f || max % 5f > 1e-3f) s else s.copy(minor = 5f)
+}
+
+/**
+ * Labels under a bar scale: quarters on an auto-range rung (0–80: 0, 20, 40, 60, 80), otherwise the
+ * dial's label step, so a speed-limit scale such as 0–65 reads 0, 10, … 60.
+ */
+fun barLabels(max: Float): List<Float> {
+    if (STEPS.any { kotlin.math.abs(it.first - max) < 1e-3f }) return List(5) { max * it / 4 }
+    val step = niceStep(max).label
+    return List(floor(max / step + 1e-3f).toInt() + 1) { step * it }
 }
 
 /** Old and new scales cross-fading while auto-range changes the dial. */

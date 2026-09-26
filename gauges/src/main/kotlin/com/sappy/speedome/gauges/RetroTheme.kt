@@ -38,16 +38,16 @@ object RetroTheme : GaugeTheme {
 
         val ink = ink(cream)
         val labelPaint = assets.paint(assets.oswald, 500)
+        // Speed limit: a redline band along the rim, and red ticks and numerals inside it.
+        limitArc(frame, c, REDLINE_R * r, REDLINE_W * r, LIMIT_RED.copy(alpha = .9f))
         for (set in frame.scaleSets()) {
             set.forEachTick(frame.rangeKmh) { v, major ->
                 val a = angleRad(v, frame.rangeKmh)
-                drawLine(
-                    ink.copy(alpha = set.alpha), polar(c, r * .93f, a), polar(c, if (major) r * .8f else r * .87f, a),
-                    strokeWidth = if (major) r * .022f else r * .009f,
-                )
+                val col = (if (frame.inRedZone(v)) LIMIT_RED else ink).copy(alpha = set.alpha)
+                drawLine(col, polar(c, r * .93f, a), polar(c, if (major) r * .8f else r * .87f, a), strokeWidth = if (major) r * .022f else r * .009f)
                 if (major) {
                     val p = polar(c, r * .66f, a)
-                    text(fmt(v.toDouble(), 0), p.x, p.y, labelPaint, r * .135f, ink.copy(alpha = set.alpha))
+                    text(fmt(v.toDouble(), 0), p.x, p.y, labelPaint, r * .135f, col)
                 }
             }
         }
@@ -64,11 +64,17 @@ object RetroTheme : GaugeTheme {
         val c = l.center
         val r = l.radius
         val (drumTop, cell) = drumGeometry(c, r)
-        drum(drumTop, cell, frame.stats.distanceM / frame.options.units.metresPerDistance, 6, assets, Color(0xFFEFE8D6), Color(0xFF141414), Color(0xFF141414), Color(0xFFE9E1CC))
+        val odometer = frame.odometerM ?: frame.stats.distanceM
+        drum(drumTop, cell, odometer / frame.options.units.metresPerDistance, 6, assets, Color(0xFFEFE8D6), Color(0xFF141414), Color(0xFF141414), Color(0xFFE9E1CC))
 
+        // Nearing the limit the redline lights up, like a warning lamp behind the face.
+        if (frame.limitWarn > 0f) {
+            limitArc(frame, c, REDLINE_R * r, REDLINE_W * r * 2.6f, LIMIT_RED.copy(alpha = .18f * frame.limitWarn))
+            limitArc(frame, c, REDLINE_R * r, REDLINE_W * r, Color(0xFFFF8A7A).copy(alpha = .8f * frame.limitWarn))
+        }
         val a = angleRad(frame.needleKmh, frame.rangeKmh)
         needle(Offset(c.x, c.y + r * .02f), r * .9f, a, Color.Black.copy(alpha = .45f), tail = .2f, width = .04f)
-        needle(c, r * .9f, a, Color(0xFFFF6A18), tail = .2f, width = .032f)
+        needle(c, r * .9f, a, frame.warned(Color(0xFFFF6A18), Color(0xFFFF1E1E)), tail = .2f, width = .032f)
         val cap = assets.memo("retro-cap", size) {
             Brush.radialGradient(listOf(Color(0xFF5A5A58), Color(0xFF0D0D0C)), Offset(c.x - r * .03f, c.y - r * .03f), r * .1f)
         }
@@ -76,6 +82,10 @@ object RetroTheme : GaugeTheme {
         glassReflection(c, r, frame.options)
         stats(frame, l, assets)
     }
+
+    /** The redline band sits on the rim, outside the ticks. */
+    private const val REDLINE_R = .965f
+    private const val REDLINE_W = .05f
 
     private fun drumGeometry(c: Offset, r: Float): Pair<Offset, Size> {
         val cell = Size(r * .1f, r * .14f)

@@ -2,7 +2,7 @@
 
 *Status: design approved 2026-09-24 · Platform: Android only · Stack: Kotlin + Jetpack Compose*
 
-Visual and behavioural reference: [`theme-lab.html`](theme-lab.html) (open it in a browser). It contains working reference versions of the speed filter, auto-range rules, needle springs, odometer drum and all nine themes. When this document and the lab disagree, this document wins; where the document is silent, copy the lab's constants.
+Visual and behavioural reference: [`theme-lab.html`](theme-lab.html) (open it in a browser). It contains working reference versions of the speed filter, auto-range rules, needle springs, odometer drum and all eight themes. When this document and the lab disagree, this document wins; where the document is silent, copy the lab's constants.
 
 ---
 
@@ -12,13 +12,14 @@ Visual and behavioural reference: [`theme-lab.html`](theme-lab.html) (open it in
 - **Why:** accurate speed with no GPS glitches (no 200 km/h spikes), a dial that adapts to how fast you're going, trips that survive the app being killed, and a look people enjoy using.
 - **Who:** drivers with the phone in a mount, walkers and joggers (step mode), and GPS nerds.
 - **Speed tab:**
-  - Nine swipeable themes: Retro · Modern · Digital · Night Focus · Map · Nerd · Speed Tape · Synthwave · Sunlight.
+  - Eight swipeable themes: Retro · Modern · Digital · Night Focus · Map · Nerd · Speed Tape · Sunlight.
   - Auto-range, which can be switched off.
+  - Speed limit: a red zone on the scale, a red fade near it, and vibration.
   - Moving / overall / both averages, max speed, distance and time.
   - Target distance with arrival time and arrive-by.
   - Drive and step modes.
 - **Trips:**
-  - A live meter counts from the moment the app opens but is never saved.
+  - A live meter counts while the app is open. It is never saved, and it ends when you leave the app.
   - Start/Stop records a trip to history, with GPX export.
   - Killed mid-trip → auto-resume if the gap is under 30 min, otherwise ask.
 - **Constraints:**
@@ -27,12 +28,12 @@ Visual and behavioural reference: [`theme-lab.html`](theme-lab.html) (open it in
   - Battery-optimization exemption.
   - Optional "Allow all the time" location for self-healing restarts.
   - Fully testable with fake GPS (in-app simulator plus Android mock location).
-- **Not in v1:** iOS, HUD mode, floating over other apps, speed alerts (deferred), Health Connect (dropped for now), Tachymeter theme, turn-by-turn navigation or routing, accounts or cloud sync, ads, analytics.
+- **Not in v1:** iOS, HUD mode, floating over other apps, Health Connect (dropped for now), Tachymeter theme, turn-by-turn navigation or routing, accounts or cloud sync, ads, analytics.
 
 ## 2. Assumptions (confirmed unless marked)
 
 - **Pressing Start begins a fresh trip at zero.** The unsaved live counts are dropped. After Stop, a fresh live meter begins. The live meter has a Reset button.
-- **Live meter in the background:** the unsaved live meter keeps counting in the background, but stops itself after ~15 min parked while the app is backgrounded. Recorded trips never stop on their own.
+- **Live meter only while open (D27):** the unsaved live meter runs while the app is on screen. Leaving the app (Home, another app, screen off) ends it and stops GPS, so nothing runs in the background. Recorded trips carry on in the background and never stop on their own.
 - **Night Focus defaults:** 0–260 dial, lit up to 140, green on black with an orange needle.
 - **Play Store ready:** built so it can go on the Play Store (privacy policy, permission justifications), even if first installs are sideloaded. Play-sensitive features sit behind build flags.
 - **Android version:** Android 8.0+ (minSdk 26). compileSdk 37 (required by Compose BOM 2026.09); targetSdk 36 until the Android 17 behaviour changes are reviewed in M9. GPU shader effects need Android 13+, with gradient fallbacks below that.
@@ -67,9 +68,9 @@ Visual and behavioural reference: [`theme-lab.html`](theme-lab.html) (open it in
 | D9 | Live meter (unsaved) + Start/Stop recorded trips | Auto-record everything | Quick glances shouldn't clutter Trips. |
 | D10 | Resume automatically if the gap is < 30 min, otherwise ask | Always ask; always auto | Seamless for short kills, safe for stale sessions. |
 | D11 | Nerd mode is its own theme page, plus an optional strip under any theme. Heading and G-force have separate switches. | Strip only; page only | Owner: both. |
-| D12 | Nine themes (Retro, Modern, Digital, Night Focus, Map, Nerd, Speed Tape, Synthwave, Sunlight) | Tachymeter, race shift-lights, CRT terminal, airspeed dial | Owner picks. |
+| D12 | Eight themes (Retro, Modern, Digital, Night Focus, Map, Nerd, Speed Tape, Sunlight) | Tachymeter, race shift-lights, CRT terminal, airspeed dial | Owner picks. Synthwave shipped in M6 and was removed on 2026-09-26. |
 | D13 | Night Focus: fixed dial, customizable lit range, no auto-range | Auto-range on every theme | Range changes would defeat a minimal night display. |
-| D14 | HUD dropped; floating-over-Maps replaced by the Map theme; speed alert deferred; Health Connect dropped for now | — | Owner's scope calls. |
+| D14 | HUD dropped; floating-over-Maps replaced by the Map theme; speed alert deferred (added 2026-09-26 as D28); Health Connect dropped for now | — | Owner's scope calls. |
 | D15 | One process; a foreground service owns the engine | Separate tracking process; engine in the UI | Simplest, one source of truth. Persistence and resume cover crashes. |
 | D16 | Gauges drawn in Compose Canvas + AGSL shaders | Rive; raw OpenGL/Vulkan | Full control of data-driven scales. GPU effects without hand-building text and layout. |
 | D17 | "Allow all the time" location as an optional upgrade | While-in-use only | Together with the battery exemption, it lets the service restart itself mid-trip. The app works fully without it, and it can be switched off per build if Play objects. |
@@ -82,6 +83,8 @@ Visual and behavioural reference: [`theme-lab.html`](theme-lab.html) (open it in
 | D24 | Keep-screen-on window flag | Screen wake lock | Needs no permission and releases automatically. The screen wake lock is deprecated anyway. |
 | D25 | Needle follows the filter's prediction between fixes (speed + acceleration × time), through a per-theme spring | Step once per fix | Validated in the Theme Lab: smooth at 1 Hz. |
 | D26 | Manual dependency wiring (a small app container), no DI framework | Hilt, Koin | A small app with fewer dependencies builds faster. |
+| D27 | The live meter runs only while the app is on screen; the foreground service runs only while a trip records | Keep counting in the background with a 15 min parked auto-stop (the M8 design) | Owner (2026-09-26): like other speedometers, a closed app shouldn't hold the CPU or GPS when nothing is recording. |
+| D28 | Speed limit: scales fixed at 125 % of it (rounded up to 5), red zone on every scale, red fade over the last 10 %, one buzz on reaching it, then pulses at 1/2/3/4 Hz up to 5/10/20 % over and beyond | Sound alerts; one fixed alert; capping auto-range instead of fixing the scale | Owner's spec (2026-09-26). The buzz works with the screen off while recording. |
 
 ---
 
@@ -110,7 +113,7 @@ GPS fixes · GNSS status · NMEA · step counter/detector · rotation vector · 
 | Module | Kind | Contents |
 |---|---|---|
 | `:engine` | Kotlin/JVM library, **no Android imports** | Event types, `EngineState`, `reduce()`, Kalman filter, gates, distance/stats, auto-range, ETA / arrive-by, step maths, GPX writer, replay harness. Unit-tested on the JVM. It is also the module an iOS port would reuse through Kotlin Multiplatform. |
-| `:gauges` | Android library (Compose) | Gauge building blocks and the nine themes. Input: `TrackState` + `ThemeSettings`. Previews and screenshot tests. |
+| `:gauges` | Android library (Compose) | Gauge building blocks and the themes. Input: `TrackState` + `ThemeSettings`. Previews and screenshot tests. |
 | `:app` | Android application | `TrackingService`, sensor adapters, Room, DataStore, screens (Speed / Trips / Settings), the map, dev tools, and the mock provider (debug only). |
 
 ### Engine API sketch
@@ -196,7 +199,7 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
   - *Immediate*: always the smallest range where v < 90 %.
   - *Off*: a fixed dial chosen by the user.
 - **Animation:** the scale max eases over 450 ms. Old labels fade out while new labels fade in. The needle is always mapped with the current animated max.
-- **Where it applies:** Retro, Modern, Digital (bar graph), Synthwave (bar), Sunlight (bar), and the Map's route-colour scale. It does not apply to Night Focus (fixed dial), Speed Tape (infinite tape) or Nerd.
+- **Where it applies:** Retro, Modern, Digital (bar graph), Sunlight (bar), and the Map's route-colour scale. It does not apply to Night Focus (fixed dial), Speed Tape (infinite tape) or Nerd.
 
 ### Stats and averages
 
@@ -221,6 +224,16 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
 - **Step speed:** feeds the Kalman filter as the third source.
 - **Display:** pace (min/km), cadence and steps. Dial range 0–10 → 0–20.
 
+### Speed limit (D28)
+
+- **Setting:** set from the LIMIT button on the Speed screen, in display units with presets. Off by default. Stored in m/s, so a change of units keeps the same speed.
+- **Scale:** while a limit is set, every dial and bar (Night Focus included) stops auto-ranging and is fixed at 125 % of the limit, rounded up to a multiple of 5 (50 → 0–65, 100 → 0–125). Needles and bars stop at the end; the digits keep showing the real speed. Every theme marks the range from the limit up in red, like a rev counter's redline: a band on the round dials, red bars on Digital, a red track on Sunlight, a red band up the Speed Tape (which keeps its moving window).
+- **Colour:** needles, bars and digits fade to red between 90 % of the limit and the limit, following the needle.
+- **Vibration** (setting, on by default), from the filtered speed:
+  - One 350 ms buzz on reaching the limit. It re-arms only below 97 %, so GPS jitter at the limit doesn't repeat it.
+  - While over: short pulses at 1 Hz up to 5 % over, 2 Hz to 10 %, 3 Hz to 20 %, 4 Hz beyond. Pulsing continues down to 99 %, and slowing down leaves a band only a point below its edge.
+  - Quiet without a fix. It runs while tracking is active, so with the screen off only while a trip records (the foreground service keeps vibration allowed).
+
 ### Night Focus lighting
 
 - The lit portion runs from 0 to the focus speed (setting: 60–160, default 140).
@@ -234,9 +247,9 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
 
 | | Live meter | Recorded trip |
 |---|---|---|
-| Starts | When the app opens (Speed tab) | **Start**: a fresh trip at zero, and the live meter is dropped |
+| Starts | When the app opens | **Start**: a fresh trip at zero, and the live meter is dropped |
 | Controls | Reset | Pause / Resume / **Stop** |
-| Ends | Reset, "Stop tracking" in the notification, or ~15 min parked in the background | Stop opens a summary sheet. The trip is saved by default, with a Discard button. A fresh live meter then begins. |
+| Ends | Reset, or leaving the app (Home, another app, screen off). Nothing of it is kept. | Stop opens a summary sheet. The trip is saved by default, with a Discard button. A fresh live meter then begins. |
 | In Trips | Never | Yes |
 
 ### Room schema (WAL mode)
@@ -262,27 +275,28 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
   - The gap can never set a max speed.
   - Toast: "Resumed: 12 min gap".
 - **Gap ≥ 30 min:**
-  - Trip: ask Resume / Save & finish / Discard.
-  - Live meter: ask Continue / Start fresh.
+  - Ask Resume / Save & finish / Discard.
+- The live meter is never stored, so it never resumes.
 
 ### Trips tab
 
 - **List:** date, mode, distance, duration, averages, max, and a route thumbnail.
-- **Detail:** map with the route coloured by speed, all stats, and a speed-over-time graph.
+- **Detail:** the route on the dark map, coloured by speed (0 to the trip's top speed, with a legend) with start and finish dots; pan, zoom and a fit-route button. All stats, and a speed-over-time graph. Offline without a cached style, the plain route drawing shows instead.
 - **Actions:** rename, delete, export GPX.
 - **GPX export:** GPX 1.1 with time, elevation and speed (Garmin TrackPointExtension). It goes through the share sheet or a save-to-folder picker (Storage Access Framework).
 
 ## 8. Background, permissions and power
 
 - **Screen:** `FLAG_KEEP_SCREEN_ON` on the activity window while the app is visible. There is no screen wake lock.
-- **Tracking service:**
-  - Foreground service, `foregroundServiceType="location"`, started as soon as the Speed tab opens. Starting while visible is what keeps location flowing in the background under the while-in-use permission.
+- **Tracking while open:** GPS, the engine clock and the screen's readouts run only while the app is on screen or a trip is recording. Leaving the app without a recording stops them all and drops the live meter (D27).
+- **Recording service:**
+  - Foreground service, `foregroundServiceType="location"`, started when a trip starts (the app is on screen then, which the while-in-use permission needs) and stopped when it ends.
   - Returns `START_STICKY`.
-  - If a trip or live meter is active and the process was killed, a sticky restart resumes tracking in the background. This needs **both** "Allow all the time" location and the battery-optimization exemption. Without them it falls back to resuming when the app is reopened.
-- **Notification** (silent, ongoing, low importance):
+  - If a trip is recording and the process was killed, a sticky restart resumes it in the background. This needs **both** "Allow all the time" location and the battery-optimization exemption. Without them it falls back to resuming when the app is reopened.
+- **Notification** (silent, ongoing, low importance), only while recording:
   - Shows speed, distance and time, plus target progress and arrival time when a target is set.
-  - Actions: live meter → **Record** · **Stop tracking**; recording → **Pause** · **Stop**.
-- **Sensors on demand:** compass and accelerometer run only when the Nerd page or the heading / G-force switches are visible. NMEA only on the Nerd page. In the background, only GPS runs (plus the step counter in step mode).
+  - Actions: **Pause** (or **Resume**) · **Stop**.
+- **Sensors on demand:** compass and accelerometer run only when the Nerd page or the heading / G-force switches are visible. NMEA only on the Nerd page. In the background (recording only), only GPS runs (plus the step counter in step mode).
 - **CPU:** no permanently held wake lock (D19). Screen-off tests decide whether a per-fix wake lock is needed.
 
 ### Permissions (asked when first needed, with one line of why)
@@ -308,7 +322,7 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
 
 ### Toolkit (`:gauges`)
 
-- **Building blocks:** dial face, scale (ticks + labels with range cross-fade), needle, arc bar, 7-segment digits (with ghost segments), rolling odometer drum (tenths digit inverted), segmented bar, stat chips, target ring.
+- **Building blocks:** dial face, scale (ticks + labels with range cross-fade), needle, arc bar, 7-segment digits (with ghost segments), rolling odometer drum (tenths digit inverted; it rolls continuously between fixes on the needle's prediction), segmented bar, stat chips, target ring, speed-limit red zone.
 - **Caching:** static layers use `drawWithCache` / `graphicsLayer`. Only the needle, digits and glow redraw each frame.
 - **AGSL effects** (`RuntimeShader`, API 33+): backlight glow, glass reflection, numeral bloom. Below 33 they fall back to gradients.
 - **Fonts:** bundled, open-licence (OFL) fonts:
@@ -316,7 +330,6 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
   - Outfit: Modern / Map card / Sunlight.
   - Barlow Semi Condensed: Night Focus / app chrome.
   - B612 Mono: Nerd / Speed Tape / Digital labels.
-  - Exo 2 Black Italic: Synthwave.
   - The 7-segment digits are drawn, not a font.
 - **Motion:**
   - Startup sweep: 0 → max → 0 over 1.3 s on launch, and on a theme change while stopped. Can be turned off; skipped under reduced motion.
@@ -335,9 +348,8 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
 | Night Focus | 11 | 1.0 | Calm |
 | Map / Nerd / Sunlight | 16 | 1.0 | Readout |
 | Speed Tape | 12 | 1.0 | Tape scroll |
-| Synthwave | 10 | 0.75 | A little bounce |
 
-### The nine themes
+### The eight themes
 
 1. **Retro:**
    - Chrome bezel, glass-dome reflection, Oswald numerals, orange needle.
@@ -369,11 +381,7 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
    - Aircraft-style vertical tape (±60 km/h window, ±12 in step mode) with a rolling-digit pointer box.
    - Yellow speed-trend arrow showing the speed 10 s ahead.
    - Altitude tape, heading strip, and PFD-style green/magenta annunciations for stats and target.
-8. **Synthwave:**
-   - Gradient sky, striped sun, wireframe mountains.
-   - A neon perspective grid that scrolls at your real speed.
-   - Chrome-italic digits, a cyan speed bar and neon stats.
-9. **Sunlight:**
+8. **Sunlight:**
    - White background, huge black Outfit 800 digits, and a thick black range bar.
    - A 2×2 stats grid. Maximum contrast for direct sun.
 
@@ -387,7 +395,8 @@ GPS comes from `LocationManager.GPS_PROVIDER` with `minTime = 0` and `minDistanc
 | Show on gauges | Nerd strip · heading · G-force |
 | Auto-range | On/off · shrink policy (with delay / only grow / immediate) · fixed dial when off |
 | Theme options | Retro face · Digital colour · Night Focus (lit up to, dial max, brightness) · accent colour · map orientation |
-| Tracking | Default mode (drive/step) · live meter auto-stop (15 min) |
+| Tracking | Default mode (drive/step) |
+| Speed limit | Limit (off by default) · vibrate. Set from the LIMIT button on the Speed screen. |
 | Background reliability | Checklist (see §8) |
 | Developer (hidden) | See §11 |
 

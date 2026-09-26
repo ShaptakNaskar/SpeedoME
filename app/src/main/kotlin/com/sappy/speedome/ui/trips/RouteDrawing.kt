@@ -57,7 +57,7 @@ fun RouteView(points: List<PointEntity>, modifier: Modifier = Modifier) {
         drawRoundRect(SpeedoColors.Raised, cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()))
         if (points.size < 2) return@Canvas
         val proj = Projection(points.map { it.lat }, points.map { it.lon }, size.width, size.height, 24.dp.toPx())
-        val maxSpeed = max(points.maxOf { it.speedMps }, 1f)
+        val maxSpeed = maxSpeedOf(points)
         val width = 4.dp.toPx()
         val dash = PathEffect.dashPathEffect(floatArrayOf(10.dp.toPx(), 8.dp.toPx()))
         for (i in 1 until points.size) {

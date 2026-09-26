@@ -15,7 +15,7 @@ import com.sappy.speedome.engine.TrackView
 import com.sappy.speedome.ui.Fmt
 import kotlin.math.roundToInt
 
-/** The silent, ongoing tracking notification with live speed and trip controls (docs/plan.md §8). */
+/** The silent, ongoing notification while a trip records: live speed and trip controls (docs/plan.md §8). */
 object TrackingNotification {
     const val CHANNEL_ID = "tracking"
     const val ID = 1
@@ -25,7 +25,7 @@ object TrackingNotification {
         if (nm.getNotificationChannel(CHANNEL_ID) != null) return
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "Tracking", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Live speed and trip controls while SpeedoME is tracking"
+                description = "Live speed and trip controls while SpeedoME records a trip"
                 setShowBadge(false)
             },
         )
@@ -74,10 +74,7 @@ object TrackingNotification {
             }
         }
         when {
-            v.sessionKind == SessionKind.LIVE -> {
-                b.addAction(0, "Record", action(context, TrackingService.ACTION_START_TRIP))
-                b.addAction(0, "Stop tracking", action(context, TrackingService.ACTION_STOP_TRACKING))
-            }
+            v.sessionKind == SessionKind.LIVE -> Unit // only for the moment the service takes to stop after a trip
             v.paused -> {
                 b.addAction(0, "Resume", action(context, TrackingService.ACTION_RESUME))
                 b.addAction(0, "Stop", action(context, TrackingService.ACTION_STOP_TRIP))

@@ -53,4 +53,11 @@ sealed interface Command {
     data class SetTarget(val distanceM: Double, val arriveByUtc: Long? = null) : Command
 
     data object ClearTarget : Command
+
+    /**
+     * Tracking stopped with no trip recording (the app was closed): the live meter ends and every
+     * trace of it (filter, last fix, target) is dropped, so the next open starts clean. A recording
+     * trip ignores it.
+     */
+    data object Standby : Command
 }

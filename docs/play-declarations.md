@@ -5,8 +5,8 @@ This is the text to paste into Play Console forms if SpeedoME is published there
 ## Foreground service: `location`
 
 - **Declared type:** `FOREGROUND_SERVICE_LOCATION`.
-- **Why it's needed:** SpeedoME is a speedometer and trip recorder. The foreground service keeps receiving GPS fixes while the user drives or walks with the screen off or another app in front (for example a navigation app). It is started only from the visible app or from its own notification actions. It shows an ongoing notification with live speed and Pause/Stop controls.
-- **User impact if deferred or stopped:** the speed display and the recorded trip would stop or show gaps in distance and route.
+- **Why it's needed:** SpeedoME is a speedometer and trip recorder. The foreground service runs only while the user records a trip, and keeps receiving GPS fixes while they drive or walk with the screen off or another app in front (for example a navigation app). It is started from the visible app when the user taps Record, and stops when the trip ends. It shows an ongoing notification with live speed and Pause/Stop controls. Without a recording, GPS runs only while the app is on screen.
+- **User impact if deferred or stopped:** the recorded trip would show gaps in distance and route.
 - **Video:** screen recording of the app starting a trip, switching to another app, and the notification continuing to update speed.
 
 ## Background location (`ACCESS_BACKGROUND_LOCATION`)

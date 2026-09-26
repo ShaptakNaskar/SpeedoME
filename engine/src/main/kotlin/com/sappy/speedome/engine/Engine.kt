@@ -15,6 +15,7 @@ import kotlin.math.max
 /** The pure, deterministic heart of SpeedoME: `state + event → state` (docs/plan.md §4–§5). */
 object Engine {
     fun reduce(state: EngineState, event: EngineEvent, settings: EngineSettings): EngineState {
+        if (event is CommandEvent && event.command == Command.Standby && state.session.kind == SessionKind.TRIP) return state
         val s = state.advanceClock(event.tNanos).anchor(event)
         val next = when (event) {
             is FixEvent -> s.onFix(event, settings)
@@ -247,6 +248,14 @@ private fun EngineState.onCommand(e: CommandEvent): EngineState = when (e.comman
     }
     is Command.SetTarget -> copy(target = Target(e.command.distanceM, stats.distanceM, e.command.arriveByUtc))
     Command.ClearTarget -> copy(target = null)
+    // A recording trip never gets here (see reduce). Only the learned stride outlives the live meter:
+    // it describes the walker, not the session.
+    Command.Standby -> EngineState(
+        session = Session(kind = SessionKind.LIVE, startedUtc = e.utcMillis),
+        steps = StepState(strideWalkM = steps.strideWalkM, strideRunM = steps.strideRunM),
+        lastEventNanos = lastEventNanos,
+        clock = clock,
+    )
 }
 
 /** A new session zeroes distance; a set target carries over and counts from the new zero. */

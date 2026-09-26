@@ -35,7 +35,6 @@ import kotlinx.coroutines.launch
 import com.sappy.speedome.LocalAppContainer
 import com.sappy.speedome.engine.Mode
 import com.sappy.speedome.tracking.PermissionState
-import com.sappy.speedome.tracking.TrackingService
 import com.sappy.speedome.ui.theme.SpeedoColors
 
 /** Live permission state; refreshed on every resume so changes made in system settings show up. */
@@ -57,7 +56,7 @@ fun rememberPermissions(): PermissionHolder {
     val holder = remember {
         PermissionHolder(context) {
             app.sources.permissionsChanged()
-            if (PermissionState.of(context).canTrack) TrackingService.start(context)
+            app.ensureRecordingService()
         }
     }
     LifecycleResumeEffect(Unit) {
@@ -115,8 +114,8 @@ fun PermissionCards(permissions: PermissionHolder, mode: Mode) {
         }
         if (state.fineLocation && !state.notifications) {
             Card(
-                "Show speed in the notification",
-                "Tracking works without it, but you won't see live speed outside the app.",
+                "Show speed while recording",
+                "Trips record without it, but you won't see live speed or the Pause and Stop buttons outside the app.",
                 if (NOTIFY in asked) "Open settings" else "Allow",
             ) {
                 if (NOTIFY in asked || Build.VERSION.SDK_INT < 33) {

@@ -12,6 +12,7 @@
 #   tools/emu.sh texts              list visible texts
 #   tools/emu.sh crashes            recent crash-buffer lines
 #   tools/emu.sh feed KMH SECONDS   drive the emulator GPS north-east at KMH (1 Hz geo fixes with speed)
+#   tools/emu.sh profile KMH:S ...  one continuous drive through several speeds, e.g. 47:10 51:6 40:5
 #   tools/emu.sh setup-dev          grant permissions, unlock developer options, turn on the simulator
 set -uo pipefail
 E=${E:-emulator-5584}
@@ -67,10 +68,22 @@ for i in range(n):
     lon += v * math.sin(math.radians(45)) / (111320 * math.cos(math.radians(lat)))
 PY
     ;;
+  profile)
+    python3 - "$@" <<'PY' | while read -r lon lat kn; do a emu geo fix "$lon" "$lat" 40 10 "$kn" >/dev/null; sleep 1; done
+import math, sys
+lat, lon = 35.6812, 139.7671
+for arg in sys.argv[1:]:
+    kmh, n = arg.split(':'); v = float(kmh) / 3.6
+    for i in range(int(n)):
+        print(f"{lon:.7f} {lat:.7f} {v*1.943844:.2f}", flush=True)
+        lat += v * math.cos(math.radians(45)) / 111320
+        lon += v * math.sin(math.radians(45)) / (111320 * math.cos(math.radians(lat)))
+PY
+    ;;
   setup-dev)
     for p in ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION POST_NOTIFICATIONS ACTIVITY_RECOGNITION; do a shell pm grant "$PKG" "android.permission.$p"; done
     "$0" launch >/dev/null; sleep 2; "$0" tap Settings >/dev/null
     for i in 1 2 3 4 5 6 7; do "$0" tap Version >/dev/null; done
     "$0" tap Simulator >/dev/null; "$0" tap Speed >/dev/null; echo "developer options + simulator on" ;;
-  *) sed -n '2,14p' "$0"; exit 1 ;;
+  *) sed -n '2,16p' "$0"; exit 1 ;;
 esac

@@ -86,7 +86,7 @@ fun SettingsScreen() {
         )
 
         Section("THEME")
-        Choices(SpeedThemes.all.map { it.title.lowercase().replaceFirstChar(Char::uppercase) to it.id }, s.theme) { id -> edit { it.copy(theme = id) } }
+        Choices(SpeedThemes.all.map { it.title.lowercase().replaceFirstChar(Char::uppercase) to it.id }, SpeedThemes.byId(s.theme).id) { id -> edit { it.copy(theme = id) } }
         Choices(listOf("Black dial" to false, "Cream dial" to true), s.retroCream, title = "Retro") { v -> edit { it.copy(retroCream = v) } }
         Choices(
             listOf("VFD cyan" to DigitalColor.VFD, "LED red" to DigitalColor.LED, "LCD amber" to DigitalColor.LCD), s.digital, title = "Digital",
@@ -125,15 +125,14 @@ fun SettingsScreen() {
         ToggleRow("Startup sweep", "The needle sweeps to the top and back once when the app starts.", s.startupSweep) { on -> edit { it.copy(startupSweep = on) } }
 
         Section("TRACKING")
-        ToggleRow(
-            "Live meter auto-stop",
-            "Without a recorded trip, stop tracking after 15 minutes parked with SpeedoME in the background. Trips never stop on their own.",
-            s.liveAutoStop,
-        ) { on -> edit { it.copy(liveAutoStop = on) } }
+        Text(
+            "The live meter runs while SpeedoME is open and resets when you leave it. Press Record to keep going in the background.",
+            color = SpeedoColors.Muted, fontSize = 13.sp,
+        )
         val nav = LocalNavigator.current
         Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { nav.openReliability() }.padding(vertical = 4.dp)) {
             Text("Background reliability  ›", color = SpeedoColors.Text, fontSize = 16.sp)
-            Text("Keep tracking when the screen is off or Android closes apps.", color = SpeedoColors.Muted, fontSize = 13.sp)
+            Text("Keep recording when the screen is off or Android closes apps.", color = SpeedoColors.Muted, fontSize = 13.sp)
         }
 
         Section("AUTO-RANGE")
@@ -152,6 +151,12 @@ fun SettingsScreen() {
         )
         if (s.shrink == ShrinkPolicy.OFF) {
             Choices(listOf(60, 80, 120, 160, 200, 260).map { "0–$it" to it }, s.fixedKmh, title = "Fixed dial") { v -> edit { it.copy(fixedKmh = v) } }
+        }
+        if (s.speedLimit != null) {
+            Text(
+                "While a speed limit is set, dials and bars stay fixed at 25 % over it instead.",
+                color = SpeedoColors.Accent, fontSize = 13.sp,
+            )
         }
 
         Section("ABOUT")
@@ -205,7 +210,7 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
                     "SpeedoME" to "GNU General Public License v3.0 or later.",
                     "MapLibre Native" to "BSD 2-Clause. © MapLibre contributors, Mapbox.",
                     "Map data" to "© OpenStreetMap contributors (ODbL). Tiles by OpenFreeMap, schema © OpenMapTiles.",
-                    "Fonts" to "Oswald, Outfit, B612 Mono, Barlow Semi Condensed, Exo 2: SIL Open Font License 1.1.",
+                    "Fonts" to "Oswald, Outfit, B612 Mono, Barlow Semi Condensed: SIL Open Font License 1.1.",
                     "AndroidX, Jetpack Compose, Kotlin, kotlinx" to "Apache License 2.0.",
                 ).forEach { (name, text) ->
                     Column {
@@ -239,7 +244,6 @@ private fun DeveloperSection(s: AppSettings, edit: ((AppSettings) -> AppSettings
     Section("DEVELOPER")
     ToggleRow("Simulator", "Drive with simulated GPS instead of the real receiver.", s.simulator) { on -> edit { it.copy(simulator = on) } }
     ToggleRow("Raw GPS log", "Writes every raw fix and satellite count to Android/data/…/files/rawlogs for replay tests.", s.rawLog) { on -> edit { it.copy(rawLog = on) } }
-    ToggleRow("Fast auto-stop", "Test the live-meter auto-stop after 20 s instead of 15 min.", s.fastAutoStop) { on -> edit { it.copy(fastAutoStop = on) } }
     ToggleRow("Needle prediction", "Between fixes the needle follows speed plus acceleration.", s.predictNeedle) { on -> edit { it.copy(predictNeedle = on) } }
     OutlinedButton(onClick = { edit { it.copy(devMode = false, simulator = false) } }) { Text("Turn off developer options") }
 }

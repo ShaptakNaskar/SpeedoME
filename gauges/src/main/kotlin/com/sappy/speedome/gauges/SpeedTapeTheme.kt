@@ -78,6 +78,15 @@ object SpeedTapeTheme : GaugeTheme {
         val label = if (step) 2 else 10
         val minor = if (step) 1 else 5
         clipRect(g.tape.left, g.tape.top, g.tape.right, g.tape.bottom) {
+            // Speed limit: a red band up the tape's edge from the limit, like an airspeed tape's red line.
+            frame.limitKmh?.let { limit ->
+                val y = g.mid - (limit - v) * ppu
+                if (y > g.tape.top) {
+                    val bottom = minOf(y, g.tape.bottom)
+                    drawRect(LIMIT_RED, Offset(g.tape.right - 6.dp.toPx(), g.tape.top), Size(6.dp.toPx(), bottom - g.tape.top))
+                    if (y < g.tape.bottom) drawLine(LIMIT_RED, Offset(g.tape.left, y), Offset(g.tape.right, y), strokeWidth = 2.dp.toPx())
+                }
+            }
             var t = (floor((v - window / 2) / minor) * minor).toInt()
             while (t <= v + window / 2) {
                 if (t >= 0) {
@@ -103,8 +112,9 @@ object SpeedTapeTheme : GaugeTheme {
             lineTo(g.boxX + g.boxW, g.mid + g.boxH / 2); lineTo(g.boxX, g.mid + g.boxH / 2); close()
         }
         drawPath(box, Color.Black)
-        drawPath(box, Color.White, style = Stroke(2.dp.toPx()))
-        rollingDigits(v, g.boxX + 4.dp.toPx(), g.mid, g.boxW - 8.dp.toPx(), g.boxH * .72f, assets.paint(assets.b612Bold), g.boxH * .62f)
+        val readout = frame.warned(Color.White)
+        drawPath(box, readout, style = Stroke(2.dp.toPx()))
+        rollingDigits(v, g.boxX + 4.dp.toPx(), g.mid, g.boxW - 8.dp.toPx(), g.boxH * .72f, assets.paint(assets.b612Bold), g.boxH * .62f, readout)
 
         val alt = frame.altitudeM ?: 0.0
         val appm = g.th / 160
@@ -147,22 +157,23 @@ object SpeedTapeTheme : GaugeTheme {
         )
         lines.forEachIndexed { i, (s, col) -> text(s, ix, iy + i * 24.dp.toPx(), mono, 15.dp.toPx(), col, Align.LEFT) }
         val alerts = buildList {
-            if (frame.gps == GpsDot.NONE) add("GPS LOST")
-            frame.target?.let { add(if (it.arrived) "TGT REACHED" else "TGT ${frame.fmtDist(it.remainingM)}") }
+            if (frame.limitKmh != null && frame.limitWarn >= 1f) add("OVERSPEED" to LIMIT_RED)
+            if (frame.gps == GpsDot.NONE) add("GPS LOST" to magenta)
+            frame.target?.let { add((if (it.arrived) "TGT REACHED" else "TGT ${frame.fmtDist(it.remainingM)}") to magenta) }
         }
-        alerts.forEachIndexed { i, s -> text(s, ix, iy + (lines.size + i) * 24.dp.toPx(), mono, 15.dp.toPx(), magenta, Align.LEFT) }
+        alerts.forEachIndexed { i, (s, col) -> text(s, ix, iy + (lines.size + i) * 24.dp.toPx(), mono, 15.dp.toPx(), col, Align.LEFT) }
     }
 
     /** Aircraft-style readout: tens and hundreds are fixed, the units digit rolls continuously. */
-    private fun DrawScope.rollingDigits(v: Float, x: Float, y: Float, w: Float, h: Float, paint: android.graphics.Paint, sizePx: Float) {
+    private fun DrawScope.rollingDigits(v: Float, x: Float, y: Float, w: Float, h: Float, paint: android.graphics.Paint, sizePx: Float, color: Color) {
         val value = maxOf(0f, v)
         val whole = floor(value).toInt()
         val frac = value - whole
         val units = whole % 10
         val rest = whole / 10
-        if (rest > 0) text(rest.toString(), x + w * .62f, y, paint, sizePx, Color.White, Align.RIGHT)
+        if (rest > 0) text(rest.toString(), x + w * .62f, y, paint, sizePx, color, Align.RIGHT)
         clipRect(x + w * .62f, y - h * .64f, x + w * .98f, y + h * .64f) { // stays inside the pointer box
-            for (k in -1..1) text(((units + k + 10) % 10).toString(), x + w * .64f, y + (frac - k) * h * 1.15f, paint, sizePx, Color.White, Align.LEFT)
+            for (k in -1..1) text(((units + k + 10) % 10).toString(), x + w * .64f, y + (frac - k) * h * 1.15f, paint, sizePx, color, Align.LEFT)
         }
     }
 }

@@ -13,6 +13,8 @@ data class TrackView(
     val rawSpeedMps: Double?,
     val rejectTotal: Int,
     val distanceM: Double,
+    /** When [distanceM] was last integrated (monotonic ns); null before the first measurement. */
+    val distanceNanos: Long?,
     val movingS: Double,
     val elapsedS: Double,
     val maxMps: Double,
@@ -41,6 +43,20 @@ data class TrackView(
         return max(0.0, speedMps + accelMps2 * h)
     }
 
+    /**
+     * Distance at [nowNanos] for a rolling odometer: [distanceM] plus the ground covered since it was
+     * last integrated, on the same prediction as the needle (speed + acceleration, at most
+     * [Tuning.PREDICT_MAX_S], never below zero speed). The next fix lands on about the same value, so
+     * a drum rolls continuously instead of stepping once per fix.
+     */
+    fun displayDistanceM(nowNanos: Long): Double {
+        val since = distanceNanos ?: return distanceM
+        if (paused || zero) return distanceM
+        var h = ((nowNanos - since) / 1e9).coerceIn(0.0, Tuning.PREDICT_MAX_S)
+        if (accelMps2 < 0) h = minOf(h, speedMps / -accelMps2) // braking to a stop within the window
+        return distanceM + max(0.0, speedMps * h + accelMps2 * h * h / 2)
+    }
+
     companion object {
         val EMPTY = EngineState().view(0)
     }
@@ -59,6 +75,7 @@ fun EngineState.view(nowNanos: Long): TrackView {
         rawSpeedMps = lastFix?.rawSpeed,
         rejectTotal = filter.rejectTotal,
         distanceM = stats.distanceM,
+        distanceNanos = lastMeasureNanos,
         movingS = stats.movingS,
         elapsedS = stats.elapsedS,
         maxMps = stats.maxMps,

@@ -141,6 +141,54 @@ class EngineScenarioTest {
     }
 
     @Test
+    fun `standby forgets the live meter but never touches a trip`() {
+        val h = Harness()
+        h.rig.cruiseMps = kmhToMps(50.0)
+        h.run(20.0)
+        h.command(Command.SetTarget(5_000.0))
+        val stride = h.state.steps.strideWalkM
+        h.command(Command.Standby)
+        assertEquals(SessionKind.LIVE, h.view.sessionKind)
+        assertEquals(0.0, h.view.speedMps, 0.0)
+        assertEquals(null, h.view.lastFix)
+        assertEquals(0.0, h.view.distanceM, 0.0)
+        assertEquals(null, h.view.target)
+        assertEquals(AutoRange.DRIVE.first(), h.view.rangeKmh)
+        assertEquals(stride, h.state.steps.strideWalkM, 0.0)
+
+        h.run(10.0) // the app is open again: a clean live meter picks up
+        assertTrue(h.view.speedMps > 10)
+        h.command(Command.StartTrip)
+        h.run(5.0)
+        val trip = h.state
+        h.command(Command.Standby)
+        assertEquals(trip, h.state)
+    }
+
+    @Test
+    fun `the odometer rolls smoothly between 1 Hz fixes`() {
+        val h = Harness()
+        h.rig.cruiseMps = kmhToMps(100.0)
+        h.run(30.0)
+        val frame = 0.02
+        var shown = h.view.displayDistanceM(h.rig.nowNanos)
+        var stored = h.view.distanceM
+        var worstShown = 0.0
+        var worstStored = 0.0
+        repeat(500) { // 10 s of 50 Hz frames
+            h.run(frame)
+            val v = h.view
+            val now = v.displayDistanceM(h.rig.nowNanos)
+            worstShown = maxOf(worstShown, abs(now - shown - v.speedMps * frame))
+            worstStored = maxOf(worstStored, v.distanceM - stored)
+            shown = now
+            stored = v.distanceM
+        }
+        assertTrue("stored distance steps once per fix: $worstStored m", worstStored > 20)
+        assertTrue("shown distance never jumps: $worstShown m", worstShown < 0.5)
+    }
+
+    @Test
     fun `display target extrapolates only a little`() {
         val h = Harness()
         h.rig.manual = com.sappy.speedome.engine.sim.SimInput(throttle = true)

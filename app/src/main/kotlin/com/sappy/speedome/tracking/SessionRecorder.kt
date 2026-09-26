@@ -17,6 +17,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -25,9 +26,10 @@ import java.util.Locale
 import kotlin.math.max
 
 /**
- * Persists the engine's current session (docs/plan.md §7): route points at most once a second and,
- * every second, one transaction with the new points plus the session totals and engine snapshot.
- * On launch it resumes an unfinished session automatically (gap < 30 min) or offers a choice.
+ * Persists a recording trip (docs/plan.md §7): route points at most once a second and, every second,
+ * one transaction with the new points plus the session totals and engine snapshot. On launch it
+ * resumes an unfinished trip automatically (gap < 30 min) or offers a choice. The live meter is never
+ * stored: it ends when the app closes.
  */
 class SessionRecorder(
     private val scope: CoroutineScope,
@@ -48,6 +50,13 @@ class SessionRecorder(
     private val _resumed = MutableStateFlow<Long?>(null)
     val resumed: StateFlow<Long?> = _resumed.asStateFlow()
 
+    /** True once the launch-time restore is done and applied to the engine (a trip was resumed, offered or there was none). */
+    private val _ready = MutableStateFlow(false)
+    val ready: StateFlow<Boolean> = _ready.asStateFlow()
+
+    /** True while a trip row is open; the per-second save loop sleeps otherwise. */
+    private val recording = MutableStateFlow(false)
+
     private data class Key(val kind: SessionKind, val startedUtc: Long)
 
     private val io = Dispatchers.IO.limitedParallelism(1)
@@ -65,8 +74,11 @@ class SessionRecorder(
     fun start() {
         scope.launch(io) {
             lock.withLock { restoreOrOffer() }
+            tracking.awaitIdle()
+            _ready.value = true
             launch { tracking.state.collect { s -> lock.withLock { onState(s) } } }
             while (isActive) {
+                recording.first { it }
                 delay(1000)
                 lock.withLock { flush() }
             }
@@ -106,7 +118,7 @@ class SessionRecorder(
         scope.launch(io) { dao.deleteSession(id) }
     }
 
-    /** "Resume" (trip) or "Continue" (live meter) on the ≥ 30 min offer. */
+    /** "Resume" on the ≥ 30 min offer. */
     fun acceptOffer() = handleOffer { o ->
         val snap = o.session.engineSnapshot?.let(Snapshot::decodeOrNull)
         if (snap == null) finishStale(o.session) else adoptAndRestore(o.session, snap, System.currentTimeMillis() - o.session.updatedAt)
@@ -115,7 +127,7 @@ class SessionRecorder(
     /** "Save & finish" on a trip offer. */
     fun finishOffer() = handleOffer { o -> _finished.value = finishStale(o.session) }
 
-    /** "Discard" (trip) or "Start fresh" (live meter). */
+    /** "Discard" on the offer. */
     fun discardOffer() = handleOffer { o -> dao.deleteSession(o.session.id) }
 
     private fun handleOffer(block: suspend (ResumeOffer) -> Unit) {
@@ -125,12 +137,13 @@ class SessionRecorder(
     }
 
     private suspend fun restoreOrOffer() {
-        val unfinished = dao.allUnfinished()
-        val row = unfinished.maxByOrNull { it.updatedAt } ?: return
-        for (other in unfinished) if (other.id != row.id) if (other.kind == SessionKind.LIVE.name) dao.deleteSession(other.id) else finishStale(other)
+        val (trips, live) = dao.allUnfinished().partition { it.kind == SessionKind.TRIP.name }
+        live.forEach { dao.deleteSession(it.id) } // live meters saved by versions before 0.10
+        val row = trips.maxByOrNull { it.updatedAt } ?: return
+        for (other in trips) if (other.id != row.id) finishStale(other)
         val snap = row.engineSnapshot?.let(Snapshot::decodeOrNull)
         if (snap == null) {
-            if (row.kind == SessionKind.LIVE.name) dao.deleteSession(row.id) else finishStale(row)
+            finishStale(row)
             return
         }
         val gap = max(0L, System.currentTimeMillis() - row.updatedAt)
@@ -158,13 +171,14 @@ class SessionRecorder(
             val adopted = adopt?.takeIf { it.first == key }
             if (adopted != null) adopt = null
             current = adopted?.let { dao.session(it.second) }
+            recording.value = current != null
             lastSeenFix = if (current != null) s.lastFix?.tNanos ?: Long.MIN_VALUE else Long.MIN_VALUE
             lastStoredFix = null
             lastStoredPos = null
         }
         lastState = s
+        if (s.session.kind != SessionKind.TRIP) return // the live meter is never stored
         if (current == null) {
-            if (s.session.kind != SessionKind.TRIP && s.lastFix == null) return // no row until there's something to keep
             val now = System.currentTimeMillis()
             val row = SessionEntity(
                 kind = s.session.kind.name,
@@ -174,6 +188,7 @@ class SessionRecorder(
                 updatedAt = now,
             )
             current = row.copy(id = dao.insertSession(row))
+            recording.value = true
         }
         val f = s.lastFix ?: return
         if (f.tNanos == lastSeenFix) return
@@ -196,26 +211,22 @@ class SessionRecorder(
         dirty = true
     }
 
-    /** The previous session ended: a trip is finalised, a live meter is thrown away. */
+    /** The recorded trip ended: finalise it. */
     private suspend fun closeCurrent() {
         val row = current ?: return
         val s = lastState
         current = null
-        if (row.kind == SessionKind.TRIP.name) {
-            if (pending.isNotEmpty()) dao.insertPoints(pending.toList())
-            pending.clear()
-            val now = System.currentTimeMillis()
-            dao.updateSession(
-                withStats(row, s).copy(
-                    state = SessionStates.FINISHED, endedAt = now, updatedAt = now,
-                    engineSnapshot = null, thumbnail = thumbnail(dao.points(row.id)),
-                ),
-            )
-            _finished.value = row.id
-        } else {
-            pending.clear()
-            dao.deleteSession(row.id)
-        }
+        recording.value = false
+        if (pending.isNotEmpty()) dao.insertPoints(pending.toList())
+        pending.clear()
+        val now = System.currentTimeMillis()
+        dao.updateSession(
+            withStats(row, s).copy(
+                state = SessionStates.FINISHED, endedAt = now, updatedAt = now,
+                engineSnapshot = null, thumbnail = thumbnail(dao.points(row.id)),
+            ),
+        )
+        _finished.value = row.id
         dirty = false
     }
 
@@ -237,10 +248,6 @@ class SessionRecorder(
 
     /** Finishes a trip that was abandoned (or "Save & finish") with its last saved totals. */
     private suspend fun finishStale(row: SessionEntity): Long {
-        if (row.kind == SessionKind.LIVE.name) {
-            dao.deleteSession(row.id)
-            return row.id
-        }
         dao.updateSession(
             row.copy(state = SessionStates.FINISHED, endedAt = row.updatedAt, engineSnapshot = null, thumbnail = thumbnail(dao.points(row.id))),
         )

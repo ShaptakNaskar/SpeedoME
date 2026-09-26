@@ -12,8 +12,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 /**
- * Decides which sensors run. Real GPS and the step sensors run only while the tracking service
- * is active; the simulator replaces real GPS when developer options enable it.
+ * Decides which sensors run. Real GPS and the step sensors run only while tracking is [active] (the
+ * app is on screen, or a trip records in the background); the simulator replaces real GPS when
+ * developer options enable it.
  */
 class SourceManager(
     context: Context,
@@ -22,11 +23,11 @@ class SourceManager(
     tracking: TrackingEngine,
     gnss: GnssRepository,
     raw: RawLogger,
+    active: StateFlow<Boolean>,
 ) {
     private val appContext = context.applicationContext
     private val gps = GpsSource(appContext, tracking, gnss, raw)
     private val steps = StepSource(appContext, tracking)
-    private val serviceActive = MutableStateFlow(false)
     private val permissionEpoch = MutableStateFlow(0)
     private val replaying = MutableStateFlow(false)
 
@@ -36,8 +37,8 @@ class SourceManager(
 
     init {
         scope.launch(Dispatchers.Main) {
-            combine(serviceActive, settings, permissionEpoch, replaying) { active, s, epoch, replay ->
-                Wanted(active, (s.devMode && s.simulator) || replay, s.mode, epoch)
+            combine(active, settings, permissionEpoch, replaying) { on, s, epoch, replay ->
+                Wanted(on, (s.devMode && s.simulator) || replay, s.mode, epoch)
             }.distinctUntilChanged().collect(::apply)
         }
     }
@@ -45,10 +46,6 @@ class SourceManager(
     /** A developer file replay stands in for real GPS, like the simulator. */
     fun setReplaying(on: Boolean) {
         replaying.value = on
-    }
-
-    fun setServiceActive(active: Boolean) {
-        serviceActive.value = active
     }
 
     /** Call after the user grants or revokes a permission so sources re-evaluate. */

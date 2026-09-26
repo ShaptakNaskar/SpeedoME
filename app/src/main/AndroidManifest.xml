@@ -15,6 +15,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Step mode: hardware step counter and detector. -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <!-- Speed limit: buzz at the limit and pulse while over it. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <uses-feature
         android:name="android.hardware.location.gps"

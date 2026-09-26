@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 /** 1980s digital dash: ramp bar graph, ghosted seven-segment digits, VFD mesh (docs/plan.md §9). */
@@ -67,14 +68,17 @@ object DigitalTheme : GaugeTheme {
         return assets.memo("digital-geo-$wide", size) { Geometry(size, density, wide) }
     }
 
+    /** First bar of the red zone (bars from the speed limit up); [BARS] when there is none on the scale. */
+    private fun GaugeFrame.redFrom(): Int = limitFraction()?.let { ceil(it * BARS - 1e-3f).toInt() } ?: BARS
+
     override fun DrawScope.drawStatic(frame: GaugeFrame, assets: GaugeAssets) {
         val g = geometry(frame, assets)
         val on = frame.options.digital.on
         drawRect(Color(0xFF030504))
-        g.bars.forEach { drawPath(it, on.copy(alpha = .07f)) }
+        val redFrom = frame.redFrom()
+        g.bars.forEachIndexed { i, bar -> drawPath(bar, if (i >= redFrom) LIMIT_RED.copy(alpha = .16f) else on.copy(alpha = .07f)) }
         val mono = assets.paint(assets.b612)
-        for (set in frame.scaleSets()) for (q in 0..4) {
-            val v = set.max * q / 4
+        for (set in frame.scaleSets()) for (v in barLabels(set.max)) {
             if (v > frame.rangeKmh * 1.001f) break
             text(fmt(v.toDouble(), 0), g.pad + g.bw * v / frame.rangeKmh, g.top + g.bh + 14.dp.toPx(), mono, 11.dp.toPx(), on.copy(alpha = .6f * set.alpha))
         }
@@ -95,12 +99,17 @@ object DigitalTheme : GaugeTheme {
         val on = frame.options.digital.on
         val glow = frame.options.digital.glow
         val lit = ((frame.needleKmh / frame.rangeKmh).coerceIn(0f, 1f) * BARS).roundToInt()
+        // Nearing the limit the bar and digits fade to red; bars inside the red zone are always red.
+        val redFrom = frame.redFrom()
+        val barOn = frame.warned(on)
+        val barGlow = frame.warned(glow)
         for (i in 0 until lit) {
-            drawPath(g.bars[i], glow.copy(alpha = .3f), style = Stroke(g.bw / BARS * .3f))
-            drawPath(g.bars[i], on)
+            val red = i >= redFrom
+            drawPath(g.bars[i], (if (red) LIMIT_RED else barGlow).copy(alpha = .3f), style = Stroke(g.bw / BARS * .3f))
+            drawPath(g.bars[i], if (red) LIMIT_RED else barOn)
         }
         frame.readout.coerceAtMost(9999).toString().padStart(g.digits, ' ').takeLast(g.digits).forEachIndexed { i, ch ->
-            seg7(g.bigCell(i), g.big, g.dh, ch, on, 0f, glow)
+            seg7(g.bigCell(i), g.big, g.dh, ch, barOn, 0f, barGlow)
         }
         // Trip in tenths of a km or mile (a dot before the last cell) or steps; then average and max.
         val trip = if (frame.stats.stepMode) {

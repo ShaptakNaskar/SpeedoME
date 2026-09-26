@@ -47,7 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.sappy.speedome.LocalAppContainer
 import com.sappy.speedome.engine.EngineState
 import com.sappy.speedome.engine.GpsQuality
@@ -64,13 +67,19 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** Samples the engine a few times a second for text readouts (the gauge has its own frame loop). */
+/**
+ * Samples the engine a few times a second for text readouts (the gauge has its own frame loop).
+ * It pauses while the app is off screen, so a closed app doesn't wake the CPU.
+ */
 @Composable
 fun rememberTrackView(engine: StateFlow<EngineState>, periodMs: Long = 250): TrackView {
-    val v by produceState(TrackView.EMPTY, engine) {
-        while (true) {
-            value = engine.value.view(SystemClock.elapsedRealtimeNanos())
-            delay(periodMs)
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val v by produceState(TrackView.EMPTY, engine, lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                value = engine.value.view(SystemClock.elapsedRealtimeNanos())
+                delay(periodMs)
+            }
         }
     }
     return v
@@ -96,14 +105,17 @@ fun SpeedScreen() {
         onDispose { if (needsCompass) app.motion.release() }
     }
     val context = LocalContext.current
-    val batteryLow by produceState(false) {
-        while (true) {
-            val i = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-            val level = i?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-            val scale = i?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
-            val charging = (i?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
-            value = !charging && level >= 0 && level * 100 / scale.coerceAtLeast(1) < 15
-            delay(30_000)
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val batteryLow by produceState(false, lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                val i = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                val level = i?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = i?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+                val charging = (i?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
+                value = !charging && level >= 0 && level * 100 / scale.coerceAtLeast(1) < 15
+                delay(30_000)
+            }
         }
     }
     val driver = rememberGaugeDriver(
@@ -116,6 +128,8 @@ fun SpeedScreen() {
     val permissions = rememberPermissions()
     var targetDialog by remember { mutableStateOf(false) }
     if (targetDialog) TargetDialog(view.target) { targetDialog = false }
+    var limitDialog by remember { mutableStateOf(false) }
+    if (limitDialog) LimitDialog { limitDialog = false }
     val targetH = if (view.target != null) TARGET_STRIP_HEIGHT else 0.dp
     val scope = rememberCoroutineScope()
 
@@ -142,7 +156,7 @@ fun SpeedScreen() {
                 height = if (landscape) HEADER_HEIGHT_LANDSCAPE else HEADER_HEIGHT,
                 ink = ink,
                 view.quality, simRunning, entry.title, onPrev = { switchTheme(-1) }, onNext = { switchTheme(1) },
-                controls = if (landscape) ({ SessionControls(view) { targetDialog = true } }) else null,
+                controls = if (landscape) ({ SessionControls(view, onTarget = { targetDialog = true }, onLimit = { limitDialog = true }) }) else null,
             )
             Column(Modifier.padding(horizontal = 16.dp)) {
                 PermissionCards(permissions, settings.mode)
@@ -150,7 +164,8 @@ fun SpeedScreen() {
             }
             // Canvas gauges have no text for TalkBack; describe what they show (read when focused).
             val gaugeDescription = if (entry.gauge != null) {
-                "${entry.title.lowercase()} gauge: ${Fmt.speed(view.speedMps).roundToInt()} ${Fmt.speedUnit}, " +
+                val limit = settings.speedLimit?.let { ", limit ${Fmt.speed(it).roundToInt()}" }.orEmpty()
+                "${entry.title.lowercase()} gauge: ${Fmt.speed(view.speedMps).roundToInt()} ${Fmt.speedUnit}$limit, " +
                     "dial 0 to ${driver.frame.rangeToKmh}. Trip ${Fmt.dist(view.distanceM)} ${Fmt.distUnit}, max ${Fmt.speed(view.maxMps).roundToInt()}."
             } else {
                 null
@@ -179,7 +194,11 @@ fun SpeedScreen() {
             }
             view.target?.let { t -> TargetStrip(t) { targetDialog = true } }
             if (showStrip) InfoStrip(settings, view, driver)
-            if (!landscape) Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth().background(Color.Black), contentAlignment = Alignment.Center) { SessionControls(view) { targetDialog = true } }
+            if (!landscape) {
+                Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth().background(Color.Black), contentAlignment = Alignment.Center) {
+                    SessionControls(view, onTarget = { targetDialog = true }, onLimit = { limitDialog = true })
+                }
+            }
             Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (view.lastFix == null && permissions.state.canTrack && !simRunning) {
                     Caption("Waiting for GPS. The first fix is quickest outdoors or near a window.")

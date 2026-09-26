@@ -53,11 +53,16 @@ data class AppSettings(
     val mapNorthUp: Boolean = false,
     val gpuEffects: Boolean = true,
     val rawLog: Boolean = false,
-    val liveAutoStop: Boolean = true,
     val reliabilityOffered: Boolean = false,
-    val fastAutoStop: Boolean = false,
     val units: SpeedUnit = defaultUnits(),
+    /** Speed limit in m/s, so it survives a change of units; 0 = off (docs/plan.md §6). */
+    val speedLimitMps: Float = 0f,
+    /** Buzz at the limit and pulse while over it. */
+    val limitVibrate: Boolean = true,
 ) {
+    /** The speed limit in m/s, or null when it's off. */
+    val speedLimit: Double? get() = speedLimitMps.takeIf { it > 0f }?.toDouble()
+
     val engine: EngineSettings get() = EngineSettings(
         mode = mode,
         autoRange = AutoRangeSettings(shrink, fixedKmh),
@@ -96,10 +101,10 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val mapNorthUp = booleanPreferencesKey("map_north_up")
         val gpuEffects = booleanPreferencesKey("gpu_effects")
         val rawLog = booleanPreferencesKey("raw_log")
-        val liveAutoStop = booleanPreferencesKey("live_auto_stop")
         val reliabilityOffered = booleanPreferencesKey("reliability_offered")
-        val fastAutoStop = booleanPreferencesKey("fast_auto_stop")
         val units = stringPreferencesKey("units")
+        val speedLimit = floatPreferencesKey("speed_limit_mps")
+        val limitVibrate = booleanPreferencesKey("limit_vibrate")
     }
 
     val state: StateFlow<AppSettings> = store.data
@@ -137,10 +142,10 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             mapNorthUp = this[Keys.mapNorthUp] ?: d.mapNorthUp,
             gpuEffects = this[Keys.gpuEffects] ?: d.gpuEffects,
             rawLog = this[Keys.rawLog] ?: d.rawLog,
-            liveAutoStop = this[Keys.liveAutoStop] ?: d.liveAutoStop,
             reliabilityOffered = this[Keys.reliabilityOffered] ?: d.reliabilityOffered,
-            fastAutoStop = this[Keys.fastAutoStop] ?: d.fastAutoStop,
             units = this[Keys.units].enumOr(d.units),
+            speedLimitMps = this[Keys.speedLimit] ?: d.speedLimitMps,
+            limitVibrate = this[Keys.limitVibrate] ?: d.limitVibrate,
         )
     }
 
@@ -166,9 +171,9 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         this[Keys.mapNorthUp] = s.mapNorthUp
         this[Keys.gpuEffects] = s.gpuEffects
         this[Keys.rawLog] = s.rawLog
-        this[Keys.liveAutoStop] = s.liveAutoStop
         this[Keys.reliabilityOffered] = s.reliabilityOffered
-        this[Keys.fastAutoStop] = s.fastAutoStop
         this[Keys.units] = s.units.name
+        this[Keys.speedLimit] = s.speedLimitMps
+        this[Keys.limitVibrate] = s.limitVibrate
     }
 }

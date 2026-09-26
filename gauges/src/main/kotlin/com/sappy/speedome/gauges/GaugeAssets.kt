@@ -20,7 +20,6 @@ class GaugeAssets(context: Context) {
     val b612: Typeface = font(context, R.font.b612_mono)
     val b612Bold: Typeface = font(context, R.font.b612_mono_bold)
     val barlowSemi: Typeface = font(context, R.font.barlow_semi_condensed_semibold)
-    val exoItalic: Typeface = font(context, R.font.exo2_italic)
 
     private val paints = HashMap<String, Paint>()
     private val memo = HashMap<String, Pair<Size, Any>>()

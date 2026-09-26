@@ -16,6 +16,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 /**
  * Golden images of every theme in representative states (docs/plan.md §11). Record with
@@ -58,20 +60,35 @@ class ThemeScreenshotTest {
     /** The same frame on the gradient fallback path (Android < 13, or effects turned off). */
     private fun noShader(frame: GaugeFrame) = Shot("noshader", frame.copy(options = frame.options.copy(shaders = false)))
 
+    /**
+     * A speed limit of [limit], which fixes the scale at 125 % of it rounded up to a multiple of 5 (50 → 0–65):
+     * 4 % under the limit (the red fade has begun), 14 % over, and 40 % over (needle and bar stop at the
+     * end; digits still show the speed).
+     */
+    private fun limitShots(base: GaugeFrame = states.getValue("mid"), limit: Float = 50f): List<Shot> {
+        val max = (ceil(limit * 1.25f / 5) * 5).toInt()
+        val scale = base.copy(rangeKmh = max.toFloat(), rangeFromKmh = max, rangeToKmh = max, limitKmh = limit)
+        return listOf(
+            Shot("limit", scale.copy(needleKmh = limit * .96f, readout = (limit * .96f).roundToInt(), limitWarn = .6f)),
+            Shot("over", scale.copy(needleKmh = limit * 1.14f, readout = (limit * 1.14f).roundToInt(), limitWarn = 1f)),
+            Shot("pinned", scale.copy(needleKmh = limit * 1.4f, readout = (limit * 1.4f).roundToInt(), limitWarn = 1f)),
+        )
+    }
+
     @Test
     fun retro() = shoot(RetroTheme, standard() + Shot("cream", states.getValue("mid").copy(options = ThemeOptions(retroCream = true))) + noShader(states.getValue("mid")) +
-        Shot("mph", states.getValue("mid").copy(options = ThemeOptions(units = SpeedUnit.MPH))))
+        Shot("mph", states.getValue("mid").copy(options = ThemeOptions(units = SpeedUnit.MPH))) + limitShots())
 
     @Test
     fun modern() = shoot(ModernTheme, standard() + Shot("blue", states.getValue("mid").copy(options = ThemeOptions(accent = Color(0xFF4DA3FF)))) + noShader(states.getValue("mid")) +
-        Shot("target", states.getValue("mid").copy(target = GaugeTarget(.62f, 3_800.0, false))))
+        Shot("target", states.getValue("mid").copy(target = GaugeTarget(.62f, 3_800.0, false))) + limitShots())
 
     @Test
     fun digital() = shoot(
         DigitalTheme,
         standard() + Shot("led", states.getValue("mid").copy(options = ThemeOptions(digital = DigitalColor.LED))) +
             Shot("steps", states.getValue("mid").copy(stats = trip.copy(stepMode = true, steps = 4312))) + noShader(states.getValue("mid")) +
-            Shot("mph", states.getValue("mid").copy(options = ThemeOptions(units = SpeedUnit.MPH))),
+            Shot("mph", states.getValue("mid").copy(options = ThemeOptions(units = SpeedUnit.MPH))) + limitShots(),
     )
 
     @Test
@@ -84,7 +101,7 @@ class ThemeScreenshotTest {
             Shot("landscape", GaugeFrame(needleKmh = 92f, readout = 92, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260), landscape = true),
             noShader(GaugeFrame(needleKmh = 92f, readout = 92, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, stats = trip)),
             Shot("target", GaugeFrame(needleKmh = 70f, readout = 70, rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, target = GaugeTarget(.93f, 640.0, false))),
-        ),
+        ) + limitShots(GaugeFrame(rangeKmh = 260f, rangeFromKmh = 260, rangeToKmh = 260, stats = trip), limit = 100f),
     )
 
     @Test
@@ -95,12 +112,9 @@ class ThemeScreenshotTest {
             Shot("braking", states.getValue("high").copy(accelKmhS = -4f, headingDeg = 312f, altitudeM = 120.0)),
             Shot("landscape", states.getValue("mid").copy(headingDeg = 47f, altitudeM = 41.0), landscape = true),
             Shot("target", states.getValue("mid").copy(headingDeg = 47f, altitudeM = 41.0, gps = GpsDot.NONE, target = GaugeTarget(.4f, 7_300.0, false))),
-        ),
+        ) + limitShots(states.getValue("mid").copy(headingDeg = 47f, altitudeM = 41.0)),
     )
 
     @Test
-    fun synth() = shoot(SynthwaveTheme, (standard() + noShader(states.getValue("mid")) + Shot("mph", states.getValue("mid").copy(options = ThemeOptions(units = SpeedUnit.MPH)))).map { it.copy(frame = it.frame.copy(scrollM = 123f, timeS = 4.0)) })
-
-    @Test
-    fun sun() = shoot(SunlightTheme, standard())
+    fun sun() = shoot(SunlightTheme, standard() + limitShots())
 }

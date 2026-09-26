@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.sappy.speedome.engine.EngineState
 import com.sappy.speedome.engine.GpsQuality
 import com.sappy.speedome.engine.Mode
+import com.sappy.speedome.engine.SpeedLimit
 import com.sappy.speedome.engine.view
 import com.sappy.speedome.gauges.GaugeFrame
 import com.sappy.speedome.gauges.GaugeStats
@@ -61,6 +62,9 @@ private fun displayRound(kmh: Int, units: SpeedUnit): Int =
     if (units == SpeedUnit.MPH) ((kmh * 0.621371 / 10).roundToInt() * 10) else kmh
 private const val RANGE_ANIM_S = 0.45
 
+/** How quickly the odometer drum catches up with the distance (it never rolls back). */
+private const val ODOMETER_FOLLOW_S = 0.25
+
 /**
  * The per-frame loop behind every gauge: spring needle toward the engine's display target, steady
  * integer readout, animated auto-range changes and the startup sweep.
@@ -99,7 +103,8 @@ fun rememberGaugeDriver(
         var rangeTo = -1
         var rangeAt = 0L
         var nightUpper = 0.0
-        var scroll = 0.0
+        var odometer = Double.NaN
+        var lastDistance = 0.0
         val start = SystemClock.elapsedRealtimeNanos()
         var statFrames = 0
         var statSum = 0.0
@@ -142,7 +147,10 @@ fun rememberGaugeDriver(
                     nightFocusKmh = nightFocus, nightMaxKmh = displayRound(s.nightMaxKmh, s.units), nightBrightness = s.nightBrightness,
                     shaders = s.gpuEffects, units = s.units,
                 )
-                val wanted = currentTheme.fixedRangeKmh(options) ?: view.rangeKmh
+                // Speed limit in display units (to 0.1, which drops the float noise of the m/s round trip).
+                // A limit fixes every scale at 125 % of it; needles and bars stop at the end, digits don't.
+                val limit = s.speedLimit?.let { (it * u * 10).roundToInt() / 10.0 }
+                val wanted = limit?.let(SpeedLimit::scaleMax) ?: currentTheme.fixedRangeKmh(options) ?: view.rangeKmh
                 if (rangeTo < 0) {
                     rangeFrom = wanted
                     rangeTo = wanted
@@ -167,7 +175,15 @@ fun rememberGaugeDriver(
                     else -> if (nightUpper > .5) 1.0 else 0.0
                 }
                 nightUpper += (upperTarget - nightUpper) * minOf(1.0, dt * 3.5)
-                scroll += v / u * dt
+
+                // The drum rolls on between fixes, like a real one, instead of stepping once per fix.
+                val rolling = view.displayDistanceM(now)
+                odometer = if (odometer.isNaN() || view.distanceM < lastDistance) {
+                    rolling // first frame, or a new session zeroed the distance
+                } else {
+                    max(odometer, odometer + (rolling - odometer) * minOf(1.0, dt / ODOMETER_FOLLOW_S))
+                }
+                lastDistance = view.distanceM
 
                 driver.frame = GaugeFrame(
                     needleKmh = needle.toFloat(),
@@ -194,11 +210,14 @@ fun rememberGaugeDriver(
                     accelKmhS = (view.accelMps2 * u).toFloat(),
                     timeS = (now - start) / 1e9,
                     nightUpper = nightUpper.toFloat(),
-                    scrollM = scroll.toFloat(),
                     target = view.target?.let { GaugeTarget(it.progress, it.remainingM, it.arrived) },
                     headingDeg = currentHeading() ?: view.lastFix?.bearing?.toFloat(),
                     altitudeM = view.lastFix?.altM,
                     batteryLow = currentBattery(),
+                    odometerM = odometer,
+                    limitKmh = limit?.toFloat(),
+                    // Colours follow the needle (not the startup sweep) into the last 10 % below the limit.
+                    limitWarn = limit?.let { SpeedLimit.warn(v, it) } ?: 0f,
                 )
             }
         }

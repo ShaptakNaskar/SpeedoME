@@ -66,13 +66,20 @@ data class GaugeFrame(
     val timeS: Double = 0.0,
     /** Night Focus: 0 → 1 as the scale above the focus speed lights up. */
     val nightUpper: Float = 0f,
-    /** Integrated displayed speed (metres); scrolls the Synthwave grid at your real speed. */
-    val scrollM: Float = 0f,
     val headingDeg: Float? = null,
     val altitudeM: Double? = null,
     val batteryLow: Boolean = false,
     /** Set when a distance target is active (docs/plan.md §6). */
     val target: GaugeTarget? = null,
+    /**
+     * Distance for a rolling odometer drum (metres): it runs on between fixes so the drum turns
+     * continuously. Null falls back to [GaugeStats.distanceM].
+     */
+    val odometerM: Double? = null,
+    /** Speed limit in display units (a red zone on the scale); null when off. */
+    val limitKmh: Float? = null,
+    /** 0 → 1 over the last 10 % below the limit: how far needles, bars and digits have faded to red. */
+    val limitWarn: Float = 0f,
 )
 
 data class GaugeTarget(val progress: Float, val remainingM: Double, val arrived: Boolean)
@@ -113,19 +120,20 @@ data class StaticKey(
     val options: ThemeOptions,
     val stepMode: Boolean,
     val nightUpper: Float,
+    val limitKmh: Float?,
 ) {
     fun toFrame() = GaugeFrame(
         rangeKmh = rangeKmh, rangeFromKmh = rangeFromKmh, rangeToKmh = rangeToKmh, rangeProgress = rangeProgress,
-        options = options, stats = GaugeStats(stepMode = stepMode), nightUpper = nightUpper,
+        options = options, stats = GaugeStats(stepMode = stepMode), nightUpper = nightUpper, limitKmh = limitKmh,
     )
 }
 
 /** Night Focus fades are quantised so the static layer re-records at most ~25 times per fade. */
 fun GaugeFrame.staticKey() =
-    StaticKey(rangeKmh, rangeFromKmh, rangeToKmh, rangeProgress, options, stats.stepMode, (nightUpper * 25).toInt() / 25f)
+    StaticKey(rangeKmh, rangeFromKmh, rangeToKmh, rangeProgress, options, stats.stepMode, (nightUpper * 25).toInt() / 25f, limitKmh)
 
 object GaugeThemes {
-    val all: List<GaugeTheme> = listOf(RetroTheme, ModernTheme, DigitalTheme, NightFocusTheme, SpeedTapeTheme, SynthwaveTheme, SunlightTheme)
+    val all: List<GaugeTheme> = listOf(RetroTheme, ModernTheme, DigitalTheme, NightFocusTheme, SpeedTapeTheme, SunlightTheme)
 
     fun byId(id: String?): GaugeTheme = all.firstOrNull { it.id == id } ?: all.first()
 }

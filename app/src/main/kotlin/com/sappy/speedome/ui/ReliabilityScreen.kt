@@ -163,13 +163,13 @@ fun ReliabilityScreen(onBack: () -> Unit) {
             Text("Background reliability", style = MaterialTheme.typography.titleLarge, color = SpeedoColors.Text)
         }
         Text(
-            "Android may close apps to save battery. These keep SpeedoME tracking when the screen is off, and let it restart itself mid-trip.",
+            "Android may close apps to save battery. These keep a trip recording when the screen is off, and let it restart itself mid-trip.",
             color = SpeedoColors.Muted, fontSize = 14.sp,
         )
         Check("Precise location", "Needed for speed.", p.fineLocation)
-        Check("Notifications", "Shows live speed and trip controls while tracking.", p.notifications)
+        Check("Notifications", "Shows live speed and trip controls while recording.", p.notifications)
         if (BuildConfig.BACKGROUND_LOCATION_ENABLED) {
-            Check("Location: Allow all the time", "Optional. Lets tracking restart itself after Android closes the app.", p.backgroundLocation) {
+            Check("Location: Allow all the time", "Optional. Lets a trip restart itself after Android closes the app.", p.backgroundLocation) {
                 if (p.fineLocation) explainBackground = true
             }
         }
@@ -179,7 +179,7 @@ fun ReliabilityScreen(onBack: () -> Unit) {
             }
         }
         Text(
-            if (p.canSelfRestart) "All set: tracking restarts itself if Android closes SpeedoME." else "Without both optional items, a trip resumes when you reopen the app.",
+            if (p.canSelfRestart) "All set: a trip restarts itself if Android closes SpeedoME." else "Without both optional items, a trip resumes when you reopen the app.",
             color = if (p.canSelfRestart) Color(0xFF3ECF7A) else SpeedoColors.Muted, fontSize = 13.sp,
         )
 

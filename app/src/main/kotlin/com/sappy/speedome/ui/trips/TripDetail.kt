@@ -80,7 +80,10 @@ fun TripDetail(id: Long, onBack: () -> Unit) {
             if (t.name != null) Text(tripDate(t), color = SpeedoColors.Muted, fontSize = 13.sp)
         }
         TripStatsGrid(t)
-        RouteView(points, Modifier.fillMaxWidth().aspectRatio(1.15f))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            TripMap(points, Modifier.fillMaxWidth().aspectRatio(1.15f))
+            if (points.size >= 2) SpeedLegend(maxSpeedOf(points), Modifier.fillMaxWidth().padding(horizontal = 4.dp))
+        }
         Text("SPEED", color = SpeedoColors.Muted, fontSize = 11.sp, letterSpacing = 2.sp)
         SpeedGraph(points, Modifier.fillMaxWidth().height(150.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

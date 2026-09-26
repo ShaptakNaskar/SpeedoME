@@ -2,13 +2,13 @@
 
 An Android GPS speedometer and trip computer that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
 
-> **Status: 0.9, feature-complete.** All planned milestones are implemented and verified on the emulator. What's left before 1.0 is the on-phone checks (screen-off drives, battery, Doze) listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md). The roadmap is in [`docs/plan.md`](docs/plan.md) and progress in [`docs/progress.md`](docs/progress.md).
+> **Status: 0.10, feature-complete.** All planned milestones are implemented and verified on the emulator; 0.10 adds the speed limit and trip maps. What's left before 1.0 is the on-phone checks (screen-off drives, battery, Doze) listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md). The roadmap is in [`docs/plan.md`](docs/plan.md) and progress in [`docs/progress.md`](docs/progress.md).
 
 <p>
   <img src="docs/store/retro.jpg" width="160" alt="Retro theme">
   <img src="docs/store/modern.jpg" width="160" alt="Modern theme">
   <img src="docs/store/map.jpg" width="160" alt="Map theme">
-  <img src="docs/store/synthwave.jpg" width="160" alt="Synthwave theme">
+  <img src="docs/store/speed-tape.jpg" width="160" alt="Speed Tape theme">
   <img src="docs/store/nerd.jpg" width="160" alt="Nerd page">
 </p>
 
@@ -16,10 +16,12 @@ An Android GPS speedometer and trip computer that shows the speed your GPS chip 
 
 - **Honest speed:** uses the GPS chip's own Doppler speed, cleaned by a Kalman filter that rejects impossible jumps but never real high speeds (trains and planes included).
 - **Auto-range dial** that grows as you speed up and shrinks back afterwards. How it shrinks is configurable, and it can be switched off.
-- **Nine themes:** Retro, Modern, Digital, Night Focus, Map, Nerd, Speed Tape, Synthwave and Sunlight. You can try them all in the [Theme Lab](docs/theme-lab.html): download it and open it in a browser, then drive with the keyboard.
+- **Eight themes:** Retro, Modern, Digital, Night Focus, Map, Nerd, Speed Tape and Sunlight. You can try them all in the [Theme Lab](docs/theme-lab.html): download it and open it in a browser, then drive with the keyboard.
+- **Speed limit:** dials and bars fix at 25 % over the limit with the top in red; the needle and digits turn red over the last 10 %, and the phone buzzes at the limit, then pulses faster the further over you go.
 - **Trip computer:** moving and overall averages, max speed, distance, target distance with arrival time, and an "arrive by" mode.
 - **Drive and step modes:** step mode adds step count, cadence and pace.
-- **Trips** that survive the app being killed, with a history and GPX export.
+- **Trips** that survive the app being killed, with a history, a map of each route and GPX export.
+- **Light when idle:** without a recording, the speedometer runs only while the app is open. Close it and nothing keeps running.
 - **Nerd page:** satellite sky plot, per-constellation signal strength, raw NMEA and a G-force meter.
 - **Private by design:** no Google Play Services, no account, no analytics. Your trips stay on your phone.
 
