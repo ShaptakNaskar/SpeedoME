@@ -6,9 +6,9 @@ import com.sappy.speedome.data.SessionEntity
 import com.sappy.speedome.data.SessionStates
 import com.sappy.speedome.data.TripDao
 import com.sappy.speedome.engine.EngineState
-import com.sappy.speedome.engine.Geo
 import com.sappy.speedome.engine.SessionKind
 import com.sappy.speedome.engine.Snapshot
+import com.sappy.speedome.engine.RouteSampler
 import com.sappy.speedome.engine.resumedAfter
 import com.sappy.speedome.settings.AppSettings
 import kotlinx.coroutines.CoroutineScope
@@ -65,9 +65,7 @@ class SessionRecorder(
     private var currentKey: Key? = null
     private var adopt: Pair<Key, Long>? = null
     private var lastState: EngineState? = null
-    private var lastSeenFix = Long.MIN_VALUE
-    private var lastStoredFix: Long? = null
-    private var lastStoredPos: Pair<Double, Double>? = null
+    private val sampler = RouteSampler()
     private val pending = ArrayList<PointEntity>()
     private var dirty = false
 
@@ -172,9 +170,7 @@ class SessionRecorder(
             if (adopted != null) adopt = null
             current = adopted?.let { dao.session(it.second) }
             recording.value = current != null
-            lastSeenFix = if (current != null) s.lastFix?.tNanos ?: Long.MIN_VALUE else Long.MIN_VALUE
-            lastStoredFix = null
-            lastStoredPos = null
+            sampler.reset(seenFix = if (current != null) s.lastFix?.tNanos else null)
         }
         lastState = s
         if (s.session.kind != SessionKind.TRIP) return // the live meter is never stored
@@ -190,18 +186,7 @@ class SessionRecorder(
             current = row.copy(id = dao.insertSession(row))
             recording.value = true
         }
-        val f = s.lastFix ?: return
-        if (f.tNanos == lastSeenFix) return
-        lastSeenFix = f.tNanos
-        val sinceStored = lastStoredFix?.let { f.tNanos - it }
-        if (s.session.paused || f.hAcc >= 20 || (sinceStored != null && sinceStored < 950_000_000L)) return
-        // Parked: don't record GPS jitter as route (it would draw squiggles at every stop).
-        val parkedHere = s.filter.output == 0.0 && lastStoredPos?.let { (lat, lon) ->
-            Geo.distanceM(lat, lon, f.lat, f.lon) < max(f.hAcc, 8.0)
-        } == true
-        if (parkedHere) return
-        lastStoredFix = f.tNanos
-        lastStoredPos = f.lat to f.lon
+        val f = sampler.take(s) ?: return
         pending += PointEntity(
             sessionId = current!!.id, t = f.utcMillis, segment = s.session.segment, lat = f.lat, lon = f.lon,
             alt = f.altM, hAcc = f.hAcc.toFloat(), vAcc = f.vAcc?.toFloat(), rawSpeedMps = f.rawSpeed?.toFloat(),
