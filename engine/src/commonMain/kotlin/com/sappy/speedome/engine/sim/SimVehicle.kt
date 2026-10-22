@@ -2,6 +2,7 @@ package com.sappy.speedome.engine.sim
 
 import com.sappy.speedome.engine.Geo
 import com.sappy.speedome.engine.Mode
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -70,7 +71,7 @@ class SimVehicle(val startLat: Double = 35.6812, val startLon: Double = 139.7671
         accel = if (v > 0 || a > 0) a else 0.0
         val yaw = input.steer * 0.6 * (v / 6).coerceIn(0.0, 1.0) / (1 + v / 30)
         lateral = (v * yaw).coerceIn(-9.0, 9.0)
-        heading = (heading + yaw * dt).mod(2 * Math.PI)
+        heading = (heading + yaw * dt).mod(2 * PI)
         eastM += v * sin(heading) * dt
         northM += v * cos(heading) * dt
         odometerM += v * dt

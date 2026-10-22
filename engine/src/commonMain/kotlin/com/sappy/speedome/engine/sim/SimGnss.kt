@@ -2,6 +2,7 @@ package com.sappy.speedome.engine.sim
 
 import com.sappy.speedome.engine.FixEvent
 import com.sappy.speedome.engine.Geo
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.ln
@@ -12,7 +13,7 @@ import kotlin.random.Random
 fun Random.gauss(): Double {
     var u = 0.0
     while (u == 0.0) u = nextDouble()
-    return sqrt(-2 * ln(u)) * cos(2 * Math.PI * nextDouble())
+    return sqrt(-2 * ln(u)) * cos(2 * PI * nextDouble())
 }
 
 /**
@@ -69,7 +70,7 @@ class SimGnss(private val rnd: Random) {
             vAcc = (4 + rnd.nextDouble() * 2).toFloat(),
             speed = speed?.toFloat(),
             speedAcc = speedAcc?.toFloat(),
-            bearing = Math.toDegrees(vehicle.heading).toFloat(),
+            bearing = (vehicle.heading * 180 / PI).toFloat(),
             bearingAcc = 5f,
             isMock = true,
         )

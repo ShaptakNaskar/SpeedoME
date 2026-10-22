@@ -1,0 +1,36 @@
+# XcodeGen spec: CI runs `xcodegen` to make SpeedoME.xcodeproj (git-ignored), so no hand-edited
+# project file lives in the repo. The Kotlin side is ../ios, linked as the static SpeedoKit framework.
+name: SpeedoME
+options:
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  SpeedoME:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: SpeedoME
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UIStatusBarStyle: UIStatusBarStyleLightContent
+        UIViewControllerBasedStatusBarAppearance: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSLocationWhenInUseUsageDescription: SpeedoME uses GPS to measure your speed and distance.
+        # Compose Multiplatform refuses to start without this (it allows 120 Hz on ProMotion screens).
+        CADisableMinimumFrameDurationOnPhone: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sappy.speedome
+        PRODUCT_NAME: SpeedoME
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../ios/build/bin/iosArm64/releaseFramework"
+        OTHER_LDFLAGS: "$(inherited) -framework SpeedoKit"

@@ -1,9 +1,7 @@
 package com.sappy.speedome.engine.replay
 
 import com.sappy.speedome.engine.FixEvent
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneOffset
+import kotlin.time.Instant
 
 /** Reads fixes from NMEA 0183 logs: RMC for position/speed/course, GGA for altitude and HDOP. */
 object Nmea {
@@ -57,11 +55,9 @@ object Nmea {
     }
 
     private fun utcMillis(time: String, date: String): Long? = runCatching {
-        val hh = time.substring(0, 2).toInt()
-        val mm = time.substring(2, 4).toInt()
-        val ss = time.substring(4).toDouble()
-        val t = LocalTime.of(hh, mm, ss.toInt(), ((ss - ss.toInt()) * 1e9).toInt())
-        val d = LocalDate.of(2000 + date.substring(4, 6).toInt(), date.substring(2, 4).toInt(), date.substring(0, 2).toInt())
-        d.atTime(t).toInstant(ZoneOffset.UTC).toEpochMilli()
+        // hhmmss.sss and ddmmyy are already zero-padded: rearrange them into ISO 8601.
+        val iso = "20${date.substring(4, 6)}-${date.substring(2, 4)}-${date.substring(0, 2)}T" +
+            "${time.substring(0, 2)}:${time.substring(2, 4)}:${time.substring(4)}Z"
+        Instant.parse(iso).toEpochMilliseconds()
     }.getOrNull()
 }

@@ -1,7 +1,9 @@
 package com.sappy.speedome.engine.replay
 
-import java.time.Instant
-import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.pow
+import kotlin.math.roundToLong
+import kotlin.time.Instant
 
 /** A stored route point for export. [segment] changes start a new `<trkseg>` (pauses, resume gaps). */
 data class GpxPoint(
@@ -32,7 +34,7 @@ object GpxWriter {
             }
             append("    <trkpt lat=\"").append(num(p.lat, 7)).append("\" lon=\"").append(num(p.lon, 7)).append("\">")
             p.eleM?.let { append("<ele>").append(num(it, 1)).append("</ele>") }
-            append("<time>").append(Instant.ofEpochMilli(p.utcMillis)).append("</time>")
+            append("<time>").append(Instant.fromEpochMilliseconds(p.utcMillis)).append("</time>")
             p.speedMps?.let {
                 append("<extensions><gpxtpx:TrackPointExtension><gpxtpx:speed>").append(num(it, 2))
                 append("</gpxtpx:speed></gpxtpx:TrackPointExtension></extensions>")
@@ -43,7 +45,13 @@ object GpxWriter {
         append("  </trk>\n</gpx>\n")
     }
 
-    private fun num(v: Double, places: Int) = String.format(Locale.ROOT, "%.${places}f", v)
+    /** [v] with exactly [places] decimals and a dot, whatever the locale (String.format is JVM-only). */
+    private fun num(v: Double, places: Int): String {
+        val scale = 10.0.pow(places).toLong()
+        val n = (abs(v) * scale).roundToLong()
+        val s = "${n / scale}." + (n % scale).toString().padStart(places, '0')
+        return if (v < 0 && n != 0L) "-$s" else s
+    }
 
     private fun esc(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 }

@@ -1,7 +1,7 @@
 package com.sappy.speedome.engine.replay
 
 import com.sappy.speedome.engine.FixEvent
-import java.time.Instant
+import kotlin.time.Instant
 
 /** Reads track points from GPX 1.0/1.1 files (speed from `<speed>` or Garmin `<gpxtpx:speed>`). */
 object Gpx {
@@ -19,7 +19,7 @@ object Gpx {
             val lat = attrs["lat"] ?: return@mapNotNull null
             val lon = attrs["lon"] ?: return@mapNotNull null
             val body = m.groupValues[2]
-            val utc = tag(body, "time")?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: return@mapNotNull null
+            val utc = tag(body, "time")?.let { runCatching { Instant.parse(it).toEpochMilliseconds() }.getOrNull() } ?: return@mapNotNull null
             Pt(utc, lat, lon, tag(body, "ele")?.toDoubleOrNull(), tag(body, "speed")?.toFloatOrNull(), tag(body, "hdop")?.toFloatOrNull())
         }.toList()
         if (pts.isEmpty()) return emptyList()
