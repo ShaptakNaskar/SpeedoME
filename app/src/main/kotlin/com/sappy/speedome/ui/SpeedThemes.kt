@@ -9,18 +9,20 @@ import com.sappy.speedome.gauges.SpeedTapeTheme
 import com.sappy.speedome.gauges.SunlightTheme
 
 /**
- * The Speed-tab carousel in plan order (docs/plan.md §9). Canvas themes come from :gauges; the Map
- * and Nerd pages are app screens because they need live data beyond a gauge frame.
+ * The Speed-tab carousel in plan order (docs/plan.md §9). Canvas themes come from :gauges; the Map,
+ * Graph and Nerd pages are app screens because they need live data beyond a gauge frame.
  */
 data class SpeedThemeEntry(val id: String, val title: String, val gauge: GaugeTheme?)
 
 object SpeedThemes {
     const val MAP = "map"
     const val NERD = "nerd"
+    const val GRAPH = "graph"
 
     val all: List<SpeedThemeEntry> = listOf(
         RetroTheme.entry(), ModernTheme.entry(), DigitalTheme.entry(), NightFocusTheme.entry(),
-        SpeedThemeEntry(MAP, "MAP", null), SpeedThemeEntry(NERD, "NERD", null),
+        SpeedThemeEntry(MAP, "MAP", null), SpeedThemeEntry(GRAPH, "GRAPH", null),
+        SpeedThemeEntry(NERD, "NERD", null),
         SpeedTapeTheme.entry(), SunlightTheme.entry(),
     )
 

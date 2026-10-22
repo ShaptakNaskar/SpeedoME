@@ -16,12 +16,13 @@ An Android GPS speedometer and trip computer that shows the speed your GPS chip 
 
 - **Honest speed:** uses the GPS chip's own Doppler speed, cleaned by a Kalman filter that rejects impossible jumps but never real high speeds (trains and planes included).
 - **Auto-range dial** that grows as you speed up and shrinks back afterwards. How it shrinks is configurable, and it can be switched off.
-- **Eight themes:** Retro, Modern, Digital, Night Focus, Map, Nerd, Speed Tape and Sunlight. You can try them all in the [Theme Lab](docs/theme-lab.html): download it and open it in a browser, then drive with the keyboard.
+- **Nine themes:** Retro, Modern, Digital, Night Focus, Map, Graph, Nerd, Speed Tape and Sunlight. You can try them all in the [Theme Lab](docs/theme-lab.html): download it and open it in a browser, then drive with the keyboard.
 - **Speed limit:** dials and bars fix at 25 % over the limit with the top in red; the needle and digits turn red over the last 10 %, and the phone buzzes at the limit, then pulses faster the further over you go.
 - **Trip computer:** moving and overall averages, max speed, distance, target distance with arrival time, and an "arrive by" mode.
 - **Drive and step modes:** step mode adds step count, cadence and pace.
 - **Trips** that survive the app being killed, with a history, a map of each route and GPX export.
 - **Light when idle:** without a recording, the speedometer runs only while the app is open. Close it and nothing keeps running.
+- **Graph page:** your speed over the last 30 s, 1, 2, 5, 30, 60 or 120 minutes, task-manager style, under the live speed.
 - **Nerd page:** satellite sky plot, per-constellation signal strength, raw NMEA and a G-force meter.
 - **Private by design:** no Google Play Services, no account, no analytics. Your trips stay on your phone.
 

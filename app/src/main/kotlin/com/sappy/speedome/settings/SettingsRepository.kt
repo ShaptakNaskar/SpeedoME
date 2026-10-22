@@ -59,6 +59,8 @@ data class AppSettings(
     val speedLimitMps: Float = 0f,
     /** Buzz at the limit and pulse while over it. */
     val limitVibrate: Boolean = true,
+    /** The Graph page's time window in seconds. */
+    val graphWindowS: Int = 120,
 ) {
     /** The speed limit in m/s, or null when it's off. */
     val speedLimit: Double? get() = speedLimitMps.takeIf { it > 0f }?.toDouble()
@@ -104,6 +106,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         val reliabilityOffered = booleanPreferencesKey("reliability_offered")
         val units = stringPreferencesKey("units")
         val speedLimit = floatPreferencesKey("speed_limit_mps")
+        val graphWindow = intPreferencesKey("graph_window_s")
         val limitVibrate = booleanPreferencesKey("limit_vibrate")
     }
 
@@ -145,6 +148,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
             reliabilityOffered = this[Keys.reliabilityOffered] ?: d.reliabilityOffered,
             units = this[Keys.units].enumOr(d.units),
             speedLimitMps = this[Keys.speedLimit] ?: d.speedLimitMps,
+            graphWindowS = this[Keys.graphWindow] ?: d.graphWindowS,
             limitVibrate = this[Keys.limitVibrate] ?: d.limitVibrate,
         )
     }
@@ -174,6 +178,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
         this[Keys.reliabilityOffered] = s.reliabilityOffered
         this[Keys.units] = s.units.name
         this[Keys.speedLimit] = s.speedLimitMps
+        this[Keys.graphWindow] = s.graphWindowS
         this[Keys.limitVibrate] = s.limitVibrate
     }
 }

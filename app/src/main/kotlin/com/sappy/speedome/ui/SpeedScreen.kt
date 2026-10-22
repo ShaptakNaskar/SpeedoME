@@ -188,6 +188,7 @@ fun SpeedScreen() {
                     when {
                         gauge != null -> GaugeView(gauge, { driver.frame }, Modifier.fillMaxSize())
                         e.id == SpeedThemes.MAP -> MapPage(driver, settings.mapNorthUp, Modifier.fillMaxSize())
+                        e.id == SpeedThemes.GRAPH -> GraphPage(driver, settings.graphWindowS, Modifier.fillMaxSize())
                         else -> NerdPage(Modifier.fillMaxSize())
                     }
                 }
