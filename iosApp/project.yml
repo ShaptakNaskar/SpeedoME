@@ -1,5 +1,6 @@
 # XcodeGen spec: CI runs `xcodegen` to make SpeedoME.xcodeproj (git-ignored), so no hand-edited
-# project file lives in the repo. The Kotlin side is ../ios, linked as the static SpeedoKit framework.
+# project file lives in the repo. The app is Kotlin (../shared via ../ios), built by Gradle from the
+# pre-build script below into the static SpeedoKit framework, with its Compose resources (fonts).
 name: SpeedoME
 options:
   deploymentTarget:
@@ -10,20 +11,33 @@ targets:
     platform: iOS
     sources:
       - Sources
+    preBuildScripts:
+      - name: Build the Kotlin framework
+        basedOnDependencyAnalysis: false
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :ios:embedAndSignAppleFrameworkForXcode
     info:
       path: Info.plist
       properties:
         CFBundleDisplayName: SpeedoME
-        CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
-        UILaunchScreen: {}
+        CFBundleShortVersionString: "0.11.0"
+        CFBundleVersion: "12"
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         UIStatusBarStyle: UIStatusBarStyleLightContent
         UIViewControllerBasedStatusBarAppearance: false
+        UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        NSLocationWhenInUseUsageDescription: SpeedoME uses GPS to measure your speed and distance.
+        NSLocationWhenInUseUsageDescription: SpeedoME uses GPS to measure your speed and distance. Nothing leaves your phone.
+        NSMotionUsageDescription: SpeedoME counts steps in Walk & run mode and reads the compass and motion sensors for the heading and G-force.
+        # A recording trip keeps receiving GPS with the app in the background (iOS shows the blue pill).
+        UIBackgroundModes:
+          - location
+        ITSAppUsesNonExemptEncryption: false
         # Compose Multiplatform refuses to start without this (it allows 120 Hz on ProMotion screens).
         CADisableMinimumFrameDurationOnPhone: true
     settings:
@@ -32,5 +46,12 @@ targets:
         PRODUCT_NAME: SpeedoME
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.0"
-        FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../ios/build/bin/iosArm64/releaseFramework"
-        OTHER_LDFLAGS: "$(inherited) -framework SpeedoKit"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Gradle writes into the repo from the build script, which Xcode's script sandbox would block.
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+        FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../ios/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+        # SpeedoKit is static, so the system libraries MapLibre (maplibre-compose) needs link here.
+        OTHER_LDFLAGS: >-
+          $(inherited) -framework SpeedoKit -lc++ -lz
+          -framework CoreFoundation -framework CoreGraphics -framework CoreText -framework Foundation
+          -framework ImageIO -framework Metal -framework QuartzCore

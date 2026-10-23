@@ -22,4 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "SpeedoME"
 
-include(":engine", ":gauges", ":app", ":baselineprofile", ":ios")
+include(":engine", ":gauges", ":shared", ":app", ":baselineprofile", ":ios")

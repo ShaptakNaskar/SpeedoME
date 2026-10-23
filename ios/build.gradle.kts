@@ -1,6 +1,6 @@
 // The iOS app's Kotlin side, built into the static SpeedoKit framework that iosApp/ links.
-// commonMain: screens shared with the Linux desktop preview. iosMain: CoreLocation, UIKit glue.
-// desktopMain: the preview (`./gradlew :ios:preview` window, `:ios:shots` PNGs), fed by the simulator.
+// The app itself is the :shared module; iosMain here is just the entry point, and desktopMain is the
+// Linux preview (`./gradlew :ios:preview` window, `:ios:shots` PNGs), fed by the engine's simulator.
 // Kotlin compiles for iOS here on Linux; linking the framework needs macOS (CI does it).
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -20,13 +20,15 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":engine"))
+            implementation(project(":shared"))
             implementation(libs.cmp.runtime)
             implementation(libs.cmp.foundation)
             implementation(libs.cmp.ui)
+            implementation(libs.cmp.material3)
         }
         named("desktopMain").dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutines.swing)
         }
     }
 }

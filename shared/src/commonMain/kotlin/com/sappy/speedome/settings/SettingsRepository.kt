@@ -1,0 +1,181 @@
+package com.sappy.speedome.settings
+
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.sappy.speedome.engine.AutoRangeSettings
+import com.sappy.speedome.engine.EngineSettings
+import com.sappy.speedome.engine.Mode
+import com.sappy.speedome.engine.ShrinkPolicy
+import com.sappy.speedome.gauges.AverageDisplay
+import com.sappy.speedome.gauges.DigitalColor
+import com.sappy.speedome.gauges.SpeedUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+
+/** Accent colours offered for Modern and Map (ARGB). */
+enum class Accent(val argb: Long, val label: String) {
+    AMBER(0xFFE8A33D, "Amber"),
+    BLUE(0xFF4DA3FF, "Blue"),
+    RED(0xFFFF5A4E, "Red"),
+    GREEN(0xFF5BE89A, "Green"),
+}
+
+/** Every user-facing setting (docs/plan.md §10). */
+data class AppSettings(
+    val devMode: Boolean = false,
+    val simulator: Boolean = false,
+    val mode: Mode = Mode.DRIVE,
+    val predictNeedle: Boolean = true,
+    val theme: String = "retro",
+    val average: AverageDisplay = AverageDisplay.BOTH,
+    val startupSweep: Boolean = true,
+    val shrink: ShrinkPolicy = ShrinkPolicy.WITH_DELAY,
+    val fixedKmh: Int = 120,
+    val retroCream: Boolean = false,
+    val digital: DigitalColor = DigitalColor.VFD,
+    val accent: Accent = Accent.AMBER,
+    val nightFocusKmh: Int = 140,
+    val nightMaxKmh: Int = 260,
+    val nightBrightness: Float = 1f,
+    val nerdStrip: Boolean = false,
+    val showHeading: Boolean = false,
+    val showGForce: Boolean = false,
+    val mapNorthUp: Boolean = false,
+    val gpuEffects: Boolean = true,
+    val rawLog: Boolean = false,
+    val reliabilityOffered: Boolean = false,
+    val units: SpeedUnit = defaultUnits(),
+    /** Speed limit in m/s, so it survives a change of units; 0 = off (docs/plan.md §6). */
+    val speedLimitMps: Float = 0f,
+    /** Buzz at the limit and pulse while over it. */
+    val limitVibrate: Boolean = true,
+    /** The Graph page's time window in seconds. */
+    val graphWindowS: Int = 120,
+) {
+    /** The speed limit in m/s, or null when it's off. */
+    val speedLimit: Double? get() = speedLimitMps.takeIf { it > 0f }?.toDouble()
+
+    val engine: EngineSettings get() = EngineSettings(
+        mode = mode,
+        autoRange = AutoRangeSettings(shrink, fixedKmh),
+        unitsPerMps = if (units == SpeedUnit.MPH) EngineSettings.MPH_PER_MPS else EngineSettings.KMH_PER_MPS,
+    )
+}
+
+/** mph where road signs use it (US, UK, Liberia, Myanmar); km/h elsewhere. Users can switch either way. */
+fun defaultUnits(): SpeedUnit =
+    if (com.sappy.speedome.regionCode() in setOf("US", "GB", "LR", "MM")) SpeedUnit.MPH else SpeedUnit.KMH
+
+/** Settings in a DataStore preferences file; each platform supplies the file ([com.sappy.speedome.Platform]). */
+class SettingsRepository(private val store: DataStore<Preferences>, scope: CoroutineScope) {
+
+    private object Keys {
+        val devMode = booleanPreferencesKey("dev_mode")
+        val simulator = booleanPreferencesKey("simulator")
+        val mode = stringPreferencesKey("mode")
+        val predictNeedle = booleanPreferencesKey("predict_needle")
+        val theme = stringPreferencesKey("theme")
+        val average = stringPreferencesKey("average")
+        val startupSweep = booleanPreferencesKey("startup_sweep")
+        val shrink = stringPreferencesKey("shrink")
+        val fixedKmh = intPreferencesKey("fixed_kmh")
+        val retroCream = booleanPreferencesKey("retro_cream")
+        val digital = stringPreferencesKey("digital")
+        val accent = stringPreferencesKey("accent")
+        val nightFocus = intPreferencesKey("night_focus")
+        val nightMax = intPreferencesKey("night_max")
+        val nightBright = floatPreferencesKey("night_bright")
+        val nerdStrip = booleanPreferencesKey("nerd_strip")
+        val showHeading = booleanPreferencesKey("show_heading")
+        val showG = booleanPreferencesKey("show_g")
+        val mapNorthUp = booleanPreferencesKey("map_north_up")
+        val gpuEffects = booleanPreferencesKey("gpu_effects")
+        val rawLog = booleanPreferencesKey("raw_log")
+        val reliabilityOffered = booleanPreferencesKey("reliability_offered")
+        val units = stringPreferencesKey("units")
+        val speedLimit = floatPreferencesKey("speed_limit_mps")
+        val graphWindow = intPreferencesKey("graph_window_s")
+        val limitVibrate = booleanPreferencesKey("limit_vibrate")
+    }
+
+    val state: StateFlow<AppSettings> = store.data
+        .map { it.toSettings() }
+        .stateIn(scope, SharingStarted.Eagerly, AppSettings())
+
+    suspend fun update(transform: (AppSettings) -> AppSettings) {
+        store.edit { prefs -> prefs.write(transform(prefs.toSettings())) }
+    }
+
+    private inline fun <reified E : Enum<E>> String?.enumOr(default: E): E =
+        this?.let { runCatching { enumValueOf<E>(it) }.getOrNull() } ?: default
+
+    private fun Preferences.toSettings(): AppSettings {
+        val d = AppSettings()
+        return AppSettings(
+            devMode = this[Keys.devMode] ?: d.devMode,
+            simulator = this[Keys.simulator] ?: d.simulator,
+            mode = this[Keys.mode].enumOr(d.mode),
+            predictNeedle = this[Keys.predictNeedle] ?: d.predictNeedle,
+            theme = this[Keys.theme] ?: d.theme,
+            average = this[Keys.average].enumOr(d.average),
+            startupSweep = this[Keys.startupSweep] ?: d.startupSweep,
+            shrink = this[Keys.shrink].enumOr(d.shrink),
+            fixedKmh = this[Keys.fixedKmh] ?: d.fixedKmh,
+            retroCream = this[Keys.retroCream] ?: d.retroCream,
+            digital = this[Keys.digital].enumOr(d.digital),
+            accent = this[Keys.accent].enumOr(d.accent),
+            nightFocusKmh = this[Keys.nightFocus] ?: d.nightFocusKmh,
+            nightMaxKmh = this[Keys.nightMax] ?: d.nightMaxKmh,
+            nightBrightness = this[Keys.nightBright] ?: d.nightBrightness,
+            nerdStrip = this[Keys.nerdStrip] ?: d.nerdStrip,
+            showHeading = this[Keys.showHeading] ?: d.showHeading,
+            showGForce = this[Keys.showG] ?: d.showGForce,
+            mapNorthUp = this[Keys.mapNorthUp] ?: d.mapNorthUp,
+            gpuEffects = this[Keys.gpuEffects] ?: d.gpuEffects,
+            rawLog = this[Keys.rawLog] ?: d.rawLog,
+            reliabilityOffered = this[Keys.reliabilityOffered] ?: d.reliabilityOffered,
+            units = this[Keys.units].enumOr(d.units),
+            speedLimitMps = this[Keys.speedLimit] ?: d.speedLimitMps,
+            graphWindowS = this[Keys.graphWindow] ?: d.graphWindowS,
+            limitVibrate = this[Keys.limitVibrate] ?: d.limitVibrate,
+        )
+    }
+
+    private fun MutablePreferences.write(s: AppSettings) {
+        this[Keys.devMode] = s.devMode
+        this[Keys.simulator] = s.simulator
+        this[Keys.mode] = s.mode.name
+        this[Keys.predictNeedle] = s.predictNeedle
+        this[Keys.theme] = s.theme
+        this[Keys.average] = s.average.name
+        this[Keys.startupSweep] = s.startupSweep
+        this[Keys.shrink] = s.shrink.name
+        this[Keys.fixedKmh] = s.fixedKmh
+        this[Keys.retroCream] = s.retroCream
+        this[Keys.digital] = s.digital.name
+        this[Keys.accent] = s.accent.name
+        this[Keys.nightFocus] = s.nightFocusKmh
+        this[Keys.nightMax] = s.nightMaxKmh
+        this[Keys.nightBright] = s.nightBrightness
+        this[Keys.nerdStrip] = s.nerdStrip
+        this[Keys.showHeading] = s.showHeading
+        this[Keys.showG] = s.showGForce
+        this[Keys.mapNorthUp] = s.mapNorthUp
+        this[Keys.gpuEffects] = s.gpuEffects
+        this[Keys.rawLog] = s.rawLog
+        this[Keys.reliabilityOffered] = s.reliabilityOffered
+        this[Keys.units] = s.units.name
+        this[Keys.speedLimit] = s.speedLimitMps
+        this[Keys.graphWindow] = s.graphWindowS
+        this[Keys.limitVibrate] = s.limitVibrate
+    }
+}
