@@ -25,6 +25,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import com.sappy.speedome.monotonicNanos
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -52,14 +54,17 @@ fun GraphPage(driver: GaugeDriver, windowS: Int, modifier: Modifier = Modifier) 
     val app = LocalAppContainer.current
     val scope = rememberCoroutineScope()
     val history by app.speedHistory.collectAsStateWithLifecycle()
+    val samples = history.samples
     val frame = driver.frame
     val accent = frame.options.accent
-    val endNanos = history.lastOrNull()?.tNanos ?: 0L
-    val startNanos = endNanos - windowS * 1_000_000_000L
-    val shown = remember(history, windowS) { history.filter { it.tNanos >= startNanos } }
-    val max = shown.maxOfOrNull { Fmt.speed(it.mps.toDouble()) } ?: 0.0
-    val avg = if (shown.isEmpty()) 0.0 else shown.sumOf { Fmt.speed(it.mps.toDouble()) } / shown.size
-    val scale = niceScale(max)
+    val windowNanos = windowS * 1_000_000_000L
+    // Stats follow the 1 Hz samples; the drawing below scrolls every frame.
+    val (max, avg) = remember(samples, windowS) {
+        val from = (samples.lastOrNull()?.tNanos ?: 0L) - windowNanos
+        val shown = samples.filter { it.tNanos >= from }.map { Fmt.speed(it.mps.toDouble()) }
+        (shown.maxOrNull() ?: 0.0) to (if (shown.isEmpty()) 0.0 else shown.average())
+    }
+    val scale = niceScale(maxOf(max, frame.readout.toDouble()))
     val over = overText(windowS)
 
     Column(modifier.background(SpeedoColors.Background).padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -83,16 +88,26 @@ fun GraphPage(driver: GaugeDriver, windowS: Int, modifier: Modifier = Modifier) 
             val grid = accent.copy(alpha = .14f)
             for (i in 1 until 6) drawLine(grid, Offset(size.width * i / 6, 0f), Offset(size.width * i / 6, size.height))
             for (i in 1 until 5) drawLine(grid, Offset(0f, size.height * i / 5), Offset(size.width, size.height * i / 5))
+            // The window ends now and moves every frame, so the graph scrolls smoothly; the newest
+            // edge follows the needle between the once-a-second samples.
+            driver.frame // redraw every frame
+            val endNanos = monotonicNanos()
+            val startNanos = endNanos - windowNanos
+            fun xOf(t: Long) = (t - startNanos).toFloat() / windowNanos * size.width
+            fun yOf(kmh: Double) = size.height * (1f - (kmh / scale).toFloat().coerceIn(0f, 1f))
+            // From the last sample before the window, so the oldest segment slides out instead of popping.
+            val first = (samples.binarySearchBy(startNanos) { it.tNanos }.let { if (it < 0) -it - 1 else it } - 1).coerceAtLeast(0)
             val line = Path()
             val fill = Path()
             var runStartX = 0f
             var prev: SpeedSample? = null
             var x = 0f
-            for (p in shown) {
-                x = (p.tNanos - startNanos).toFloat() / (endNanos - startNanos) * size.width
-                val y = size.height * (1f - (Fmt.speed(p.mps.toDouble()) / scale).toFloat())
+            for (k in first until samples.size) {
+                val p = samples[k]
+                x = xOf(p.tNanos)
+                val y = yOf(Fmt.speed(p.mps.toDouble()))
                 if (prev == null || p.tNanos - prev.tNanos > GAP_NANOS) {
-                    if (prev != null) fill.lineTo((prev.tNanos - startNanos).toFloat() / (endNanos - startNanos) * size.width, size.height)
+                    if (prev != null) fill.lineTo(xOf(prev.tNanos), size.height)
                     line.moveTo(x, y)
                     fill.moveTo(x, size.height)
                     runStartX = x
@@ -101,12 +116,20 @@ fun GraphPage(driver: GaugeDriver, windowS: Int, modifier: Modifier = Modifier) 
                 fill.lineTo(x, y)
                 prev = p
             }
+            if (prev != null && endNanos - prev.tNanos < GAP_NANOS) {
+                x = size.width
+                val y = yOf(driver.liveKmh.toDouble())
+                line.lineTo(x, y)
+                fill.lineTo(x, y)
+            }
             if (prev != null) {
                 fill.lineTo(x, size.height)
                 fill.lineTo(runStartX, size.height)
             }
-            drawPath(fill, accent.copy(alpha = .22f))
-            drawPath(line, accent, style = Stroke(1.5.dp.toPx()))
+            clipRect {
+                drawPath(fill, accent.copy(alpha = .22f))
+                drawPath(line, accent, style = Stroke(1.5.dp.toPx()))
+            }
             drawRect(accent.copy(alpha = .5f), style = Stroke(1.dp.toPx()))
         }
         Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {

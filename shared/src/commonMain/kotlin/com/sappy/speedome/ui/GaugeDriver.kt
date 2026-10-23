@@ -44,6 +44,13 @@ class GaugeDriver {
 
     internal var sweepStartNanos: Long? = null
 
+    /**
+     * The needle's speed this frame without the startup sweep, in display units. Not a state: read
+     * it after [frame], which changes every frame (the Graph page's leading edge follows it).
+     */
+    var liveKmh = 0f
+        internal set
+
     /** Plays the 0 → max → 0 startup sweep (docs/plan.md §9). */
     fun sweep() {
         sweepStartNanos = monotonicNanos()
@@ -180,6 +187,7 @@ fun rememberGaugeDriver(
                 }
                 lastDistance = view.distanceM
 
+                driver.liveKmh = v.toFloat()
                 driver.frame = GaugeFrame(
                     needleKmh = needle.toFloat(),
                     readout = readout,

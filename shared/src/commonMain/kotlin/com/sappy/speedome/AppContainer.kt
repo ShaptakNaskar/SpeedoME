@@ -3,8 +3,7 @@ package com.sappy.speedome
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.sappy.speedome.engine.Command
 import com.sappy.speedome.engine.SessionKind
-import com.sappy.speedome.engine.SpeedSample
-import com.sappy.speedome.engine.appended
+import com.sappy.speedome.engine.SpeedHistory
 import com.sappy.speedome.settings.SettingsRepository
 import com.sappy.speedome.tracking.GnssRepository
 import com.sappy.speedome.tracking.SessionRecorder
@@ -51,8 +50,8 @@ class AppContainer(val platform: Platform) {
     val db = platform.database()
     val liveRoute = com.sappy.speedome.tracking.LiveRoute(appScope, tracking.state)
     /** The last two hours of speed, one sample a second, for the Graph page. */
-    val speedHistory: StateFlow<List<SpeedSample>> = tracking.state.scan(emptyList<SpeedSample>()) { h, s -> h.appended(s) }
-        .stateIn(appScope, SharingStarted.Eagerly, emptyList())
+    val speedHistory: StateFlow<SpeedHistory> = tracking.state.scan(SpeedHistory()) { h, s -> h.appended(s) }
+        .stateIn(appScope, SharingStarted.Eagerly, SpeedHistory())
     val replay = com.sappy.speedome.tracking.FileReplay(appScope, tracking)
     val recorder = SessionRecorder(appScope, db.trips(), tracking, settings.state)
     val limitAlert = SpeedLimitAlert(appScope, tracking.state, settings.state, trackingActive, platform.vibrator)
