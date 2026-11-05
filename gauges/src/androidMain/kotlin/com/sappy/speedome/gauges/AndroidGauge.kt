@@ -42,6 +42,9 @@ private fun androidAssets(context: Context): GaugeAssets {
         GaugeTypeface.VT323 to font(R.font.vt323),
         GaugeTypeface.SILKSCREEN to font(R.font.silkscreen),
         GaugeTypeface.ORBITRON to font(R.font.orbitron),
+        GaugeTypeface.CINZEL to font(R.font.cinzel),
+        GaugeTypeface.COURIER to font(R.font.courier_prime),
+        GaugeTypeface.COURIER_BOLD to font(R.font.courier_prime_bold),
     )
     return GaugeAssets { face, weight, skewX ->
         Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
@@ -136,6 +139,9 @@ actual fun GaugeTypeface.fontFamily(): androidx.compose.ui.text.font.FontFamily 
         GaugeTypeface.VT323 -> R.font.vt323
         GaugeTypeface.SILKSCREEN -> R.font.silkscreen
         GaugeTypeface.ORBITRON -> R.font.orbitron
+        GaugeTypeface.CINZEL -> R.font.cinzel
+        GaugeTypeface.COURIER -> R.font.courier_prime
+        GaugeTypeface.COURIER_BOLD -> R.font.courier_prime_bold
     }
     androidx.compose.ui.text.font.FontFamily(FAMILY_WEIGHTS.map { androidx.compose.ui.text.font.Font(res, it) })
 }

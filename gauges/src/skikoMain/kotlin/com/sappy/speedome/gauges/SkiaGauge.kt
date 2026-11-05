@@ -19,6 +19,9 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import com.sappy.speedome.gauges.resources.Res
 import com.sappy.speedome.gauges.resources.b612_mono
+import com.sappy.speedome.gauges.resources.cinzel
+import com.sappy.speedome.gauges.resources.courier_prime
+import com.sappy.speedome.gauges.resources.courier_prime_bold
 import com.sappy.speedome.gauges.resources.b612_mono_bold
 import com.sappy.speedome.gauges.resources.barlow_semi_condensed_semibold
 import com.sappy.speedome.gauges.resources.orbitron
@@ -70,6 +73,9 @@ private val fontFiles = mapOf(
     GaugeTypeface.VT323 to "vt323.ttf",
     GaugeTypeface.SILKSCREEN to "silkscreen.ttf",
     GaugeTypeface.ORBITRON to "orbitron.ttf",
+    GaugeTypeface.CINZEL to "cinzel.ttf",
+    GaugeTypeface.COURIER to "courier_prime.ttf",
+    GaugeTypeface.COURIER_BOLD to "courier_prime_bold.ttf",
 )
 
 private var loadedFaces: Map<GaugeTypeface, Typeface>? = null
@@ -189,6 +195,9 @@ actual fun GaugeTypeface.fontFamily(): androidx.compose.ui.text.font.FontFamily 
         GaugeTypeface.VT323 -> Res.font.vt323
         GaugeTypeface.SILKSCREEN -> Res.font.silkscreen
         GaugeTypeface.ORBITRON -> Res.font.orbitron
+        GaugeTypeface.CINZEL -> Res.font.cinzel
+        GaugeTypeface.COURIER -> Res.font.courier_prime
+        GaugeTypeface.COURIER_BOLD -> Res.font.courier_prime_bold
     }
     return androidx.compose.ui.text.font.FontFamily(FAMILY_WEIGHTS.map { org.jetbrains.compose.resources.Font(res, it) })
 }

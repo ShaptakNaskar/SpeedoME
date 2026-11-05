@@ -5,8 +5,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 
-/** The bundled OFL typefaces (docs/plan.md §9); the last four are for the world speedos. */
-enum class GaugeTypeface { OSWALD, OUTFIT, B612, B612_BOLD, BARLOW_SEMI, RYE, VT323, SILKSCREEN, ORBITRON }
+/** The bundled OFL typefaces (docs/plan.md §9); from Rye on they are for the world speedos. */
+enum class GaugeTypeface { OSWALD, OUTFIT, B612, B612_BOLD, BARLOW_SEMI, RYE, VT323, SILKSCREEN, ORBITRON, CINZEL, COURIER, COURIER_BOLD }
 
 /**
  * A text paint: a bundled typeface at a variable-font weight, optionally skewed. Android uses
@@ -30,6 +30,9 @@ class GaugeAssets(private val factory: PaintFactory) {
     val vt323 = GaugeTypeface.VT323
     val silkscreen = GaugeTypeface.SILKSCREEN
     val orbitron = GaugeTypeface.ORBITRON
+    val cinzel = GaugeTypeface.CINZEL
+    val courier = GaugeTypeface.COURIER
+    val courierBold = GaugeTypeface.COURIER_BOLD
 
     private data class Key(val face: GaugeTypeface, val weight: Int, val skewX: Float)
 

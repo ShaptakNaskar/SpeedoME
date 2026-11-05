@@ -208,7 +208,7 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
                     "Map data" to "© OpenStreetMap contributors (ODbL). Tiles by OpenFreeMap, schema © OpenMapTiles.",
                     "World map styles" to "From Waypoint (github.com/the-geeky-couldron/waypoint). Copyright (c) 2026 Waypoint contributors, MIT License; the full notice ships with the styles. Lettering changed to Noto Sans.",
                     "Elevation (hill shading on some worlds)" to "Terrain Tiles on the AWS Open Data Registry: Mapzen, with SRTM, GMTED, ETOPO1 and other sources.",
-                    "Fonts" to "Oswald, Outfit, B612 Mono, Barlow Semi Condensed, Rye, VT323, Silkscreen, Orbitron, and Noto Sans on the maps: SIL Open Font License 1.1.",
+                    "Fonts" to "Oswald, Outfit, B612 Mono, Barlow Semi Condensed, Rye, VT323, Silkscreen, Orbitron, Cinzel, Courier Prime, and Noto Sans on the maps: SIL Open Font License 1.1.",
                     "AndroidX, Jetpack Compose, Kotlin, kotlinx" to "Apache License 2.0.",
                 ).forEach { (name, text) ->
                     Column {
