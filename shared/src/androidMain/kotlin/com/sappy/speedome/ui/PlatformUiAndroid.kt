@@ -142,3 +142,16 @@ actual val hasReliabilityScreen: Boolean = true
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) = androidx.activity.compose.BackHandler(enabled, onBack)
 
 actual val hasSatelliteData: Boolean = true
+
+@Composable
+actual fun SystemBars(light: Boolean) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.LaunchedEffect(view, light) {
+        val activity = generateSequence(view.context) { (it as? android.content.ContextWrapper)?.baseContext }
+            .filterIsInstance<android.app.Activity>().firstOrNull() ?: return@LaunchedEffect
+        androidx.core.view.WindowCompat.getInsetsController(activity.window, view).apply {
+            isAppearanceLightStatusBars = light
+            isAppearanceLightNavigationBars = light
+        }
+    }
+}

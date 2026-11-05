@@ -2,6 +2,7 @@ package com.sappy.speedome.ui.worlds
 
 import androidx.compose.ui.graphics.Color
 import com.sappy.speedome.gauges.GaugeTheme
+import com.sappy.speedome.gauges.GaugeTypeface
 import com.sappy.speedome.gauges.GreenTerminalTheme
 import com.sappy.speedome.gauges.NeonCityTheme
 import com.sappy.speedome.gauges.OldWestTheme
@@ -13,9 +14,17 @@ import com.sappy.speedome.gauges.WorldTheme
  * A map world: one of the game-inspired map styles from Waypoint (MIT, imported by
  * tools/import_worlds.py into composeResources/files/worlds/<id>.json) with its palette, which also
  * colours the world's speedo unless it has a hand-made one ([hero]). Names are neutral on purpose:
- * no game titles.
+ * no game titles. While a world is on, the app's lettering uses [font] for titles, numbers and buttons
+ * and [bodyFont] for running text (the system font when null).
  */
-data class World(val id: String, val title: String, val palette: WorldPalette, val hero: GaugeTheme? = null) {
+data class World(
+    val id: String,
+    val title: String,
+    val palette: WorldPalette,
+    val hero: GaugeTheme? = null,
+    val font: GaugeTypeface? = null,
+    val bodyFont: GaugeTypeface? = null,
+) {
     val stylePath get() = "files/worlds/$id.json"
 
     /** The speedo docked on this world's map. */
@@ -25,10 +34,10 @@ data class World(val id: String, val title: String, val palette: WorldPalette, v
 object Worlds {
     val all: List<World> = listOf(
         World("palm_city", "PALM CITY", WorldPalette(accent = Color(0xFFB6DB91), route = Color(0xFFB786ED), ground = Color(0xFF20221F), road = Color(0xFF73776C), building = Color(0xFF383B35))),
-        World("old_west", "OLD WEST", WorldPalette(accent = Color(0xFFE4BE82), route = Color(0xFFB52E31), ground = Color(0xFFDAC8A2), road = Color(0xFF665F4B), building = Color(0xFFC6B18D)), hero = OldWestTheme),
-        World("neon_city", "NEON CITY", WorldPalette(accent = Color(0xFF6DE9DD), route = Color(0xFFF6E75C), ground = Color(0xFF0C1019), road = Color(0xFF258DA3), building = Color(0xFF8B2029)), hero = NeonCityTheme),
-        World("pixel_world", "PIXEL WORLD", WorldPalette(accent = Color(0xFFB8E088), route = Color(0xFFE95345), ground = Color(0xFF566943), road = Color(0xFFC7C4A5), building = Color(0xFF777D6C)), hero = PixelWorldTheme),
-        World("green_terminal", "GREEN TERMINAL", WorldPalette(accent = Color(0xFF9AF477), route = Color(0xFFD5FF9B), ground = Color(0xFF071109), road = Color(0xFF6BCF55), building = Color(0xFF1E4922)), hero = GreenTerminalTheme),
+        World("old_west", "OLD WEST", WorldPalette(accent = Color(0xFFE4BE82), route = Color(0xFFB52E31), ground = Color(0xFFDAC8A2), road = Color(0xFF665F4B), building = Color(0xFFC6B18D)), hero = OldWestTheme, font = GaugeTypeface.RYE),
+        World("neon_city", "NEON CITY", WorldPalette(accent = Color(0xFF6DE9DD), route = Color(0xFFF6E75C), ground = Color(0xFF0C1019), road = Color(0xFF258DA3), building = Color(0xFF8B2029)), hero = NeonCityTheme, font = GaugeTypeface.ORBITRON),
+        World("pixel_world", "PIXEL WORLD", WorldPalette(accent = Color(0xFFB8E088), route = Color(0xFFE95345), ground = Color(0xFF566943), road = Color(0xFFC7C4A5), building = Color(0xFF777D6C)), hero = PixelWorldTheme, font = GaugeTypeface.SILKSCREEN),
+        World("green_terminal", "GREEN TERMINAL", WorldPalette(accent = Color(0xFF9AF477), route = Color(0xFFD5FF9B), ground = Color(0xFF071109), road = Color(0xFF6BCF55), building = Color(0xFF1E4922)), hero = GreenTerminalTheme, font = GaugeTypeface.VT323, bodyFont = GaugeTypeface.VT323),
         World("back_streets", "BACK STREETS", WorldPalette(accent = Color(0xFFF2C877), route = Color(0xFFDA5B3C), ground = Color(0xFFC2C5AD), road = Color(0xFFF4F0D8), building = Color(0xFFA4A48E))),
         World("midnight_run", "MIDNIGHT RUN", WorldPalette(accent = Color(0xFFFFA9E8), route = Color(0xFF75EBF5), ground = Color(0xFF555946), road = Color(0xFFD2D2B6), building = Color(0xFF6A6A5A))),
         World("wayfarer", "WAYFARER", WorldPalette(accent = Color(0xFFD6D59A), route = Color(0xFF9F3435), ground = Color(0xFFB6AF8D), road = Color(0xFFE4D6AE), building = Color(0xFF93886B))),

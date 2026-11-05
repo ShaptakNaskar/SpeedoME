@@ -106,8 +106,9 @@ fun SpeedScreen() {
         heading = { if (needsCompass) app.motion.motion.value.headingDeg else null },
         batteryLow = { batteryLow },
     )
-    val chrome = if (theme.light) Color.White else Color.Black
-    val ink = if (theme.light) Color(0xFF111111) else SpeedoColors.Text
+    // The app's look follows the theme (ui/theme/Theme.kt), so the chrome around the gauge matches it.
+    val chrome = SpeedoColors.Background
+    val ink = SpeedoColors.Text
     val permissions = rememberPermissionsUi()
     var targetDialog by remember { mutableStateOf(false) }
     if (targetDialog) TargetDialog(view.target) { targetDialog = false }
@@ -178,7 +179,7 @@ fun SpeedScreen() {
             view.target?.let { t -> TargetStrip(t) { targetDialog = true } }
             if (showStrip) InfoStrip(settings, view, driver)
             if (!landscape) {
-                Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth().background(Color.Black), contentAlignment = Alignment.Center) {
+                Box(Modifier.height(CONTROLS_HEIGHT).fillMaxWidth().background(chrome), contentAlignment = Alignment.Center) {
                     SessionControls(view, onTarget = { targetDialog = true }, onLimit = { limitDialog = true })
                 }
             }
@@ -260,7 +261,7 @@ private fun InfoStrip(settings: com.sappy.speedome.settings.AppSettings, view: T
             add("G ${Fmt.decimal(kotlin.math.abs(lat), 2)} lat ${Fmt.decimal(fwd, 2)} fwd")
         }
     }
-    Box(Modifier.fillMaxWidth().height(STRIP_HEIGHT).background(Color.Black), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxWidth().height(STRIP_HEIGHT).background(SpeedoColors.Background), contentAlignment = Alignment.Center) {
         Text(
             parts.joinToString(" · ") { it.replace(' ', '\u00A0') }, color = SpeedoColors.Muted, fontSize = 10.sp, lineHeight = 13.sp, textAlign = TextAlign.Center,
             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, maxLines = 2, modifier = Modifier.padding(horizontal = 12.dp),

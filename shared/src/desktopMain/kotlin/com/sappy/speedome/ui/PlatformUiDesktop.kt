@@ -72,3 +72,6 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, wo
 }
 
 actual val hasSatelliteData: Boolean = true
+
+@Composable
+actual fun SystemBars(light: Boolean) {}

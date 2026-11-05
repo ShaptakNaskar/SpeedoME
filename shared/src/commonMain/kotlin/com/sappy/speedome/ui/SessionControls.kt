@@ -160,7 +160,7 @@ private fun LabeledButton(label: String?, active: Boolean, description: String, 
         Modifier
             .widthIn(min = 44.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White.copy(alpha = 0.07f))
+            .background(SpeedoColors.Text.copy(alpha = 0.08f))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(horizontal = 8.dp, vertical = if (label == null) 13.dp else 5.dp),
@@ -181,7 +181,7 @@ private fun Pill(label: String, color: Color, description: String? = null, onCli
         letterSpacing = 1.5.sp,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(Color.White.copy(alpha = 0.07f))
+            .background(SpeedoColors.Text.copy(alpha = 0.08f))
             .clickable(role = Role.Button, onClick = onClick)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
             .padding(horizontal = 14.dp, vertical = 15.dp), // 48 dp touch target
@@ -208,7 +208,7 @@ fun TripSummarySheet() {
         ) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(if (f.sectionOf != null) "Section saved" else "Trip saved", color = SpeedoColors.Text, fontSize = 22.sp)
-                if (f.sectionOf != null) Text("Keep it linked to its trip, or as a trip of its own.", color = SpeedoColors.Muted, fontSize = 14.sp)
+                if (f.sectionOf != null) Text("Keep it linked to its trip, or as a trip of its own.", color = SpeedoColors.Muted, fontSize = 14.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
                 trip?.let { TripStatsGrid(it) }
                 FlowRow(
                     Modifier.fillMaxWidth().padding(bottom = 24.dp),

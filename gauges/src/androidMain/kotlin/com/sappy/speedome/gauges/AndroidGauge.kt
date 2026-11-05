@@ -123,3 +123,19 @@ internal actual fun meshBrush(density: Float): ShaderBrush {
     val image: ImageBitmap = bmp.asImageBitmap()
     return ShaderBrush(ImageShader(image, TileMode.Repeated, TileMode.Repeated))
 }
+
+@Composable
+actual fun GaugeTypeface.fontFamily(): androidx.compose.ui.text.font.FontFamily = remember(this) {
+    val res = when (this) {
+        GaugeTypeface.OSWALD -> R.font.oswald
+        GaugeTypeface.OUTFIT -> R.font.outfit
+        GaugeTypeface.B612 -> R.font.b612_mono
+        GaugeTypeface.B612_BOLD -> R.font.b612_mono_bold
+        GaugeTypeface.BARLOW_SEMI -> R.font.barlow_semi_condensed_semibold
+        GaugeTypeface.RYE -> R.font.rye
+        GaugeTypeface.VT323 -> R.font.vt323
+        GaugeTypeface.SILKSCREEN -> R.font.silkscreen
+        GaugeTypeface.ORBITRON -> R.font.orbitron
+    }
+    androidx.compose.ui.text.font.FontFamily(FAMILY_WEIGHTS.map { androidx.compose.ui.text.font.Font(res, it) })
+}

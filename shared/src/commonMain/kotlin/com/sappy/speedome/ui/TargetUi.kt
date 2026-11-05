@@ -69,7 +69,7 @@ fun TargetStrip(t: TargetView, onEdit: () -> Unit) {
     }
     val accent = if (t.arrived) SpeedoColors.Text else SpeedoColors.Accent
     Box(
-        Modifier.fillMaxWidth().height(TARGET_STRIP_HEIGHT).background(androidx.compose.ui.graphics.Color.Black)
+        Modifier.fillMaxWidth().height(TARGET_STRIP_HEIGHT).background(SpeedoColors.Background)
             .clickable(role = Role.Button, onClick = onEdit).semantics { contentDescription = "Edit target" },
     ) {
         Box(Modifier.fillMaxWidth().fillMaxHeight().background(SpeedoColors.Accent.copy(alpha = .35f * flash.value)))

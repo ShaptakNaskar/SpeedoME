@@ -211,7 +211,7 @@ private fun Check(title: String, body: String, ok: Boolean, onFix: (() -> Unit)?
         ) { Text(if (ok) "✓" else "", color = Color(0xFF3ECF7A), fontSize = 14.sp, fontWeight = FontWeight.Bold) }
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(title, color = SpeedoColors.Text, fontSize = 16.sp)
-            Text(body, color = SpeedoColors.Muted, fontSize = 13.sp)
+            Text(body, color = SpeedoColors.Muted, fontSize = 13.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
         }
         if (!ok && onFix != null) FilledTonalButton(onClick = onFix) { Text("Allow") }
     }
@@ -224,7 +224,7 @@ private fun OemCard(oem: Oem, context: Context) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(oem.name, color = SpeedoColors.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text(oem.steps, color = SpeedoColors.Muted, fontSize = 14.sp)
+        Text(oem.steps, color = SpeedoColors.Muted, fontSize = 14.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalButton(onClick = { openOemScreen(context, oem) }) { Text("Open settings") }
             TextButton(onClick = {

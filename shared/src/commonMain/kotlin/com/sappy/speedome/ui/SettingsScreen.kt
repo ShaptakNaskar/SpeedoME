@@ -130,7 +130,7 @@ fun SettingsScreen() {
             val nav = LocalNavigator.current
             Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { nav.openReliability() }.padding(vertical = 4.dp)) {
                 Text("Background reliability  ›", color = SpeedoColors.Text, fontSize = 16.sp)
-                Text("Keep recording when the screen is off or Android closes apps.", color = SpeedoColors.Muted, fontSize = 13.sp)
+                Text("Keep recording when the screen is off or Android closes apps.", color = SpeedoColors.Muted, fontSize = 13.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
             }
         }
 
@@ -178,7 +178,7 @@ fun SettingsScreen() {
             }.padding(vertical = 8.dp),
         ) {
             Text("Version", color = SpeedoColors.Text, fontSize = 16.sp)
-            Text("SpeedoME ${AppInfo.versionName}", color = SpeedoColors.Muted, fontSize = 14.sp)
+            Text("SpeedoME ${AppInfo.versionName}", color = SpeedoColors.Muted, fontSize = 14.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
         }
         if (s.devMode) DeveloperSection(s, ::edit)
     }
@@ -191,7 +191,7 @@ private const val REPO = "https://github.com/ShaptakNaskar/SpeedoME"
 private fun LinkRow(title: String, body: String, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(vertical = 4.dp)) {
         Text(title, color = SpeedoColors.Text, fontSize = 16.sp)
-        Text(body, color = SpeedoColors.Muted, fontSize = 13.sp)
+        Text(body, color = SpeedoColors.Muted, fontSize = 13.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
     }
 }
 
@@ -213,7 +213,7 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
                 ).forEach { (name, text) ->
                     Column {
                         Text(name, color = SpeedoColors.Text, fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                        Text(text, color = SpeedoColors.Muted, fontSize = 13.sp)
+                        Text(text, color = SpeedoColors.Muted, fontSize = 13.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
                     }
                 }
             }
@@ -254,7 +254,7 @@ private fun ToggleRow(title: String, body: String, checked: Boolean, onChange: (
     ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
             Text(title, color = SpeedoColors.Text, fontSize = 16.sp)
-            Text(body, color = SpeedoColors.Muted, fontSize = 13.sp)
+            Text(body, color = SpeedoColors.Muted, fontSize = 13.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
         }
         Switch(checked = checked, onCheckedChange = null)
     }

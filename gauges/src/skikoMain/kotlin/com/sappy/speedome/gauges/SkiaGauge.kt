@@ -18,6 +18,15 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import com.sappy.speedome.gauges.resources.Res
+import com.sappy.speedome.gauges.resources.b612_mono
+import com.sappy.speedome.gauges.resources.b612_mono_bold
+import com.sappy.speedome.gauges.resources.barlow_semi_condensed_semibold
+import com.sappy.speedome.gauges.resources.orbitron
+import com.sappy.speedome.gauges.resources.oswald
+import com.sappy.speedome.gauges.resources.outfit
+import com.sappy.speedome.gauges.resources.rye
+import com.sappy.speedome.gauges.resources.silkscreen
+import com.sappy.speedome.gauges.resources.vt323
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.skia.Data
 import org.jetbrains.skia.FilterBlurMode
@@ -166,4 +175,20 @@ internal actual fun meshBrush(density: Float): ShaderBrush {
         drawRect(Rect(0f, n - t, n - t, n.toFloat()), line)
     }
     return ShaderBrush(ImageShader(image, TileMode.Repeated, TileMode.Repeated))
+}
+
+@Composable
+actual fun GaugeTypeface.fontFamily(): androidx.compose.ui.text.font.FontFamily {
+    val res = when (this) {
+        GaugeTypeface.OSWALD -> Res.font.oswald
+        GaugeTypeface.OUTFIT -> Res.font.outfit
+        GaugeTypeface.B612 -> Res.font.b612_mono
+        GaugeTypeface.B612_BOLD -> Res.font.b612_mono_bold
+        GaugeTypeface.BARLOW_SEMI -> Res.font.barlow_semi_condensed_semibold
+        GaugeTypeface.RYE -> Res.font.rye
+        GaugeTypeface.VT323 -> Res.font.vt323
+        GaugeTypeface.SILKSCREEN -> Res.font.silkscreen
+        GaugeTypeface.ORBITRON -> Res.font.orbitron
+    }
+    return androidx.compose.ui.text.font.FontFamily(FAMILY_WEIGHTS.map { org.jetbrains.compose.resources.Font(res, it) })
 }

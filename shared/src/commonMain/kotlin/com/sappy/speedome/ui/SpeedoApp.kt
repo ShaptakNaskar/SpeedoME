@@ -136,6 +136,7 @@ fun Caption(text: String) {
         text,
         color = SpeedoColors.Muted,
         fontSize = 14.sp,
+        fontFamily = com.sappy.speedome.ui.theme.readingFont,
         textAlign = TextAlign.Center,
         modifier = Modifier.widthIn(max = 320.dp),
     )

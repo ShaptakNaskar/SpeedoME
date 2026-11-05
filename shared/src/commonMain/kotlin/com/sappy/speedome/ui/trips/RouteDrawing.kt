@@ -157,7 +157,7 @@ fun SpeedGraph(points: List<PointEntity>, modifier: Modifier = Modifier) {
         var g = 0.0
         while (g <= Fmt.speed(vMax.toDouble())) {
             val gy = y((g / Fmt.speed(1.0)).toFloat())
-            drawLine(Color.White.copy(alpha = if (g == 0.0) .14f else .06f), Offset(left, gy), Offset(right, gy), 1.dp.toPx())
+            drawLine(SpeedoColors.Text.copy(alpha = if (g == 0.0) .16f else .07f), Offset(left, gy), Offset(right, gy), 1.dp.toPx())
             val text = labels.measure(Fmt.decimal(g, 0), labelStyle)
             drawText(text, topLeft = Offset(left - 8.dp.toPx() - text.size.width, gy - text.size.height / 2f))
             g += step

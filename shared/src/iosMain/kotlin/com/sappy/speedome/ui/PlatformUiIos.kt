@@ -179,3 +179,14 @@ actual fun ReliabilityScreen(onBack: () -> Unit) {}
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {}
 
 actual val hasSatelliteData: Boolean = false
+
+@Composable
+actual fun SystemBars(light: Boolean) {
+    // The status bar style is "default" (Info.plist), which follows the window's light or dark style.
+    androidx.compose.runtime.LaunchedEffect(light) {
+        val style = if (light) platform.UIKit.UIUserInterfaceStyle.UIUserInterfaceStyleLight else platform.UIKit.UIUserInterfaceStyle.UIUserInterfaceStyleDark
+        platform.UIKit.UIApplication.sharedApplication.connectedScenes.filterIsInstance<platform.UIKit.UIWindowScene>()
+            .flatMap { it.windows.filterIsInstance<platform.UIKit.UIWindow>() }
+            .forEach { it.overrideUserInterfaceStyle = style }
+    }
+}

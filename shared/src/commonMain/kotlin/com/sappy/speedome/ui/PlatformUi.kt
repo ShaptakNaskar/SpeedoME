@@ -77,3 +77,7 @@ expect fun PlatformBackHandler(enabled: Boolean = true, onBack: () -> Unit)
 
 /** False where the platform gives apps no satellite list or NMEA (iOS); the Nerd page says so. */
 expect val hasSatelliteData: Boolean
+
+/** Dark status and navigation bar icons on a light look, light ones on a dark look. */
+@Composable
+expect fun SystemBars(light: Boolean)

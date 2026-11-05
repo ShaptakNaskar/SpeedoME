@@ -70,3 +70,10 @@ expect fun DrawScope.text(
     spacingEm: Float = 0f,
     top: Boolean = false,
 )
+
+/** The typeface as a Compose font family (weights 300–800; variable fonts follow the weight), for app text. */
+@androidx.compose.runtime.Composable
+expect fun GaugeTypeface.fontFamily(): androidx.compose.ui.text.font.FontFamily
+
+/** The weights app text asks for; a variable font gets each as its own instance. */
+internal val FAMILY_WEIGHTS = (300..800 step 100).map { androidx.compose.ui.text.font.FontWeight(it) }

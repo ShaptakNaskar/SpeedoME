@@ -98,6 +98,12 @@ private fun shots(app: AppContainer, dir: File) {
     shot(dir, "trip-detail", PHONE, app) { TripDetail(tripId, onBack = {}, onOpen = {}) }
     shot(dir, "section-detail", PHONE, app) { TripDetail(trips.first { it.parentId != null }.id, onBack = {}, onOpen = {}) }
     shot(dir, "settings", PHONE, app) { SettingsScreen() }
+    // A light world's look on the other screens (parchment, Rye lettering).
+    runBlocking { app.settings.update { it.copy(theme = "map", worldId = "old_west") } }
+    shot(dir, "look-oldwest-trips", PHONE, app) { TripsScreen() }
+    shot(dir, "look-oldwest-detail", PHONE, app) { TripDetail(tripId, onBack = {}, onOpen = {}) }
+    shot(dir, "look-oldwest-settings", PHONE, app) { SettingsScreen() }
+    runBlocking { app.settings.update { it.copy(theme = "retro") } }
     shot(dir, "app", PHONE, app) { SpeedoApp() }
     System.exit(0) // the simulator and recorder keep coroutines alive
 }

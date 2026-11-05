@@ -169,7 +169,7 @@ fun ReliabilityOfferCard(permissions: PermissionHolder, recording: Boolean) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text("Keep recording if Android closes the app", color = SpeedoColors.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text("Two optional settings let a trip carry on with the screen off, even if Android stops SpeedoME.", color = SpeedoColors.Muted, fontSize = 14.sp)
+        Text("Two optional settings let a trip carry on with the screen off, even if Android stops SpeedoME.", color = SpeedoColors.Muted, fontSize = 14.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
         androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalButton(onClick = {
                 dismiss()
@@ -187,7 +187,7 @@ private fun Card(title: String, body: String, button: String, onClick: () -> Uni
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(title, color = SpeedoColors.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text(body, color = SpeedoColors.Muted, fontSize = 14.sp)
+        Text(body, color = SpeedoColors.Muted, fontSize = 14.sp, fontFamily = com.sappy.speedome.ui.theme.readingFont)
         FilledTonalButton(onClick = onClick) { Text(button) }
     }
 }
