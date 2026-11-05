@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,7 +47,31 @@ data class AppLook(
     val light: Boolean = false,
     val font: GaugeTypeface? = null,
     val reading: GaugeTypeface? = null,
-)
+    /** Warnings and destructive actions (Record, Delete, running late). */
+    val danger: Color = Color(0xFFFF5B4E),
+) {
+    /** The look with muted text, accent and danger nudged until each reads at 4.6:1 on every surface. */
+    fun readable(): AppLook {
+        val surfaces = arrayOf(background, raised, lerp(background, text, .08f)) // the last: button pills
+        return copy(muted = legible(muted, surfaces), accent = legible(accent, surfaces), danger = legible(danger, surfaces))
+    }
+
+    /** [c] moved towards black on a light look (white on a dark one) until it reaches 4.6:1 on all [on]. */
+    private fun legible(c: Color, on: Array<Color>): Color {
+        fun contrast(a: Color, b: Color): Float {
+            val la = a.luminance()
+            val lb = b.luminance()
+            return (maxOf(la, lb) + .05f) / (minOf(la, lb) + .05f)
+        }
+        var t = 0f
+        var out = c
+        while (t < 1f && on.any { contrast(out, it) < 4.6f }) {
+            t += .04f
+            out = lerp(c, if (light) Color.Black else Color.White, t)
+        }
+        return out
+    }
+}
 
 /** SpeedoME's own look: true black (saves power on OLED) with amber. Graph and Nerd keep it. */
 private val DEFAULT_LOOK = AppLook(
@@ -55,7 +80,9 @@ private val DEFAULT_LOOK = AppLook(
 )
 
 /** The look for the current settings: the selected speedo theme's, or on the Map its world's. */
-fun lookFor(s: AppSettings): AppLook = when (SpeedThemes.byId(s.theme).id) {
+fun lookFor(s: AppSettings): AppLook = baseLook(s).readable()
+
+private fun baseLook(s: AppSettings): AppLook = when (SpeedThemes.byId(s.theme).id) {
     RetroTheme.id -> if (s.retroCream) {
         AppLook(Color(0xFFF3EAD2), Color(0xFFE5D9B8), Color(0xFF1D1812), Color(0xFF6F6452), Color(0xFFB4410C), light = true, font = GaugeTypeface.OSWALD)
     } else {
@@ -88,6 +115,7 @@ object SpeedoColors {
     val Muted get() = look.muted
     val Accent get() = look.accent
     val AccentDim get() = lerp(look.background, look.accent, .22f)
+    val Danger get() = look.danger
 }
 
 /** The look's reading font for captions and descriptions. */

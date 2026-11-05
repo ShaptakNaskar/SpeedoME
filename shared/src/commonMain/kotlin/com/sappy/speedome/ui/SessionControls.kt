@@ -72,7 +72,7 @@ private fun ControlsRow(v: TrackView, onTarget: () -> Unit, onLimit: () -> Unit,
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         when {
             v.sessionKind == SessionKind.LIVE -> {
-                Pill("● RECORD", Color(0xFFFF5B4E), "Record trip") { app.recorder.startTrip() }
+                Pill("● RECORD", SpeedoColors.Danger, "Record trip") { app.recorder.startTrip() }
                 Pill("RESET", SpeedoColors.Text) { app.recorder.reset() }
             }
             v.paused -> {
@@ -214,7 +214,7 @@ fun TripSummarySheet() {
                     Modifier.fillMaxWidth().padding(bottom = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    TextButton(onClick = { app.recorder.discardTrip(tripId) }) { Text("Discard", color = Color(0xFFFF6B5E)) }
+                    TextButton(onClick = { app.recorder.discardTrip(tripId) }) { Text("Discard", color = SpeedoColors.Danger) }
                     if (f.sectionOf != null) {
                         OutlinedButton(onClick = {
                             app.recorder.linkSection(tripId, null)

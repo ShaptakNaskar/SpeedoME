@@ -106,7 +106,7 @@ fun TripDetail(id: Long, onBack: () -> Unit, onOpen: (Long) -> Unit) {
             }) { Text("Share GPX") }
             OutlinedButton(enabled = points.isNotEmpty(), onClick = { saveAs(GpxExport.fileName(t)) { GpxExport.build(t, points) } }) { Text("Save GPX") }
             OutlinedButton(onClick = { renaming = true }) { Text("Rename") }
-            OutlinedButton(onClick = { deleting = true }) { Text("Delete", color = Color(0xFFFF6B5E)) }
+            OutlinedButton(onClick = { deleting = true }) { Text("Delete", color = SpeedoColors.Danger) }
         }
     }
 
@@ -123,7 +123,7 @@ fun TripDetail(id: Long, onBack: () -> Unit, onOpen: (Long) -> Unit) {
                 TextButton(onClick = {
                     deleting = false
                     scope.launch { dao.deleteSession(id) }
-                }) { Text("Delete", color = Color(0xFFFF6B5E)) }
+                }) { Text("Delete", color = SpeedoColors.Danger) }
             },
             dismissButton = { TextButton(onClick = { deleting = false }) { Text("Cancel") } },
         )

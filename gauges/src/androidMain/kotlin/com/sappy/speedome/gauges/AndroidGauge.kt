@@ -143,5 +143,14 @@ actual fun GaugeTypeface.fontFamily(): androidx.compose.ui.text.font.FontFamily 
         GaugeTypeface.COURIER -> R.font.courier_prime
         GaugeTypeface.COURIER_BOLD -> R.font.courier_prime_bold
     }
-    androidx.compose.ui.text.font.FontFamily(FAMILY_WEIGHTS.map { androidx.compose.ui.text.font.Font(res, it) })
+    // The weight must reach the variable fonts as an axis setting, or they draw their default
+    // instance (Outfit's is Thin).
+    androidx.compose.ui.text.font.FontFamily(
+        FAMILY_WEIGHTS.map {
+            androidx.compose.ui.text.font.Font(
+                res, it, androidx.compose.ui.text.font.FontStyle.Normal,
+                variationSettings = androidx.compose.ui.text.font.FontVariation.Settings(androidx.compose.ui.text.font.FontVariation.weight(it.weight)),
+            )
+        },
+    )
 }

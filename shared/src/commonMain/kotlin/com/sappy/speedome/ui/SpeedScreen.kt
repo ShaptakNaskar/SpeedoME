@@ -209,7 +209,7 @@ private fun Header(
     val (color, label) = when (quality) {
         GpsQuality.GOOD -> Color(0xFF3ECF7A) to "GPS"
         GpsQuality.FALLBACK -> Color(0xFFF0B43C) to "GPS · POSITION"
-        GpsQuality.NONE -> Color(0xFFFF5B4E) to "NO FIX"
+        GpsQuality.NONE -> SpeedoColors.Danger to "NO FIX"
     }
     Row(Modifier.fillMaxWidth().height(height).padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(9.dp).clip(CircleShape).background(color))

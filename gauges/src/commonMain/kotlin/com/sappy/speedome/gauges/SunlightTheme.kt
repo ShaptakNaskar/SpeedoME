@@ -36,9 +36,10 @@ object SunlightTheme : GaugeTheme {
         val g = geo(assets)
         drawRect(Color.White)
         text(frame.options.units.label.uppercase(), g.numberX, g.numberY + g.digit * .5f, assets.paint(assets.outfit, 800), g.digit * .1f, Color.Black, spacingEm = .2f)
-        drawRect(Color(0xFFE4E4E4), Offset(g.barX, g.barY), Size(g.barW, g.barH))
+        // Track and red zone stay at least 3:1 on white, so the bar reads in direct sun.
+        drawRect(Color(0xFF8E8E8E), Offset(g.barX, g.barY), Size(g.barW, g.barH))
         // Speed limit: the track is red from the limit on.
-        frame.limitFraction()?.let { f -> drawRect(Color(0xFFFFB1AA), Offset(g.barX + g.barW * f, g.barY), Size(g.barW * (1 - f), g.barH)) }
+        frame.limitFraction()?.let { f -> drawRect(Color(0xFFDC3B30), Offset(g.barX + g.barW * f, g.barY), Size(g.barW * (1 - f), g.barH)) }
         val labels = assets.paint(assets.outfit, 700)
         for (set in frame.scaleSets()) for (v in barLabels(set.max)) {
             if (v > frame.rangeKmh * 1.001f) break

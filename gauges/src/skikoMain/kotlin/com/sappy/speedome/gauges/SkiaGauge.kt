@@ -199,5 +199,12 @@ actual fun GaugeTypeface.fontFamily(): androidx.compose.ui.text.font.FontFamily 
         GaugeTypeface.COURIER -> Res.font.courier_prime
         GaugeTypeface.COURIER_BOLD -> Res.font.courier_prime_bold
     }
-    return androidx.compose.ui.text.font.FontFamily(FAMILY_WEIGHTS.map { org.jetbrains.compose.resources.Font(res, it) })
+    return androidx.compose.ui.text.font.FontFamily(
+        FAMILY_WEIGHTS.map {
+            org.jetbrains.compose.resources.Font(
+                res, it, androidx.compose.ui.text.font.FontStyle.Normal,
+                variationSettings = androidx.compose.ui.text.font.FontVariation.Settings(androidx.compose.ui.text.font.FontVariation.weight(it.weight)),
+            )
+        },
+    )
 }

@@ -76,7 +76,7 @@ fun TargetStrip(t: TargetView, onEdit: () -> Unit) {
         Box(Modifier.fillMaxWidth(t.progress).height(2.dp).background(accent))
         Text(
             Fmt.target(t).joinToString(" · ") { it.replace(' ', '\u00A0') },
-            color = if (t.late) androidx.compose.ui.graphics.Color(0xFFFF5B4E) else accent,
+            color = if (t.late) SpeedoColors.Danger else accent,
             fontSize = 12.sp, lineHeight = 15.sp, letterSpacing = .5.sp, maxLines = 2, textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp),
         )
