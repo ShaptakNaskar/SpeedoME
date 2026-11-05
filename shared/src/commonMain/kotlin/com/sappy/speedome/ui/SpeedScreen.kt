@@ -4,7 +4,6 @@ import com.sappy.speedome.monotonicNanos
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,16 +16,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,10 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -139,7 +135,14 @@ fun SpeedScreen() {
             Header(
                 height = if (landscape) HEADER_HEIGHT_LANDSCAPE else HEADER_HEIGHT,
                 ink = ink,
-                view.quality, simRunning, entry.title, onPrev = { switchTheme(-1) }, onNext = { switchTheme(1) },
+                view.quality, simRunning,
+                picker = {
+                    // Each theme's chip shows its app look: background and accent.
+                    val options = remember(settings) {
+                        SpeedThemes.all.map { e -> com.sappy.speedome.ui.theme.lookFor(settings.copy(theme = e.id)).let { l -> PickOption(e.id, e.title, listOf(l.background, l.accent)) } }
+                    }
+                    ArrowPicker(entry.title, "theme", options, entry.id, onSelect = { id -> scope.launch { app.settings.update { it.copy(theme = id) } } }, ink)
+                },
                 controls = if (landscape) ({ SessionControls(view, onTarget = { targetDialog = true }, onLimit = { limitDialog = true }) }) else null,
             )
             Column(Modifier.padding(horizontal = 16.dp)) {
@@ -200,9 +203,7 @@ private fun Header(
     ink: Color,
     quality: GpsQuality,
     simulated: Boolean,
-    title: String,
-    onPrev: () -> Unit,
-    onNext: () -> Unit,
+    picker: @Composable () -> Unit,
     controls: (@Composable () -> Unit)? = null,
 ) {
     val (color, label) = when (quality) {
@@ -218,21 +219,8 @@ private fun Header(
             modifier = Modifier.padding(start = 8.dp).weight(1f),
         )
         if (controls != null) Box(Modifier.weight(1.4f)) { controls() }
-        Arrow("‹", "Previous theme", ink, onPrev)
-        Text(
-            title, color = ink, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.5.sp,
-            textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 96.dp),
-        )
-        Arrow("›", "Next theme", ink, onNext)
+        picker()
     }
-}
-
-@Composable
-private fun Arrow(glyph: String, description: String, ink: Color, onClick: () -> Unit) {
-    Box(
-        Modifier.size(40.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-    ) { Text(glyph, color = ink, fontSize = 22.sp) }
 }
 
 /** Compact data strip under any gauge: nerd readouts, heading and G-force, per the Settings switches. */

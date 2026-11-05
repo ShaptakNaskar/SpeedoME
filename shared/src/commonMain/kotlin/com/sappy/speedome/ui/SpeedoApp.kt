@@ -57,34 +57,40 @@ fun SpeedoApp() {
             reliability = true
         }
     }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(SpeedoColors.Background),
-    ) {
-        Box(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .statusBarsPadding(),
-        ) {
-            androidx.compose.runtime.CompositionLocalProvider(LocalNavigator provides navigator) {
-                when {
-                    tab == Tab.Speed -> SpeedScreen()
-                    tab == Tab.Trips -> com.sappy.speedome.ui.trips.TripsScreen()
-                    reliability -> ReliabilityScreen(onBack = { reliability = false })
-                    else -> SettingsScreen()
+    // Choice lists (theme and world pickers) draw over everything, so a held finger can slide onto them.
+    val pickMenu = androidx.compose.runtime.remember { PickMenuState() }
+    androidx.compose.runtime.CompositionLocalProvider(LocalPickMenu provides pickMenu) {
+        PickMenuHost(pickMenu) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .background(SpeedoColors.Background),
+            ) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .statusBarsPadding(),
+                ) {
+                    androidx.compose.runtime.CompositionLocalProvider(LocalNavigator provides navigator) {
+                        when {
+                            tab == Tab.Speed -> SpeedScreen()
+                            tab == Tab.Trips -> com.sappy.speedome.ui.trips.TripsScreen()
+                            reliability -> ReliabilityScreen(onBack = { reliability = false })
+                            else -> SettingsScreen()
+                        }
+                    }
+                }
+                // In landscape the Speed tab is a full-screen car-mount display (as in the Theme Lab).
+                val window = LocalWindowInfo.current.containerSize
+                val landscape = window.width > window.height
+                if (!(landscape && tab == Tab.Speed)) {
+                    TabBar(selected = tab, onSelect = {
+                        if (it == Tab.Settings && tab == Tab.Settings) reliability = false
+                        tab = it
+                    })
                 }
             }
-        }
-        // In landscape the Speed tab is a full-screen car-mount display (as in the Theme Lab).
-        val window = LocalWindowInfo.current.containerSize
-        val landscape = window.width > window.height
-        if (!(landscape && tab == Tab.Speed)) {
-            TabBar(selected = tab, onSelect = {
-                if (it == Tab.Settings && tab == Tab.Settings) reliability = false
-                tab = it
-            })
         }
     }
     // App-wide: resume decisions and the post-trip summary show on any tab.
