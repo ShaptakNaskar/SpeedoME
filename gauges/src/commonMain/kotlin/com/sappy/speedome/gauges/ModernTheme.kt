@@ -97,7 +97,7 @@ object ModernTheme : GaugeTheme {
     }
 
     private fun DrawScope.stats(frame: GaugeFrame, l: GaugeLayout, assets: GaugeAssets) {
-        val pairs = frame.statPairs()
+        val pairs = frame.statPairs(room = 5)
         val n = pairs.size
         val s = l.stats
         val value = assets.paint(assets.outfit, 300)

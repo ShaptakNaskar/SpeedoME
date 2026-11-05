@@ -108,8 +108,8 @@ fun SettingsScreen() {
         Section("DISPLAY")
         Choices(listOf("km/h" to SpeedUnit.KMH, "mph" to SpeedUnit.MPH), s.units, title = "Units") { v -> edit { it.copy(units = v) } }
         Choices(
-            listOf("Both averages" to AverageDisplay.BOTH, "Moving" to AverageDisplay.MOVING, "Overall" to AverageDisplay.OVERALL), s.average,
-            title = "Average speed",
+            listOf("Both averages" to AverageDisplay.BOTH, "Moving avg + time" to AverageDisplay.MOVING, "Avg + time" to AverageDisplay.OVERALL), s.average,
+            title = "Map cards: four stats fit, so show max, distance and",
         ) { v -> edit { it.copy(average = v) } }
         ToggleRow("Nerd strip", "Satellites, accuracy, position and altitude under any gauge.", s.nerdStrip) { on -> edit { it.copy(nerdStrip = on) } }
         ToggleRow("Heading", "Compass heading under the gauge.", s.showHeading) { on -> edit { it.copy(showHeading = on) } }

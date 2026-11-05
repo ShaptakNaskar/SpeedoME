@@ -150,6 +150,7 @@ object SpeedTapeTheme : GaugeTheme {
         val ix = if (g.land) g.w * .34f else g.tape.right + 22.dp.toPx()
         val iy = if (g.land) g.h * .2f else g.mid - 70.dp.toPx()
         val lines = listOf(
+            "MOV ${fmt(frame.stats.avgMovingKmh, 0).padStart(3, '0')}" to green,
             "AVG ${fmt(frame.stats.avgOverallKmh, 0).padStart(3, '0')}" to green,
             "MAX ${fmt(frame.stats.maxKmh, 0).padStart(3, '0')}" to green,
             (if (step) "STP ${frame.stats.steps}" else "TRP ${frame.fmtDist(frame.stats.distanceM)}") to ink,

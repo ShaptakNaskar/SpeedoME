@@ -54,10 +54,12 @@ object SunlightTheme : GaugeTheme {
         drawRect(ink, Offset(g.barX, g.barY), Size(g.barW * (frame.needleKmh / frame.rangeKmh).coerceIn(0f, 1f), g.barH))
         val value = assets.paint(assets.outfit, 800)
         val label = assets.paint(assets.outfit, 700)
-        val valueSize = minOf(40.dp.toPx(), g.rowH * .55f)
-        frame.statPairs().forEachIndexed { i, (k, v) ->
+        val valueSize = minOf(40.dp.toPx(), (if (g.land) size.height * .84f / 5 else g.rowH) * .55f)
+        val pairs = frame.statPairs(room = 5)
+        val rowH = if (g.land) size.height * .84f / pairs.size else g.rowH // a column of five in landscape
+        pairs.forEachIndexed { i, (k, v) ->
             val x = g.statX + if (g.land) 0f else (i % 2) * g.colW
-            val y = g.statY + (if (g.land) i else i / 2) * g.rowH
+            val y = g.statY + (if (g.land) i else i / 2) * rowH
             text(v, x, y, value, valueSize, Color.Black, Align.LEFT, top = true)
             text(k, x, y + valueSize + 4.dp.toPx(), label, 12.dp.toPx(), Color(0xFF333333), Align.LEFT, spacingEm = .15f, top = true)
         }

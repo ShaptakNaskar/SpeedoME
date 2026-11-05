@@ -90,6 +90,8 @@ object NightFocusTheme : GaugeTheme {
         }
         val s = l.stats
         val paint = assets.paint(assets.barlowSemi)
+        val timeY = if (l.landscape) s.bottom - 14.dp.toPx() else minOf(s.bottom - 12.dp.toPx(), s.top + 26.dp.toPx() + 3 * 30.dp.toPx())
+        text("TRIP TIME  ${fmtDuration(frame.stats.elapsedS)}", s.center.x, timeY, paint, 13.dp.toPx(), green.copy(alpha = .4f * alpha), spacingEm = .12f)
         warnings.forEachIndexed { i, (w, col) ->
             val y = if (l.landscape) s.top + s.height * .3f + i * 30.dp.toPx() else s.top + 26.dp.toPx() + i * 30.dp.toPx()
             val x = s.center.x

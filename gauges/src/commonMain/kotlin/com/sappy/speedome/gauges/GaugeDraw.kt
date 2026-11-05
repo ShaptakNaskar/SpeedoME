@@ -159,12 +159,23 @@ fun fmtDuration(seconds: Double): String {
     return if (h > 0) "$h:${two(m)}:${two(sec)}" else "$m:${two(sec)}"
 }
 
-/** The stat pairs a theme shows, following the average-display setting. */
-fun GaugeFrame.statPairs(): List<Pair<String, String>> = buildList {
-    if (options.average != AverageDisplay.OVERALL) add("MOVING AVG" to fmt(stats.avgMovingKmh, 0))
-    if (options.average != AverageDisplay.MOVING) add("AVG" to fmt(stats.avgOverallKmh, 0))
-    add("MAX" to fmt(stats.maxKmh, 0))
-    if (stats.stepMode) add("STEPS" to stats.steps.toString()) else add("TRIP" to fmtDist(stats.distanceM))
+/**
+ * The trip stats a theme shows. With [room] for five: moving average, average, max, distance (or
+ * steps) and trip time. With room for four (the map worlds' cards), max and distance plus the two of
+ * moving average, average and time that the setting picks ([AverageDisplay]).
+ */
+fun GaugeFrame.statPairs(room: Int = 4): List<Pair<String, String>> {
+    val moving = "MOVING AVG" to fmt(stats.avgMovingKmh, 0)
+    val overall = "AVG" to fmt(stats.avgOverallKmh, 0)
+    val time = "TIME" to fmtDuration(stats.elapsedS)
+    val max = "MAX" to fmt(stats.maxKmh, 0)
+    val trip = if (stats.stepMode) "STEPS" to stats.steps.toString() else "TRIP" to fmtDist(stats.distanceM)
+    if (room >= 5) return listOf(moving, overall, max, trip, time)
+    return when (options.average) {
+        AverageDisplay.BOTH -> listOf(moving, overall, max, trip)
+        AverageDisplay.MOVING -> listOf(moving, time, max, trip)
+        AverageDisplay.OVERALL -> listOf(overall, time, max, trip)
+    }
 }
 
 /**

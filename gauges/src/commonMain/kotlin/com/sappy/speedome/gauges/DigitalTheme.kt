@@ -33,7 +33,9 @@ object DigitalTheme : GaugeTheme {
         val bh = if (land) h * .2f else minOf(h * .1f, w * .2f)
         val dh = if (land) h * .38f else minOf(h * .22f, w * .36f)
         val sh = minOf(h * .045f, 30 * density)
-        private val blockH = bh + h * .08f + dh + h * .09f + sh + 20 * density
+        /** Portrait stacks a second stats row (moving average, trip time); landscape fits all five in one. */
+        private val row2 = if (land) 0f else sh + 34 * density
+        private val blockH = bh + h * .08f + dh + h * .09f + sh + 20 * density + row2
         val top = if (land) h * .12f else ((h - blockH) / 2).coerceAtLeast(h * .06f)
         val bars: List<Path> = (0 until BARS).map { i ->
             val sw = bw / BARS
@@ -47,16 +49,21 @@ object DigitalTheme : GaugeTheme {
         val gap = dw * .22f
         val total = digits * dw + (digits - 1) * gap
         val dx = (w - total) / 2 - dw * .3f
-        val dy = if (land) h * .42f else top + bh + h * .08f
+        val dy = if (land) h * .37f else top + bh + h * .08f
         val big = SegmentShapes(dw, dh)
-        val rowY = if (land) h * .84f else dy + dh + h * .09f
-        val cellW = (w - pad * 2) / 3
+        val rowY = if (land) h * .86f else dy + dh + h * .09f
+        val rowY2 = rowY + row2
+        val cellW = (w - pad * 2) / (if (land) 5 else 3)
         val sww = sh * .55f
         val small = SegmentShapes(sww, sh)
 
         fun bigCell(i: Int) = Offset(dx + i * (dw + gap), dy)
 
-        fun smallCell(group: Int, i: Int) = Offset(pad + cellW * group + i * sww * 1.25f, rowY)
+        fun smallCell(group: Int, i: Int): Offset {
+            // The time group (4) leaves room for its colons after the hour and the minutes.
+            val x = i * sww * 1.25f + if (group == 4) sww * .5f * ((if (i > 0) 1 else 0) + (if (i > 2) 1 else 0)) else 0f
+            return if (land || group < 3) Offset(pad + cellW * group + x, rowY) else Offset(pad + cellW * (group - 3) + x, rowY2)
+        }
     }
 
     private fun DrawScope.geometry(frame: GaugeFrame, assets: GaugeAssets): Geometry {
@@ -82,10 +89,11 @@ object DigitalTheme : GaugeTheme {
         backlightGlow(Offset(g.dx + g.total / 2, g.dy + g.dh / 2), g.total * .62f, frame.options.digital.glow, .09f, frame.options)
         for (i in 0 until g.digits) seg7(g.bigCell(i), g.big, g.dh, '8', on, .06f, null, ghostOnly = true)
         text(frame.options.units.label.uppercase(), g.dx + g.total + g.dw * .15f, g.dy + g.dh * .85f, assets.paint(assets.b612Bold), g.dh * .09f, on, Align.LEFT)
-        val labels = listOf(if (frame.stats.stepMode) "STEPS" else "TRIP", "AVG", "MAX")
+        val labels = listOf(if (frame.stats.stepMode) "STEPS" else "TRIP", "AVG", "MAX", "MOVING AVG", "TIME")
         labels.forEachIndexed { group, k ->
-            text(k, g.pad + g.cellW * group + 2, g.rowY - 10.dp.toPx(), assets.paint(assets.b612Bold), 10.dp.toPx(), on.copy(alpha = .7f), Align.LEFT, spacingEm = .2f)
-            val cells = if (group == 0) TRIP_CELLS else SMALL_CELLS
+            val at = g.smallCell(group, 0)
+            text(k, at.x + 2, at.y - 10.dp.toPx(), assets.paint(assets.b612Bold), 10.dp.toPx(), on.copy(alpha = .7f), Align.LEFT, spacingEm = .2f)
+            val cells = if (group == 0 || group == 4) TRIP_CELLS else SMALL_CELLS
             for (i in 0 until cells) seg7(g.smallCell(group, i), g.small, g.sh, '8', on, .06f, null, ghostOnly = true)
         }
     }
@@ -120,6 +128,17 @@ object DigitalTheme : GaugeTheme {
         }
         fmt(frame.stats.avgOverallKmh.coerceAtMost(999.0), 0).padStart(SMALL_CELLS).forEachIndexed { i, ch -> seg7(g.smallCell(1, i), g.small, g.sh, ch, on, 0f, glow) }
         fmt(frame.stats.maxKmh.coerceAtMost(999.0), 0).padStart(SMALL_CELLS).forEachIndexed { i, ch -> seg7(g.smallCell(2, i), g.small, g.sh, ch, on, 0f, glow) }
+        fmt(frame.stats.avgMovingKmh.coerceAtMost(999.0), 0).padStart(SMALL_CELLS).forEachIndexed { i, ch -> seg7(g.smallCell(3, i), g.small, g.sh, ch, on, 0f, glow) }
+        // Trip time as H:MM:SS on five cells (M:SS under an hour), with drawn colons.
+        val t = frame.stats.elapsedS.toLong().coerceIn(0, 9 * 3600 + 3599)
+        val hours = t / 3600
+        val mm = (t % 3600 / 60).toString().let { if (hours > 0) it.padStart(2, '0') else it.padStart(2) }
+        val clock = (if (hours > 0) hours.toString() else " ") + mm + (t % 60).toString().padStart(2, '0')
+        clock.forEachIndexed { i, ch -> seg7(g.smallCell(4, i), g.small, g.sh, ch, on, 0f, glow) }
+        for (after in listOfNotNull(if (hours > 0) 0 else null, 2)) {
+            val next = g.smallCell(4, after + 1)
+            for (fy in listOf(.3f, .7f)) drawCircle(on, g.sh * .06f, Offset(next.x - g.sww * .4f + g.sh * .1f * (.5f - fy), next.y + g.sh * fy))
+        }
         drawRect(assets.memo("mesh", Size(density, density)) { meshBrush(density) })
     }
 }

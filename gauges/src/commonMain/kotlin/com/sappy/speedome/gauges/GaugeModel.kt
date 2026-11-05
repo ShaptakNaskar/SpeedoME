@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 
 /** Which averages the gauges show (docs/plan.md §6, setting). */
+/** Where a speedo has room for four stats only: max and distance plus both averages, or one average and the trip time. */
 enum class AverageDisplay { BOTH, MOVING, OVERALL }
 
 enum class GpsDot { GOOD, FALLBACK, NONE }
