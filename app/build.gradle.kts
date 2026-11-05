@@ -20,8 +20,8 @@ android {
         applicationId = "com.sappy.SpeedoMe"
         minSdk = 26
         targetSdk = 36
-        versionCode = 16
-        versionName = "0.13.1"
+        versionCode = 17
+        versionName = "0.13.2"
         manifestPlaceholders["appLabel"] = "SpeedoME"
         // Store-policy switches for the two optional reliability upgrades (docs/plan.md §8).
         buildConfigField("boolean", "BACKGROUND_LOCATION_ENABLED", "true")

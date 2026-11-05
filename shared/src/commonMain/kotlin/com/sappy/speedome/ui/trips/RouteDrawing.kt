@@ -20,6 +20,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.runtime.remember
+import com.sappy.speedome.engine.RoutePoint
+import com.sappy.speedome.engine.routeRuns
+import com.sappy.speedome.engine.speedProfile
+import com.sappy.speedome.ui.COLOR_BUCKETS
+import kotlin.math.pow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
@@ -56,6 +66,7 @@ private class Projection(lats: List<Double>, lons: List<Double>, w: Float, h: Fl
     private val spanX = max((lons.max() - lons.min()) * k, 1e-6)
     private val spanY = max(lats.max() - lats.min(), 1e-6)
     private val scale = minOf((w - 2 * pad) / spanX, (h - 2 * pad) / spanY)
+    val metresPerPx get() = 111_195.0 / scale
     private val cx = w / 2
     private val cy = h / 2
 
@@ -65,23 +76,27 @@ private class Projection(lats: List<Double>, lons: List<Double>, w: Float, h: Fl
 /** The recorded route coloured by speed; segments (pauses, resume gaps) are joined with a dashed line. */
 @Composable
 fun RouteView(points: List<PointEntity>, modifier: Modifier = Modifier) {
+    val route = remember(points) { points.map { RoutePoint(it.lat, it.lon, it.speedMps, it.segment) } }
     Canvas(modifier) {
         drawRoundRect(SpeedoColors.Raised, cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()))
         if (points.size < 2) return@Canvas
         val proj = Projection(points.map { it.lat }, points.map { it.lon }, size.width, size.height, 24.dp.toPx())
-        val maxSpeed = maxSpeedOf(points)
-        val width = 4.dp.toPx()
         val dash = PathEffect.dashPathEffect(floatArrayOf(10.dp.toPx(), 8.dp.toPx()))
-        for (i in 1 until points.size) {
-            val a = points[i - 1]
-            val b = points[i]
-            val pa = proj.at(a.lat, a.lon)
-            val pb = proj.at(b.lat, b.lon)
-            if (a.segment != b.segment) {
-                drawLine(Color.White.copy(alpha = 0.45f), pa, pb, strokeWidth = 2.dp.toPx(), pathEffect = dash)
-            } else {
-                drawLine(speedColor(b.speedMps / maxSpeed), pa, pb, strokeWidth = width, cap = StrokeCap.Round)
+        val stroke = Stroke(4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        // Colour changes at most every 2 px and vertices every 1.5 px: a long trip stays a few hundred paths.
+        for (r in routeRuns(route, maxSpeedOf(points), COLOR_BUCKETS, 2 * proj.metresPerPx)) {
+            val a = proj.at(route[r.from].lat, route[r.from].lon)
+            if (r.gap) {
+                drawLine(Color.White.copy(alpha = 0.45f), a, proj.at(route[r.to].lat, route[r.to].lon), strokeWidth = 2.dp.toPx(), pathEffect = dash)
+                continue
             }
+            var last = a
+            val path = Path().apply { moveTo(a.x, a.y) }
+            for (i in r.from + 1..r.to) {
+                val o = proj.at(route[i].lat, route[i].lon)
+                if ((o - last).getDistance() >= 1.5f || i == r.to) path.lineTo(o.x, o.y).also { last = o }
+            }
+            drawPath(path, speedColor((r.bucket!! + .5f) / COLOR_BUCKETS), style = stroke)
         }
         endpoint(proj.at(points.first().lat, points.first().lon), Color(0xFF3ECF7A))
         endpoint(proj.at(points.last().lat, points.last().lon), Color.White)
@@ -115,54 +130,79 @@ fun RouteThumbnail(encoded: String?, modifier: Modifier = Modifier) {
     }
 }
 
-/** Speed over time; breaks the line across gaps longer than 5 s. */
+/**
+ * Speed over time: the average speed of each of [GRAPH_BINS] slices of the trip (stops dip to zero),
+ * as a smooth line coloured like the route, with speed gridlines and the start and end times.
+ */
 @Composable
 fun SpeedGraph(points: List<PointEntity>, modifier: Modifier = Modifier) {
+    val profile = remember(points) {
+        speedProfile(LongArray(points.size) { points[it].t }, FloatArray(points.size) { points[it].speedMps }, GRAPH_BINS)
+    }
+    val tripMax = maxSpeedOf(points)
+    val labels = rememberTextMeasurer()
+    val labelStyle = TextStyle(color = SpeedoColors.Muted, fontSize = 10.sp)
     Canvas(modifier) {
         drawRoundRect(SpeedoColors.Raised, cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()))
         if (points.size < 2) return@Canvas
-        val pad = 14.dp.toPx()
-        val t0 = points.first().t
-        val span = max(points.last().t - t0, 1L).toFloat()
-        val vMax = max(points.maxOf { it.speedMps }, 0.5f) * 1.1f
-        fun x(t: Long) = pad + (t - t0) / span * (size.width - 2 * pad)
-        fun y(v: Float) = size.height - pad - v / vMax * (size.height - 2 * pad)
-        val line = Path()
-        val area = Path()
-        var open = false
-        var startX = 0f
-        var lastX = 0f
-        for (i in points.indices) {
-            val p = points[i]
-            val gap = i > 0 && p.t - points[i - 1].t > 5_000
-            if (gap && open) {
-                area.lineTo(lastX, size.height - pad)
-                area.lineTo(startX, size.height - pad)
-                area.close()
-                open = false
-            }
-            val px = x(p.t)
-            val py = y(p.speedMps)
-            if (!open) {
-                line.moveTo(px, py)
-                area.moveTo(px, size.height - pad)
-                area.lineTo(px, py)
-                startX = px
-                open = true
-            } else {
-                line.lineTo(px, py)
-                area.lineTo(px, py)
-            }
-            lastX = px
+        val left = 34.dp.toPx()
+        val right = size.width - 14.dp.toPx()
+        val top = 14.dp.toPx()
+        val bottom = size.height - 24.dp.toPx()
+        val vMax = max(profile.max(), .5f) * 1.12f
+        fun y(mps: Float) = bottom - mps / vMax * (bottom - top)
+
+        // Gridlines every round step of the display unit.
+        val step = niceGridStep(Fmt.speed(vMax.toDouble()))
+        var g = 0.0
+        while (g <= Fmt.speed(vMax.toDouble())) {
+            val gy = y((g / Fmt.speed(1.0)).toFloat())
+            drawLine(Color.White.copy(alpha = if (g == 0.0) .14f else .06f), Offset(left, gy), Offset(right, gy), 1.dp.toPx())
+            val text = labels.measure(Fmt.decimal(g, 0), labelStyle)
+            drawText(text, topLeft = Offset(left - 8.dp.toPx() - text.size.width, gy - text.size.height / 2f))
+            g += step
         }
-        if (open) {
-            area.lineTo(lastX, size.height - pad)
-            area.lineTo(startX, size.height - pad)
-            area.close()
+
+        // A smooth line through the slice midpoints (quadratic curves never overshoot below zero).
+        val pts = profile.mapIndexed { i, v -> Offset(left + (i + .5f) / profile.size * (right - left), y(v)) }
+        fun Path.curve() {
+            moveTo(left, pts.first().y)
+            lineTo(pts.first().x, pts.first().y)
+            for (i in 1 until pts.size) {
+                val a = pts[i - 1]
+                val b = pts[i]
+                quadraticTo(a.x, a.y, (a.x + b.x) / 2, (a.y + b.y) / 2)
+            }
+            lineTo(pts.last().x, pts.last().y)
+            lineTo(right, pts.last().y)
         }
-        drawPath(area, SpeedoColors.Accent.copy(alpha = 0.18f))
-        drawPath(line, SpeedoColors.Accent, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round))
+        val line = Path().apply { curve() }
+        // Coloured by height on the route's speed scale (0 to the trip's top speed).
+        val colours = (0..6).map { speedColor((1 - it / 6f) * vMax / tripMax) }
+        val area = Path().apply {
+            curve()
+            lineTo(right, bottom)
+            lineTo(left, bottom)
+            close()
+        }
+        drawPath(area, Brush.verticalGradient(colours.map { it.copy(alpha = .22f) }, startY = top, endY = bottom))
+        drawPath(line, Brush.verticalGradient(colours, startY = top, endY = bottom), style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // Start and end times under the graph.
+        val start = labels.measure(Fmt.clock(points.first().t), labelStyle)
+        val end = labels.measure(Fmt.clock(points.last().t), labelStyle)
+        drawText(start, topLeft = Offset(left, bottom + 6.dp.toPx()))
+        drawText(end, topLeft = Offset(right - end.size.width, bottom + 6.dp.toPx()))
     }
+}
+
+private const val GRAPH_BINS = 180
+
+/** 1, 2 or 5 × 10ⁿ, giving two to four gridlines up to [max]. */
+private fun niceGridStep(max: Double): Double {
+    val raw = max / 3
+    val mag = 10.0.pow(kotlin.math.floor(kotlin.math.log10(raw.coerceAtLeast(1e-6))))
+    return listOf(1.0, 2.0, 5.0, 10.0).map { it * mag }.first { it >= raw }
 }
 
 /** The fastest point of a trip, for the colour scale (at least 1 m/s so a stationary trip still draws). */

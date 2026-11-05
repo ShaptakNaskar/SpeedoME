@@ -14,7 +14,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.sappy.speedome.tracking.RoutePoint
+import com.sappy.speedome.engine.RoutePoint
+import com.sappy.speedome.engine.routeRuns
 import com.sappy.speedome.ui.theme.SpeedoColors
 import com.sappy.speedome.ui.trips.speedColor
 import org.maplibre.android.MapLibre
@@ -35,12 +36,10 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
-import kotlin.math.abs
 
 /** Configurable per the risk table in docs/plan.md §13 (OpenFreeMap has no SLA). */
 private const val STYLE_URL = "https://tiles.openfreemap.org/styles/dark"
 private const val CACHE_BYTES = 150L * 1024 * 1024
-private const val COLOR_BUCKETS = 24
 
 /**
  * A MapLibre map for Compose, shared by the Map theme and trip detail. It uses TextureView mode, so
@@ -155,44 +154,19 @@ fun Style.addRouteLayers(color: String? = null) {
 }
 
 /**
- * The route coloured by speed over 0–[rangeMps]. Consecutive points are merged into LineStrings while
- * their colour bucket stays the same, so a long drive is a few hundred features rather than one per
- * fix. Segment changes (pauses, resume gaps) become dashed straight lines.
+ * The route for the "route" source: lines coloured by speed over 0–[rangeMps] that change colour only
+ * once [minRunM] long (see [routeRuns]), or one line per segment without a range; segment changes
+ * (pauses, resume gaps) become dashed straight lines.
  */
-fun routeFeatures(points: List<RoutePoint>, rangeMps: Float): FeatureCollection {
-    val out = ArrayList<Feature>()
-    if (points.size < 2) return FeatureCollection.fromFeatures(out)
-    var run = arrayListOf(points[0].pt())
-    var bucket = -1
-    fun flush() {
-        if (run.size >= 2 && bucket >= 0) {
-            out += Feature.fromGeometry(LineString.fromLngLats(run)).apply {
-                addStringProperty("color", colorHex(speedColor((bucket + .5f) / COLOR_BUCKETS)))
-                addBooleanProperty("gap", false)
+fun routeFeatures(points: List<RoutePoint>, rangeMps: Float?, minRunM: Double = 0.0): FeatureCollection =
+    FeatureCollection.fromFeatures(
+        routeRuns(points, rangeMps, COLOR_BUCKETS, minRunM).map { r ->
+            Feature.fromGeometry(LineString.fromLngLats(points.subList(r.from, r.to + 1).map { it.pt() })).apply {
+                r.bucket?.let { addStringProperty("color", colorHex(speedColor((it + .5f) / COLOR_BUCKETS))) }
+                addBooleanProperty("gap", r.gap)
             }
-        }
-    }
-    for (i in 1 until points.size) {
-        val a = points[i - 1]
-        val b = points[i]
-        if (a.segment != b.segment) {
-            flush()
-            out += Feature.fromGeometry(LineString.fromLngLats(listOf(a.pt(), b.pt()))).apply { addBooleanProperty("gap", true) }
-            run = arrayListOf(b.pt())
-            bucket = -1
-            continue
-        }
-        val bk = ((b.speedMps / rangeMps.coerceAtLeast(1f)).coerceIn(0f, .999f) * COLOR_BUCKETS).toInt()
-        if (bucket >= 0 && abs(bk - bucket) > 0) {
-            flush()
-            run = arrayListOf(a.pt())
-        }
-        bucket = bk
-        run += b.pt()
-    }
-    flush()
-    return FeatureCollection.fromFeatures(out)
-}
+        },
+    )
 
 fun RoutePoint.pt(): Point = Point.fromLngLat(lon, lat)
 

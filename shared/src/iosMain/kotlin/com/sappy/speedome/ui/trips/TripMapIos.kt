@@ -16,12 +16,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sappy.speedome.data.PointEntity
-import com.sappy.speedome.tracking.RoutePoint
+import com.sappy.speedome.engine.RoutePoint
 import com.sappy.speedome.ui.Dot
 import com.sappy.speedome.ui.MapButton
 import com.sappy.speedome.ui.RouteLayers
 import com.sappy.speedome.ui.STYLE_URL
 import com.sappy.speedome.ui.pointGeoJson
+import com.sappy.speedome.ui.metresPerPixel
 import com.sappy.speedome.ui.routeGeoJson
 import com.sappy.speedome.ui.theme.SpeedoColors
 import org.maplibre.compose.camera.CameraFit
@@ -51,14 +52,26 @@ actual fun TripMap(points: List<PointEntity>, modifier: Modifier) {
         Box(modifier.clip(RoundedCornerShape(16.dp)).background(SpeedoColors.Raised))
         return
     }
-    val (lines, gaps) = remember(route) { routeGeoJson(route, maxSpeedOf(points)) }
     val ends = remember(route) {
         pointGeoJson(listOf(route.first().lat to route.first().lon)) to pointGeoJson(listOf(route.last().lat to route.last().lon))
     }
+    // Rebuilt per zoom level once the camera settles: colours change at most every 2 px, so zoomed out
+    // the route is a few hundred lines (no holes, smooth panning) and zoomed in it keeps its detail.
+    var zoom by remember { mutableStateOf(-1) }
+    val empty = """{"type":"FeatureCollection","features":[]}"""
+    val geo by androidx.compose.runtime.produceState(empty to empty, route, zoom) {
+        if (zoom < 0) return@produceState
+        val minRunM = 2 * metresPerPixel(zoom.toDouble(), route[route.size / 2].lat)
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { routeGeoJson(route, maxSpeedOf(points), minRunM) }
+    }
     val state = rememberMapState(baseStyle = BaseStyle.Uri(STYLE_URL)) {
-        RouteLayers(lines, gaps)
+        RouteLayers(geo.first, geo.second)
         Dot("start", ends.first, Color(0xFF3ECF7A), 6f)
         Dot("finish", ends.second, Color.White, 6f)
+    }
+    LaunchedEffect(state) {
+        androidx.compose.runtime.snapshotFlow { if (state.isCameraMoving) null else state.cameraPosition.zoom.toInt() }
+            .collect { z -> if (z != null) zoom = z }
     }
     var fitTick by remember { mutableStateOf(0) }
     LaunchedEffect(route, fitTick) {

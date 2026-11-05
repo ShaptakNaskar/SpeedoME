@@ -1,6 +1,7 @@
 package com.sappy.speedome.tracking
 
 import com.sappy.speedome.engine.EngineState
+import com.sappy.speedome.engine.RoutePoint
 import com.sappy.speedome.engine.RouteSampler
 import com.sappy.speedome.engine.thinned
 import kotlinx.coroutines.CoroutineScope
@@ -8,8 +9,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-data class RoutePoint(val lat: Double, val lon: Double, val speedMps: Float, val segment: Int)
 
 /**
  * The route of the current session (live meter or trip) for the Map theme, kept in memory from the

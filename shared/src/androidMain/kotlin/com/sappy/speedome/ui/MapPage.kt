@@ -110,10 +110,8 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, wo
         if (insetPx > 0) map?.uiSettings?.setAttributionMargins(0, 0, with(density) { 8.dp.roundToPx() }, insetPx.toInt() + with(density) { 8.dp.roundToPx() })
     }
 
-    val rangeKmh = driver.frame.rangeKmh
-    LaunchedEffect(style, route, (rangeKmh / 10).toInt()) {
-        // The dial range is in display units; the route colours scale to it in m/s.
-        style?.getSourceAs<GeoJsonSource>("route")?.setGeoJson(routeFeatures(route, (rangeKmh / Fmt.speed(1.0)).toFloat()))
+    LaunchedEffect(style, route) {
+        style?.getSourceAs<GeoJsonSource>("route")?.setGeoJson(routeFeatures(route, rangeMps = null)) // one colour: the world's
     }
     val fix = view.lastFix
     val moving = view.speedMps > 1.5

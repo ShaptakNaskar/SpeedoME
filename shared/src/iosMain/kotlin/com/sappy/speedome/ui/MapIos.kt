@@ -27,7 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sappy.speedome.LocalAppContainer
-import com.sappy.speedome.tracking.RoutePoint
+import com.sappy.speedome.engine.RoutePoint
+import com.sappy.speedome.engine.RouteRun
+import com.sappy.speedome.engine.routeRuns
 import com.sappy.speedome.ui.theme.SpeedoColors
 import com.sappy.speedome.ui.trips.speedColor
 import org.maplibre.compose.camera.CameraAnimation
@@ -59,7 +61,6 @@ import kotlin.time.Duration.Companion.milliseconds
 // Android (docs/plan.md §9.5). The route is coloured by speed in buckets like Android's.
 
 internal const val STYLE_URL = "https://tiles.openfreemap.org/styles/dark"
-private const val COLOR_BUCKETS = 24
 
 private fun hex(c: Color): String {
     fun h(v: Float) = (v * 255 + .5f).toInt().coerceIn(0, 255).toString(16).padStart(2, '0')
@@ -75,39 +76,14 @@ private fun lineFeature(coords: List<String>, color: String?) =
 private fun collection(features: List<String>) = """{"type":"FeatureCollection","features":[${features.joinToString(",")}]}"""
 
 /**
- * The route as GeoJSON: speed-coloured lines (consecutive points merged while their colour bucket
- * holds) and straight gap lines where the segment changes (pauses, resume gaps).
+ * The route as GeoJSON: lines coloured by speed over 0–[rangeMps] that change colour only once
+ * [minRunM] long (see [routeRuns]), or one line per segment without a range; and straight gap lines
+ * where the segment changes (pauses, resume gaps).
  */
-internal fun routeGeoJson(points: List<RoutePoint>, rangeMps: Float): Pair<String, String> {
-    val lines = ArrayList<String>()
-    val gaps = ArrayList<String>()
-    if (points.size >= 2) {
-        var run = arrayListOf(coord(points[0]))
-        var bucket = -1
-        fun flush() {
-            if (run.size >= 2 && bucket >= 0) lines += lineFeature(run, hex(speedColor((bucket + .5f) / COLOR_BUCKETS)))
-        }
-        for (i in 1 until points.size) {
-            val a = points[i - 1]
-            val b = points[i]
-            if (a.segment != b.segment) {
-                flush()
-                gaps += lineFeature(listOf(coord(a), coord(b)), null)
-                run = arrayListOf(coord(b))
-                bucket = -1
-                continue
-            }
-            val bk = ((b.speedMps / rangeMps.coerceAtLeast(1f)).coerceIn(0f, .999f) * COLOR_BUCKETS).toInt()
-            if (bucket >= 0 && bk != bucket) {
-                flush()
-                run = arrayListOf(coord(a))
-            }
-            bucket = bk
-            run += coord(b)
-        }
-        flush()
-    }
-    return collection(lines) to collection(gaps)
+internal fun routeGeoJson(points: List<RoutePoint>, rangeMps: Float?, minRunM: Double = 0.0): Pair<String, String> {
+    val (gaps, lines) = routeRuns(points, rangeMps, COLOR_BUCKETS, minRunM).partition { it.gap }
+    fun json(r: RouteRun) = lineFeature(points.subList(r.from, r.to + 1).map(::coord), r.bucket?.let { hex(speedColor((it + .5f) / COLOR_BUCKETS)) })
+    return collection(lines.map(::json)) to collection(gaps.map(::json))
 }
 
 internal fun pointGeoJson(points: List<Pair<Double, Double>>) = collection(
@@ -163,8 +139,7 @@ private fun LiveMap(
     val route by app.liveRoute.points.collectAsStateWithLifecycle()
     val view = rememberTrackView(app.tracking.state, 500)
     val fix = view.lastFix
-    val rangeBucket = (driver.frame.rangeKmh / 10).toInt()
-    val (lines, gaps) = remember(route, rangeBucket) { routeGeoJson(route, (driver.frame.rangeKmh / Fmt.speed(1.0)).toFloat()) }
+    val (lines, gaps) = remember(route) { routeGeoJson(route, rangeMps = null) } // one colour: the world's
     val puck = remember(fix?.lat, fix?.lon) { pointGeoJson(listOfNotNull(fix?.let { it.lat to it.lon })) }
     val moving = view.speedMps > 1.5
     // Course from the route itself first: some receivers report a stale bearing.

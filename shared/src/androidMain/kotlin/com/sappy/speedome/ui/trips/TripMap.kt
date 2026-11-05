@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,12 +35,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.doOnLayout
 import com.sappy.speedome.data.PointEntity
-import com.sappy.speedome.tracking.RoutePoint
+import com.sappy.speedome.engine.RoutePoint
 import com.sappy.speedome.ui.Fmt
 import com.sappy.speedome.ui.TabIcons
 import com.sappy.speedome.ui.addRouteLayers
 import com.sappy.speedome.ui.loadDarkStyle
 import com.sappy.speedome.ui.pt
+import com.sappy.speedome.ui.metresPerPixel
 import com.sappy.speedome.ui.rememberMapView
 import com.sappy.speedome.ui.routeFeatures
 import com.sappy.speedome.ui.theme.SpeedoColors
@@ -55,6 +57,8 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import kotlin.math.max
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 /**
@@ -71,11 +75,13 @@ actual fun TripMap(points: List<PointEntity>, modifier: Modifier) {
     var style by remember { mutableStateOf<Style?>(null) }
     var drawn by remember { mutableStateOf(false) }
     var moved by remember { mutableStateOf(false) }
+    var zoom by remember { mutableIntStateOf(-1) } // whole zoom level, updated when the camera settles
     val padding = with(LocalDensity.current) { 36.dp.roundToPx() }
     val mapView = rememberMapView { m ->
         m.uiSettings.isRotateGesturesEnabled = false
         m.uiSettings.attributionGravity = Gravity.BOTTOM or Gravity.START
         m.setMaxZoomPreference(18.0)
+        m.addOnCameraIdleListener { zoom = m.cameraPosition.zoom.toInt() }
         m.addOnCameraMoveStartedListener { reason ->
             if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) moved = true
         }
@@ -88,14 +94,23 @@ actual fun TripMap(points: List<PointEntity>, modifier: Modifier) {
     }
     LaunchedEffect(style, route) {
         val s = style ?: return@LaunchedEffect
-        s.getSourceAs<GeoJsonSource>("route")?.setGeoJson(routeFeatures(route, maxMps))
         s.getSourceAs<GeoJsonSource>("ends")?.setGeoJson(endsOf(route))
         mapView.doOnLayout { map?.let { fit(it, route, padding) } }
         moved = false
-        drawn = route.isNotEmpty()
+    }
+    LaunchedEffect(style, route, zoom) {
+        // Rebuilt per zoom level: colours change at most every 2 px, so zoomed out the route is a few
+        // hundred lines (no holes, smooth panning) and zoomed in it keeps its full detail.
+        val s = style ?: return@LaunchedEffect
+        if (zoom < 0 || route.isEmpty()) return@LaunchedEffect
+        val minRunM = 2 * metresPerPixel(zoom.toDouble(), route[route.size / 2].lat)
+        val features = withContext(Dispatchers.Default) { routeFeatures(route, maxMps, minRunM) }
+        s.getSourceAs<GeoJsonSource>("route")?.setGeoJson(features)
+        drawn = true
     }
     Box(modifier.clip(RoundedCornerShape(16.dp)).semantics { contentDescription = "Map of the route" }) {
-        RouteView(points, Modifier.fillMaxSize())
+        // The plain drawing only until the map shows: under a live map it would be redrawn every map frame.
+        if (!drawn) RouteView(points, Modifier.fillMaxSize())
         AndroidView({ mapView }, Modifier.fillMaxSize().alpha(if (drawn) 1f else 0f))
         if (drawn && moved) {
             Box(
