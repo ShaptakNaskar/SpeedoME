@@ -5,10 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,8 +32,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sappy.speedome.LocalAppContainer
-import com.sappy.speedome.gauges.warned
-import com.sappy.speedome.tracking.RoutePoint
 import com.sappy.speedome.ui.theme.SpeedoColors
 import com.sappy.speedome.ui.worlds.styleJson
 import org.maplibre.android.camera.CameraPosition
@@ -54,11 +49,10 @@ import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.Point
-import kotlin.math.abs
 
-/** Live map: route coloured by speed, a heading puck, follow camera, speed card (docs/plan.md §9.5). */
+/** The Map page's live map in a world's style: the route in its colour, a heading puck, follow camera. */
 @Composable
-actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, world: com.sappy.speedome.ui.worlds.World?, insetBottom: androidx.compose.ui.unit.Dp) {
+actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, world: com.sappy.speedome.ui.worlds.World, insetBottom: androidx.compose.ui.unit.Dp) {
     val app = LocalAppContainer.current
     val route by app.liveRoute.points.collectAsStateWithLifecycle()
     val view = rememberTrackView(app.tracking.state, 500)
@@ -100,15 +94,15 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, wo
     }
     val density = androidx.compose.ui.platform.LocalDensity.current
     // (Re)load the style when the map is ready and whenever the world changes.
-    LaunchedEffect(map, world?.id) {
+    LaunchedEffect(map, world.id) {
         val m = map ?: return@LaunchedEffect
         style = null
         val onLoaded = { s: Style ->
-            s.addRouteLayers(world?.let { colorHex(it.palette.route) })
+            s.addRouteLayers(colorHex(world.palette.route))
             s.addPuck(density.density)
             style = s
         }
-        if (world == null) m.loadDarkStyle(onLoaded) else m.setStyle(Style.Builder().fromJson(world.styleJson())) { onLoaded(it) }
+        m.setStyle(Style.Builder().fromJson(world.styleJson())) { onLoaded(it) }
     }
     val insetPx = with(density) { insetBottom.toPx() }
     LaunchedEffect(map, insetPx) {
@@ -151,7 +145,6 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, wo
 
     Box(modifier.background(SpeedoColors.Background)) {
         AndroidView({ mapView }, Modifier.fillMaxSize())
-        if (world == null) SpeedCard(driver, view, Modifier.align(Alignment.BottomStart).padding(12.dp))
         if (!following) {
             Box(
                 Modifier.align(Alignment.TopEnd).padding(12.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xE6101312))
@@ -163,7 +156,7 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, wo
         if (fix == null) {
             Text(
                 "Waiting for position", color = SpeedoColors.Muted, fontSize = 13.sp,
-                modifier = Modifier.align(if (world == null) Alignment.TopStart else Alignment.Center).padding(14.dp),
+                modifier = Modifier.align(Alignment.Center).padding(14.dp),
             )
         }
     }

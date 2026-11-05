@@ -140,11 +140,7 @@ internal fun Dot(id: String, json: String, fill: Color, radius: Float) {
 }
 
 @Composable
-actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, world: com.sappy.speedome.ui.worlds.World?, insetBottom: androidx.compose.ui.unit.Dp) {
-    if (world == null) {
-        LiveMap(driver, northUp, modifier, BaseStyle.Uri(STYLE_URL), null, insetBottom)
-        return
-    }
+actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, world: com.sappy.speedome.ui.worlds.World, insetBottom: androidx.compose.ui.unit.Dp) {
     val style by androidx.compose.runtime.produceState<BaseStyle?>(null, world.id) {
         value = BaseStyle.Json(kotlinx.serialization.json.Json.parseToJsonElement(world.styleJson()).jsonObject)
     }
@@ -160,7 +156,7 @@ private fun LiveMap(
     northUp: Boolean,
     modifier: Modifier,
     baseStyle: BaseStyle,
-    world: com.sappy.speedome.ui.worlds.World?,
+    world: com.sappy.speedome.ui.worlds.World,
     insetBottom: androidx.compose.ui.unit.Dp,
 ) {
     val app = LocalAppContainer.current
@@ -179,7 +175,7 @@ private fun LiveMap(
         baseStyle = baseStyle,
         initialCameraPosition = CameraPosition(center = Position(fix?.lon ?: 0.0, fix?.lat ?: 0.0), zoom = if (fix != null) 16.0 else 2.0),
     ) {
-        RouteLayers(lines, gaps, world?.palette?.route)
+        RouteLayers(lines, gaps, world.palette.route)
         Dot("puck", puck, SpeedoColors.Accent, 7f)
     }
     // Panning or rotating the map stops following until RE-CENTRE.
@@ -203,12 +199,11 @@ private fun LiveMap(
             )
         }
         MaplibreMap(Modifier.fillMaxSize(), state)
-        if (world == null) SpeedCard(driver, view, Modifier.align(Alignment.BottomStart).padding(12.dp))
         if (!following) MapButton("RE-CENTRE", "Re-centre map", Modifier.align(Alignment.TopEnd)) { following = true }
         if (fix == null) {
             Text(
                 "Waiting for position", color = SpeedoColors.Muted, fontSize = 13.sp,
-                modifier = Modifier.align(if (world == null) Alignment.TopStart else Alignment.Center).padding(14.dp),
+                modifier = Modifier.align(Alignment.Center).padding(14.dp),
             )
         }
     }

@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -79,7 +80,11 @@ fun WorldPage(driver: GaugeDriver, settings: AppSettings, modifier: Modifier = M
             MapPage(driver, settings.mapNorthUp, Modifier.fillMaxSize(), world, insetBottom = cardHeight)
             WorldPill(world, Modifier.align(Alignment.TopCenter)) { picking = true }
             key(world.id) {
-                GaugeView(theme, { driver.frame }, Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(cardHeight).padding(10.dp))
+                // The empty pointerInput keeps touches off the map behind the card, so a drag here scrolls the page.
+                GaugeView(
+                    theme, { driver.frame },
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(cardHeight).pointerInput(Unit) {}.padding(10.dp),
+                )
             }
         }
     }

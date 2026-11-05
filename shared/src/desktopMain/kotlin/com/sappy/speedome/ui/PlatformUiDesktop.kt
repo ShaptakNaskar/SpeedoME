@@ -59,16 +59,14 @@ actual fun ReliabilityScreen(onBack: () -> Unit) {}
 @Composable
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {}
 
-/** No MapLibre on the desktop preview: the live route drawn plainly, with the speed card. */
+/** No MapLibre on the desktop preview: the live route drawn plainly on the world's land colour. */
 @Composable
-actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, world: com.sappy.speedome.ui.worlds.World?, insetBottom: androidx.compose.ui.unit.Dp) {
+actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, world: com.sappy.speedome.ui.worlds.World, insetBottom: androidx.compose.ui.unit.Dp) {
     val app = LocalAppContainer.current
     val route by app.liveRoute.points.collectAsStateWithLifecycle()
-    val view = rememberTrackView(app.tracking.state, 500)
     val points = route.mapIndexed { i, p -> PointEntity(sessionId = 0, t = i.toLong(), segment = p.segment, lat = p.lat, lon = p.lon, speedMps = p.speedMps, hAcc = 5f, source = "") }
-    Box(modifier.background(world?.palette?.ground ?: SpeedoColors.Background)) {
+    Box(modifier.background(world.palette.ground)) {
         RouteView(points, Modifier.fillMaxSize().padding(24.dp))
-        if (world == null) SpeedCard(driver, view, Modifier.align(Alignment.BottomStart).padding(12.dp))
         Text("MAP (preview: no map tiles)", color = SpeedoColors.Muted, fontSize = 12.sp, modifier = Modifier.align(Alignment.TopStart).padding(14.dp))
     }
 }

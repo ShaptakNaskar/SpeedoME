@@ -14,7 +14,7 @@ SpeedoME is a GPS speedometer and trip computer. It is built to keep your data o
 ## Where it goes
 
 - **Trips you record** are stored on your phone, in the app's private database. They are never uploaded. You can delete them at any time, and uninstalling the app deletes them all.
-- **Map tiles.** When the Map theme or a trip's map is on screen, the app downloads map tiles from [OpenFreeMap](https://openfreemap.org). Like any web request, this reveals your IP address and the map area being viewed to that server. OpenFreeMap's own privacy policy applies. On the World page, some worlds also draw hill shading from elevation tiles on Amazon S3 (the public [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) dataset), which reveals the same to Amazon Web Services. Tiles are cached on your phone. Nothing else is sent with these requests: no identifier, account or trip data.
+- **Map tiles.** When the Map theme or a trip's map is on screen, the app downloads map tiles from [OpenFreeMap](https://openfreemap.org). Like any web request, this reveals your IP address and the map area being viewed to that server. OpenFreeMap's own privacy policy applies. On the Map theme, some worlds also draw hill shading from elevation tiles on Amazon S3 (the public [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) dataset), which reveals the same to Amazon Web Services. Tiles are cached on your phone. Nothing else is sent with these requests: no identifier, account or trip data.
 - **GPX export.** Only when you choose to export a trip does the file go where you send it (another app, a file or a share target).
 
 SpeedoME has no accounts, advertising, analytics or crash reporting, and it does not use Google Play Services.
@@ -29,7 +29,7 @@ SpeedoME has no accounts, advertising, analytics or crash reporting, and it does
 | Vibration | Buzzes at your speed limit, if you set one. |
 | Physical activity (optional) | Step counting in Walk & run mode. |
 | Ignore battery optimisations (optional) | Keeps GPS running reliably with the screen off. |
-| Internet | Map tiles for the Map theme, the World page and trip maps. |
+| Internet | Map tiles for the Map theme and trip maps. |
 
 You can turn off any optional permission in Android's settings. The app keeps working without it.
 

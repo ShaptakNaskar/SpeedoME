@@ -14,7 +14,7 @@ SpeedoME shows the speed your GPS chip actually measures. It uses the receiver's
 - Modern: a glowing arc.
 - Digital: VFD seven-segment.
 - Night Focus: only the speeds you need stay lit.
-- Map: your route coloured by speed.
+- Map: your route on one of 38 world map styles, each with its own speedo.
 - Nerd: satellites, signal bars and G-force.
 - Speed Tape: aircraft style.
 - Sunlight: high contrast for bright days.
