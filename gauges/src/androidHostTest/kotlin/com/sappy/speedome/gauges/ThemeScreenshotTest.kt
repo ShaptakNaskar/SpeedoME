@@ -153,4 +153,22 @@ class ThemeScreenshotTest {
 
     @Test
     fun greenTerminal() = shoot(GreenTerminalTheme, cardShots())
+
+    @Test
+    fun sunsetCoast() = shoot(SunsetCoastTheme, cardShots())
+
+    @Test
+    fun seaChart() = shoot(SeaChartTheme, cardShots())
+
+    @Test
+    fun tacticalRadar() = shoot(TacticalRadarTheme, cardShots())
+
+    @Test
+    fun dosAtlas() = shoot(DosAtlasTheme, cardShots())
+
+    @Test
+    fun quest16() = shoot(Quest16Theme, cardShots())
+
+    @Test
+    fun inkWind() = shoot(InkWindTheme, cardShots())
 }
