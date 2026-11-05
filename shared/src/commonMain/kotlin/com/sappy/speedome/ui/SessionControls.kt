@@ -17,7 +17,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.runtime.key
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -79,10 +84,24 @@ private fun ControlsRow(v: TrackView, onTarget: () -> Unit, onLimit: () -> Unit,
                 Pill("■ STOP", SpeedoColors.Text, "Stop trip") { app.recorder.stopTrip() }
             }
         }
+        if (v.sessionKind == SessionKind.TRIP) LapButton(v, labels)
         val target = if (v.target != null) "Edit target" else "Set target"
         IconButtonLabeled(TabIcons.Target, "TARGET".takeIf { labels }, v.target != null, target, onTarget)
         LimitButton(labels, onLimit)
         ModeButton(labels)
+    }
+}
+
+/** Marks the start of a section of the trip, amber while it runs; tapping again ends and saves it. */
+@Composable
+private fun LapButton(v: TrackView, labels: Boolean) {
+    val app = LocalAppContainer.current
+    val actions = rememberPlatformActions()
+    val lapM = v.lapDistanceM
+    val description = if (lapM != null) "End section, ${Fmt.dist(lapM)} ${Fmt.distUnit} so far" else "Start a section of this trip"
+    IconButtonLabeled(TabIcons.Flag, "LAP".takeIf { labels }, lapM != null, description) {
+        if (lapM == null) actions.toast("Section started")
+        app.recorder.toggleLap(open = lapM != null)
     }
 }
 
@@ -169,21 +188,43 @@ private fun Pill(label: String, color: Color, description: String? = null, onCli
     )
 }
 
-/** Summary sheet after Stop: saved by default, with Discard (docs/plan.md §7). */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Summary sheet after Stop, or after a section ends: saved by default, with Discard (docs/plan.md §7).
+ * A section is saved linked to its trip; "Separate trip" unlinks it. One sheet at a time, oldest first.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TripSummarySheet() {
     val app = LocalAppContainer.current
-    val id by app.recorder.finished.collectAsStateWithLifecycle()
-    val tripId = id ?: return
+    val queue by app.recorder.finished.collectAsStateWithLifecycle()
+    val f = queue.firstOrNull() ?: return
+    val tripId = f.id
     val trip by remember(tripId) { app.db.trips().observeSession(tripId) }.collectAsStateWithLifecycle(null)
-    ModalBottomSheet(onDismissRequest = { app.recorder.dismissSummary() }, containerColor = SpeedoColors.Raised) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Trip saved", color = SpeedoColors.Text, fontSize = 22.sp)
-            trip?.let { TripStatsGrid(it) }
-            Row(Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextButton(onClick = { app.recorder.discardTrip(tripId) }) { Text("Discard", color = Color(0xFFFF6B5E)) }
-                FilledTonalButton(onClick = { app.recorder.dismissSummary() }) { Text("Done") }
+    key(tripId) {
+        ModalBottomSheet(
+            onDismissRequest = { app.recorder.dismissSummary(tripId) },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), // the buttons must never sit below the fold
+            containerColor = SpeedoColors.Raised,
+        ) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(if (f.sectionOf != null) "Section saved" else "Trip saved", color = SpeedoColors.Text, fontSize = 22.sp)
+                if (f.sectionOf != null) Text("Keep it linked to its trip, or as a trip of its own.", color = SpeedoColors.Muted, fontSize = 14.sp)
+                trip?.let { TripStatsGrid(it) }
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TextButton(onClick = { app.recorder.discardTrip(tripId) }) { Text("Discard", color = Color(0xFFFF6B5E)) }
+                    if (f.sectionOf != null) {
+                        OutlinedButton(onClick = {
+                            app.recorder.linkSection(tripId, null)
+                            app.recorder.dismissSummary(tripId)
+                        }) { Text("Separate trip") }
+                        FilledTonalButton(onClick = { app.recorder.dismissSummary(tripId) }) { Text("Link to trip") }
+                    } else {
+                        FilledTonalButton(onClick = { app.recorder.dismissSummary(tripId) }) { Text("Done") }
+                    }
+                }
             }
         }
     }

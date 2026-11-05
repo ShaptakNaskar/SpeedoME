@@ -1,12 +1,13 @@
 package com.sappy.speedome.data
 
+import androidx.room.AutoMigration
 import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 
 /** Trips and their points (docs/plan.md §7). Each platform builds it in its own place ([Platform]). */
-@Database(entities = [SessionEntity::class, PointEntity::class], version = 1, exportSchema = true)
+@Database(entities = [SessionEntity::class, PointEntity::class], version = 2, exportSchema = true, autoMigrations = [AutoMigration(from = 1, to = 2)])
 @ConstructedBy(SpeedoDatabaseConstructor::class)
 abstract class SpeedoDatabase : RoomDatabase() {
     abstract fun trips(): TripDao

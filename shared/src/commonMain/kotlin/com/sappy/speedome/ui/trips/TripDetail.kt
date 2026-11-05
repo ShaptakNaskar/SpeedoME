@@ -2,6 +2,7 @@ package com.sappy.speedome.ui.trips
 
 import com.sappy.speedome.ui.rememberPlatformActions
 import com.sappy.speedome.ui.rememberSaveFile
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -47,7 +48,7 @@ private sealed interface Loaded {
 }
 
 @Composable
-fun TripDetail(id: Long, onBack: () -> Unit) {
+fun TripDetail(id: Long, onBack: () -> Unit, onOpen: (Long) -> Unit) {
     val app = LocalAppContainer.current
     val dao = app.db.trips()
     val actions = rememberPlatformActions()
@@ -60,6 +61,7 @@ fun TripDetail(id: Long, onBack: () -> Unit) {
         }
     }.collectAsStateWithLifecycle(Loaded.Loading)
     val points by remember(id) { dao.observePoints(id) }.collectAsStateWithLifecycle(emptyList())
+    val sections by remember(id) { dao.sections(id) }.collectAsStateWithLifecycle(emptyList())
     var renaming by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
 
@@ -75,6 +77,10 @@ fun TripDetail(id: Long, onBack: () -> Unit) {
             Text(tripTitle(t), color = SpeedoColors.Text, fontSize = 22.sp)
             if (t.name != null) Text(tripDate(t), color = SpeedoColors.Muted, fontSize = 13.sp)
         }
+        t.parentId?.let { pid ->
+            val parent by remember(pid) { dao.observeSession(pid) }.collectAsStateWithLifecycle(null)
+            parent?.let { p -> TextButton(onClick = { onOpen(pid) }) { Text("Section of ${tripTitle(p)} ›", color = SpeedoColors.Accent) } }
+        }
         TripStatsGrid(t)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             TripMap(points, Modifier.fillMaxWidth().aspectRatio(1.15f))
@@ -82,6 +88,15 @@ fun TripDetail(id: Long, onBack: () -> Unit) {
         }
         Text("SPEED", color = SpeedoColors.Muted, fontSize = 11.sp, letterSpacing = 2.sp)
         SpeedGraph(points, Modifier.fillMaxWidth().height(150.dp))
+        if (sections.isNotEmpty()) {
+            Text("SECTIONS", color = SpeedoColors.Muted, fontSize = 11.sp, letterSpacing = 2.sp)
+            sections.forEach { s ->
+                Column(Modifier.fillMaxWidth().clickable { onOpen(s.id) }.padding(vertical = 6.dp)) {
+                    Text(tripTitle(s), color = SpeedoColors.Text, fontSize = 16.sp)
+                    Text(tripSummary(s), color = SpeedoColors.Muted, fontSize = 13.sp)
+                }
+            }
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(enabled = points.isNotEmpty(), onClick = {
                 scope.launch {

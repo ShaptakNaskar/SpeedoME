@@ -79,7 +79,11 @@ private fun shots(app: AppContainer, dir: File) {
     // A short city drive, recorded, so trips and the live screens have data.
     Thread.sleep(3_000)
     app.recorder.startTrip()
-    Thread.sleep(25_000)
+    Thread.sleep(8_000)
+    app.recorder.toggleLap(open = false)
+    Thread.sleep(10_000)
+    app.recorder.toggleLap(open = true)
+    Thread.sleep(7_000)
     for (entry in SpeedThemes.all) {
         runBlocking { app.settings.update { it.copy(theme = entry.id) } }
         shot(dir, "speed-${entry.id}", PHONE, app) { SpeedScreen() }
@@ -87,10 +91,12 @@ private fun shots(app: AppContainer, dir: File) {
     runBlocking { app.settings.update { it.copy(theme = "retro") } }
     shot(dir, "speed-landscape", DpSize(PHONE.height, PHONE.width), app) { SpeedScreen() }
     app.recorder.stopTrip()
-    val tripId = runBlocking { app.db.trips().trips().first { it.isNotEmpty() }.first().id }
-    app.recorder.dismissSummary()
+    val trips = runBlocking { app.db.trips().trips().first { it.size >= 2 } }
+    val tripId = trips.first { it.parentId == null }.id
+    app.recorder.finished.value.forEach { app.recorder.dismissSummary(it.id) }
     shot(dir, "trips", PHONE, app) { TripsScreen() }
-    shot(dir, "trip-detail", PHONE, app) { TripDetail(tripId, onBack = {}) }
+    shot(dir, "trip-detail", PHONE, app) { TripDetail(tripId, onBack = {}, onOpen = {}) }
+    shot(dir, "section-detail", PHONE, app) { TripDetail(trips.first { it.parentId != null }.id, onBack = {}, onOpen = {}) }
     shot(dir, "settings", PHONE, app) { SettingsScreen() }
     shot(dir, "app", PHONE, app) { SpeedoApp() }
     System.exit(0) // the simulator and recorder keep coroutines alive

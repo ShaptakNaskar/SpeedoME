@@ -31,6 +31,8 @@ data class TrackView(
     /** Current dial maximum from auto-range (km/h). */
     val rangeKmh: Int,
     val target: TargetView? = null,
+    /** The open section's distance so far, or null when no section is open. */
+    val lapDistanceM: Double? = null,
 ) {
     /**
      * What the needle chases at [nowNanos]: the filtered speed, extrapolated with the filter's
@@ -91,5 +93,6 @@ fun EngineState.view(nowNanos: Long): TrackView {
         lastFix = lastFix,
         rangeKmh = range.maxKmh,
         target = targetView(nowNanos),
+        lapDistanceM = lap?.let { stats.distanceM - it.base.distanceM },
     )
 }

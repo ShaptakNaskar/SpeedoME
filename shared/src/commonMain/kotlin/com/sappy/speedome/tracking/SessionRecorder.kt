@@ -11,6 +11,7 @@ import com.sappy.speedome.engine.SessionKind
 import com.sappy.speedome.engine.Snapshot
 import com.sappy.speedome.engine.RouteSampler
 import com.sappy.speedome.engine.resumedAfter
+import com.sappy.speedome.engine.lapStats
 import com.sappy.speedome.settings.AppSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -42,12 +44,15 @@ class SessionRecorder(
 ) {
     data class ResumeOffer(val session: SessionEntity, val gapMillis: Long)
 
+    /** A saved trip awaiting its summary sheet; [sectionOf] is set for a section of that trip. */
+    data class Finished(val id: Long, val sectionOf: Long? = null)
+
     private val _offer = MutableStateFlow<ResumeOffer?>(null)
     val offer: StateFlow<ResumeOffer?> = _offer.asStateFlow()
 
-    /** Id of a trip that just finished; the Speed screen shows its summary sheet. */
-    private val _finished = MutableStateFlow<Long?>(null)
-    val finished: StateFlow<Long?> = _finished.asStateFlow()
+    /** Trips and sections that just finished, oldest first; the Speed screen shows a summary sheet for the first. */
+    private val _finished = MutableStateFlow<List<Finished>>(emptyList())
+    val finished: StateFlow<List<Finished>> = _finished.asStateFlow()
 
     /** The gap (ms) after an automatic resume, until the UI has shown it. */
     private val _resumed = MutableStateFlow<Long?>(null)
@@ -92,6 +97,15 @@ class SessionRecorder(
 
     fun reset() = tracking.command(com.sappy.speedome.engine.Command.Reset)
 
+    /** Starts a section of the recording trip, or ends the open one (it is then saved and summarised). */
+    fun toggleLap(open: Boolean) =
+        tracking.command(if (open) com.sappy.speedome.engine.Command.EndLap else com.sappy.speedome.engine.Command.StartLap)
+
+    /** Keeps a just-saved section linked to its trip, or makes it a trip of its own. */
+    fun linkSection(id: Long, tripId: Long?) {
+        scope.launch(io) { dao.setParent(id, tripId) }
+    }
+
     fun clearResumedNotice() {
         _resumed.value = null
     }
@@ -110,12 +124,12 @@ class SessionRecorder(
         }
     }
 
-    fun dismissSummary() {
-        _finished.value = null
+    fun dismissSummary(id: Long) {
+        _finished.update { list -> list.filter { it.id != id } }
     }
 
     fun discardTrip(id: Long) {
-        if (_finished.value == id) _finished.value = null
+        dismissSummary(id)
         scope.launch(io) { dao.deleteSession(id) }
     }
 
@@ -126,7 +140,7 @@ class SessionRecorder(
     }
 
     /** "Save & finish" on a trip offer. */
-    fun finishOffer() = handleOffer { o -> _finished.value = finishStale(o.session) }
+    fun finishOffer() = handleOffer { o -> _finished.update { it + Finished(finishStale(o.session)) } }
 
     /** "Discard" on the offer. */
     fun discardOffer() = handleOffer { o -> dao.deleteSession(o.session.id) }
@@ -174,6 +188,8 @@ class SessionRecorder(
             current = adopted?.let { dao.session(it.second) }
             recording.value = current != null
             sampler.reset(seenFix = if (current != null) s.lastFix?.tNanos else null)
+        } else if (s.lap == null && lastState?.lap != null) {
+            current?.let { saveLap(it, lastState!!) } // the section just ended
         }
         lastState = s
         if (s.session.kind != SessionKind.TRIP) return // the live meter is never stored
@@ -203,6 +219,7 @@ class SessionRecorder(
     private suspend fun closeCurrent() {
         val row = current ?: return
         val s = lastState
+        if (s?.lap != null) saveLap(row, s) // stopping the trip ends its open section too
         current = null
         recording.value = false
         if (pending.isNotEmpty()) dao.insertPoints(pending.toList())
@@ -214,8 +231,28 @@ class SessionRecorder(
                 engineSnapshot = null, thumbnail = thumbnail(dao.points(row.id)),
             ),
         )
-        _finished.value = row.id
+        _finished.update { it + Finished(row.id) }
         dirty = false
+    }
+
+    /** Saves the section open in [s] as a finished trip linked to [trip], with its stretch of the route. */
+    private suspend fun saveLap(trip: SessionEntity, s: EngineState) {
+        val lap = s.lap ?: return
+        val st = s.lapStats() ?: return
+        if (pending.isNotEmpty()) dao.insertPoints(pending.toList()) // the trip row catches up on the next flush
+        pending.clear()
+        val end = utcMillis()
+        val points = dao.pointsBetween(trip.id, lap.startUtc, end)
+        val id = dao.insertSection(
+            SessionEntity(
+                kind = SessionKind.TRIP.name, state = SessionStates.FINISHED, mode = trip.mode,
+                startedAt = lap.startUtc, endedAt = end, updatedAt = end,
+                distanceM = st.distanceM, movingS = st.movingS, elapsedS = st.elapsedS, maxMps = st.maxMps, steps = st.steps,
+                thumbnail = thumbnail(points), parentId = trip.id,
+            ),
+            points,
+        )
+        _finished.update { it + Finished(id, sectionOf = trip.id) }
     }
 
     private suspend fun flush(force: Boolean = false) {

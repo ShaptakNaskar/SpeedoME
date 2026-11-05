@@ -46,6 +46,11 @@ object TabIcons {
     }
 
     /** The "end of speed limit" road sign: a ring with a slash. */
+    val Flag: ImageVector = icon("flag") {
+        stroke { moveTo(6f, 21f); lineTo(6f, 4f) }
+        stroke { moveTo(6f, 4.5f); lineTo(18f, 4.5f); lineTo(15f, 8.5f); lineTo(18f, 12.5f); lineTo(6f, 12.5f) }
+    }
+
     val NoLimit: ImageVector = icon("no-limit") {
         stroke { dot(12f, 12f, 8.5f) }
         stroke { moveTo(17.5f, 6.5f); lineTo(6.5f, 17.5f) }

@@ -44,6 +44,10 @@ data class Stats(
 @Serializable
 data class Target(val distanceM: Double, val startDistanceM: Double, val arriveByUtc: Long? = null)
 
+/** An open section of a trip (a lap): the trip totals when it began, and its own top speed. */
+@Serializable
+data class Lap(val startUtc: Long, val base: Stats, val maxMps: Double = 0.0)
+
 /** Session distance at a moment; the last ~180 s of these give the arrival trend speed. */
 @Serializable
 data class TrendSample(val tNanos: Long, val distanceM: Double)
@@ -90,7 +94,20 @@ data class EngineState(
     val target: Target? = null,
     val trend: List<TrendSample> = emptyList(),
     val clock: UtcAnchor? = null,
+    val lap: Lap? = null,
 )
+
+/** Totals of the open section so far, or null when none is open. */
+fun EngineState.lapStats(): Stats? = lap?.let { l ->
+    val elapsed = stats.elapsedS - l.base.elapsedS
+    Stats(
+        distanceM = stats.distanceM - l.base.distanceM,
+        // The first fix after the start also brings the moments just before it; never more than the elapsed time.
+        movingS = (stats.movingS - l.base.movingS).coerceAtMost(elapsed),
+        elapsedS = elapsed, maxMps = l.maxMps,
+        steps = stats.steps - l.base.steps, gaps = stats.gaps - l.base.gaps,
+    )
+}
 
 /** GPS dot colour at [nowNanos]. */
 fun EngineState.quality(nowNanos: Long): GpsQuality {

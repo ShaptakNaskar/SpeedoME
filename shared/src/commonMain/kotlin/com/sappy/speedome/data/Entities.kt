@@ -7,7 +7,12 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /** A live meter or recorded trip (docs/plan.md §7). Times are UTC milliseconds. */
-@Entity(tableName = "session", indices = [Index("state"), Index("kind", "startedAt")])
+@Entity(
+    tableName = "session",
+    indices = [Index("state"), Index("kind", "startedAt"), Index("parentId")],
+    // Deleting a trip keeps its sections as trips of their own.
+    foreignKeys = [ForeignKey(entity = SessionEntity::class, parentColumns = ["id"], childColumns = ["parentId"], onDelete = ForeignKey.SET_NULL)],
+)
 data class SessionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     /** LIVE or TRIP. */
@@ -30,6 +35,8 @@ data class SessionEntity(
     val engineSnapshot: String? = null,
     /** Decimated route for list thumbnails: "lat,lon;lat,lon;…". */
     val thumbnail: String? = null,
+    /** For a section saved linked to its trip: that trip's id. */
+    val parentId: Long? = null,
 )
 
 /** One stored route point; at most one per second per session. */

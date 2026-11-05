@@ -50,6 +50,23 @@ interface TripDao {
     @Query("SELECT MAX(segment) FROM point WHERE sessionId = :sessionId")
     suspend fun lastSegment(sessionId: Long): Int?
 
+    @Query("SELECT * FROM point WHERE sessionId = :sessionId AND t BETWEEN :from AND :to ORDER BY t")
+    suspend fun pointsBetween(sessionId: Long, from: Long, to: Long): List<PointEntity>
+
+    /** Saves a finished section with a copy of its stretch of the trip's route; returns its id. */
+    @Transaction
+    suspend fun insertSection(section: SessionEntity, points: List<PointEntity>): Long {
+        val id = insertSession(section)
+        insertPoints(points.map { it.copy(id = 0, sessionId = id) })
+        return id
+    }
+
+    @Query("SELECT * FROM session WHERE parentId = :tripId ORDER BY startedAt")
+    fun sections(tripId: Long): Flow<List<SessionEntity>>
+
+    @Query("UPDATE session SET parentId = :parentId WHERE id = :id")
+    suspend fun setParent(id: Long, parentId: Long?)
+
     @Query("DELETE FROM session WHERE id = :id")
     suspend fun deleteSession(id: Long)
 

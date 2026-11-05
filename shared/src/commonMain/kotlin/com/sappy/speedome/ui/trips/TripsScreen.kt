@@ -41,7 +41,7 @@ fun TripsScreen() {
     val openId = open
     if (openId != null) {
         PlatformBackHandler { open = null }
-        TripDetail(openId, onBack = { open = null })
+        TripDetail(openId, onBack = { open = null }, onOpen = { open = it })
         return
     }
     val trips by remember { app.db.trips().trips() }.collectAsStateWithLifecycle(emptyList())
@@ -65,7 +65,7 @@ private fun TripRow(t: SessionEntity, onClick: () -> Unit) {
         RouteThumbnail(t.thumbnail, Modifier.size(64.dp))
         Column(Modifier.weight(1f)) {
             Text(tripTitle(t), color = SpeedoColors.Text, fontSize = 16.sp)
-            Text(tripSummary(t), color = SpeedoColors.Muted, fontSize = 13.sp)
+            Text(if (t.parentId != null) "Section · ${tripSummary(t)}" else tripSummary(t), color = SpeedoColors.Muted, fontSize = 13.sp)
         }
     }
 }

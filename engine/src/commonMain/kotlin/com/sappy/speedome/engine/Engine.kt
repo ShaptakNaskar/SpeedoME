@@ -45,7 +45,8 @@ object Engine {
 }
 
 private val Command.keepsRange
-    get() = this == Command.Pause || this == Command.Resume || this is Command.SetTarget || this == Command.ClearTarget
+    get() = this == Command.Pause || this == Command.Resume || this is Command.SetTarget || this == Command.ClearTarget ||
+        this == Command.StartLap || this == Command.EndLap
 
 private fun EngineState.anchor(e: EngineEvent): EngineState {
     val utc = when (e) {
@@ -153,7 +154,8 @@ private fun EngineState.integrate(t: Long, goodPos: PosSample?, accepted: Boolea
         }
     }
     if (accepted) st = st.copy(maxMps = max(st.maxMps, out))
-    return copy(stats = st, lastMeasureNanos = t, lastMeasureOut = out, lastGood = goodPos ?: lastGood)
+    val lp = if (accepted) lap?.let { it.copy(maxMps = max(it.maxMps, out)) } else lap
+    return copy(stats = st, lap = lp, lastMeasureNanos = t, lastMeasureOut = out, lastGood = goodPos ?: lastGood)
 }
 
 private fun EngineState.isMoving(vm: Double, t: Long, cfg: EngineSettings): Boolean = when (cfg.mode) {
@@ -248,6 +250,8 @@ private fun EngineState.onCommand(e: CommandEvent): EngineState = when (e.comman
     }
     is Command.SetTarget -> copy(target = Target(e.command.distanceM, stats.distanceM, e.command.arriveByUtc))
     Command.ClearTarget -> copy(target = null)
+    Command.StartLap -> if (session.kind == SessionKind.TRIP && lap == null) copy(lap = Lap(e.utcMillis, stats)) else this
+    Command.EndLap -> copy(lap = null)
     // A recording trip never gets here (see reduce). Only the learned stride outlives the live meter:
     // it describes the walker, not the session.
     Command.Standby -> EngineState(
@@ -261,7 +265,7 @@ private fun EngineState.onCommand(e: CommandEvent): EngineState = when (e.comman
 /** A new session zeroes distance; a set target carries over and counts from the new zero. */
 private fun EngineState.freshSession(kind: SessionKind, utc: Long) = copy(
     session = Session(kind = kind, startedUtc = utc), stats = Stats(), lastMeasureNanos = null, lastGood = null,
-    trend = emptyList(), target = target?.copy(startDistanceM = 0.0), steps = steps.rebaselined(),
+    trend = emptyList(), target = target?.copy(startDistanceM = 0.0), steps = steps.rebaselined(), lap = null,
 )
 
 private fun StepState.rebaselined() = copy(lastCounter = null, provisional = 0)
