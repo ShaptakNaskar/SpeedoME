@@ -57,6 +57,10 @@ private val fontFiles = mapOf(
     GaugeTypeface.B612 to "b612_mono.ttf",
     GaugeTypeface.B612_BOLD to "b612_mono_bold.ttf",
     GaugeTypeface.BARLOW_SEMI to "barlow_semi_condensed_semibold.ttf",
+    GaugeTypeface.RYE to "rye.ttf",
+    GaugeTypeface.VT323 to "vt323.ttf",
+    GaugeTypeface.SILKSCREEN to "silkscreen.ttf",
+    GaugeTypeface.ORBITRON to "orbitron.ttf",
 )
 
 private var loadedFaces: Map<GaugeTypeface, Typeface>? = null

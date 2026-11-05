@@ -38,6 +38,7 @@ import com.sappy.speedome.LocalAppContainer
 import com.sappy.speedome.gauges.warned
 import com.sappy.speedome.tracking.RoutePoint
 import com.sappy.speedome.ui.theme.SpeedoColors
+import com.sappy.speedome.ui.worlds.styleJson
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -57,7 +58,7 @@ import kotlin.math.abs
 
 /** Live map: route coloured by speed, a heading puck, follow camera, speed card (docs/plan.md §9.5). */
 @Composable
-actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier) {
+actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, world: com.sappy.speedome.ui.worlds.World?, insetBottom: androidx.compose.ui.unit.Dp) {
     val app = LocalAppContainer.current
     val route by app.liveRoute.points.collectAsStateWithLifecycle()
     val view = rememberTrackView(app.tracking.state, 500)
@@ -95,13 +96,24 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier) {
                 zoomOffset = (m.cameraPosition.zoom - zoomFor(lastKmh)).coerceIn(-8.0, 4.0)
             }
         })
-        val density = resources.displayMetrics.density
-        m.loadDarkStyle { s ->
-            s.addRouteLayers()
-            s.addPuck(density)
-            map = m
+        map = m
+    }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    // (Re)load the style when the map is ready and whenever the world changes.
+    LaunchedEffect(map, world?.id) {
+        val m = map ?: return@LaunchedEffect
+        style = null
+        val onLoaded = { s: Style ->
+            s.addRouteLayers(world?.let { colorHex(it.palette.route) })
+            s.addPuck(density.density)
             style = s
         }
+        if (world == null) m.loadDarkStyle(onLoaded) else m.setStyle(Style.Builder().fromJson(world.styleJson())) { onLoaded(it) }
+    }
+    val insetPx = with(density) { insetBottom.toPx() }
+    LaunchedEffect(map, insetPx) {
+        // Keep the OpenStreetMap attribution above the docked speedo.
+        if (insetPx > 0) map?.uiSettings?.setAttributionMargins(0, 0, with(density) { 8.dp.roundToPx() }, insetPx.toInt() + with(density) { 8.dp.roundToPx() })
     }
 
     val rangeKmh = driver.frame.rangeKmh
@@ -132,14 +144,14 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier) {
             .target(LatLng(fix.lat, fix.lon))
             .zoom(zoomFor(view.speedMps * 3.6) + zoomOffset)
             .bearing(bearing)
-            .padding(0.0, if (northUp) 0.0 else mapView.height * .35, 0.0, 0.0) // course-up: see more road ahead
+            .padding(0.0, if (northUp) 0.0 else (mapView.height - insetPx) * .35, 0.0, insetPx.toDouble()) // course-up: see more road ahead
             .build()
         m.easeCamera(CameraUpdateFactory.newCameraPosition(camera), 900, false)
     }
 
     Box(modifier.background(SpeedoColors.Background)) {
         AndroidView({ mapView }, Modifier.fillMaxSize())
-        SpeedCard(driver, view, Modifier.align(Alignment.BottomStart).padding(12.dp))
+        if (world == null) SpeedCard(driver, view, Modifier.align(Alignment.BottomStart).padding(12.dp))
         if (!following) {
             Box(
                 Modifier.align(Alignment.TopEnd).padding(12.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xE6101312))
@@ -151,7 +163,7 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier) {
         if (fix == null) {
             Text(
                 "Waiting for position", color = SpeedoColors.Muted, fontSize = 13.sp,
-                modifier = Modifier.align(Alignment.TopStart).padding(14.dp),
+                modifier = Modifier.align(if (world == null) Alignment.TopStart else Alignment.Center).padding(14.dp),
             )
         }
     }

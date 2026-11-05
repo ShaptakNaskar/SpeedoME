@@ -60,6 +60,8 @@ data class AppSettings(
     val limitVibrate: Boolean = true,
     /** The Graph page's time window in seconds. */
     val graphWindowS: Int = 120,
+    /** The World page's map world (ui/worlds/Worlds.kt). */
+    val worldId: String = "neon_city",
 ) {
     /** The speed limit in m/s, or null when it's off. */
     val speedLimit: Double? get() = speedLimitMps.takeIf { it > 0f }?.toDouble()
@@ -104,6 +106,7 @@ class SettingsRepository(private val store: DataStore<Preferences>, scope: Corou
         val units = stringPreferencesKey("units")
         val speedLimit = floatPreferencesKey("speed_limit_mps")
         val graphWindow = intPreferencesKey("graph_window_s")
+        val world = stringPreferencesKey("world")
         val limitVibrate = booleanPreferencesKey("limit_vibrate")
     }
 
@@ -146,6 +149,7 @@ class SettingsRepository(private val store: DataStore<Preferences>, scope: Corou
             units = this[Keys.units].enumOr(d.units),
             speedLimitMps = this[Keys.speedLimit] ?: d.speedLimitMps,
             graphWindowS = this[Keys.graphWindow] ?: d.graphWindowS,
+            worldId = this[Keys.world] ?: d.worldId,
             limitVibrate = this[Keys.limitVibrate] ?: d.limitVibrate,
         )
     }
@@ -176,6 +180,7 @@ class SettingsRepository(private val store: DataStore<Preferences>, scope: Corou
         this[Keys.units] = s.units.name
         this[Keys.speedLimit] = s.speedLimitMps
         this[Keys.graphWindow] = s.graphWindowS
+        this[Keys.world] = s.worldId
         this[Keys.limitVibrate] = s.limitVibrate
     }
 }

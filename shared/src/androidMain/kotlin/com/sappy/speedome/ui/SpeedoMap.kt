@@ -122,13 +122,19 @@ private fun Style.restyle() {
     getLayerAs<SymbolLayer>("highway_name_other")?.setProperties(PropertyFactory.textColor("#7D8683"))
 }
 
-/** A GeoJSON source "route" for [routeFeatures], drawn above roads and rail but below road and place labels. */
-fun Style.addRouteLayers() {
+/**
+ * A GeoJSON source "route" for [routeFeatures], drawn above roads and rail but below road and place
+ * labels. Coloured by speed, or all in [color] (a world's route colour).
+ */
+fun Style.addRouteLayers(color: String? = null) {
     addSource(GeoJsonSource("route"))
-    // water_name comes first in the style, too low; the road names are the right place.
-    val beforeLabels = (getLayer("highway_name_other") ?: layers.lastOrNull { it !is SymbolLayer }?.let { l -> layers.getOrNull(layers.indexOf(l) + 1) })?.id
+    // water_name comes first in the style, too low; the road names are the right place. Other styles
+    // (the worlds) put it just above their last non-label layer. Index one list: `layers` builds new
+    // Layer objects on every read, so indexOf on a second read finds nothing.
+    val all = layers
+    val beforeLabels = (getLayer("highway_name_other") ?: all.getOrNull(all.indexOfLast { it !is SymbolLayer } + 1))?.id
     val routeLine = LineLayer("route-line", "route").withProperties(
-        PropertyFactory.lineColor(Expression.get("color")),
+        if (color != null) PropertyFactory.lineColor(color) else PropertyFactory.lineColor(Expression.get("color")),
         PropertyFactory.lineWidth(Expression.interpolate(Expression.linear(), Expression.zoom(), Expression.stop(10, 3f), Expression.stop(17, 7f))),
         PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),

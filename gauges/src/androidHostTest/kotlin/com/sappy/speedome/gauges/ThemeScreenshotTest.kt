@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -39,14 +40,15 @@ class ThemeScreenshotTest {
         "range_change" to GaugeFrame(needleKmh = 58f, readout = 58, rangeKmh = 70f, rangeFromKmh = 60, rangeToKmh = 80, rangeProgress = .5f, stats = trip),
     )
 
-    private data class Shot(val name: String, val frame: GaugeFrame, val landscape: Boolean = false)
+    private data class Shot(val name: String, val frame: GaugeFrame, val landscape: Boolean = false, val size: DpSize? = null)
 
     /** setContent may only run once per test, so the shots are driven through state. */
     private fun shoot(theme: GaugeTheme, shots: List<Shot>) {
         var current by mutableStateOf(shots.first())
         compose.setContent {
             val shot = current
-            GaugeView(theme, { shot.frame }, if (shot.landscape) Modifier.size(780.dp, 360.dp) else Modifier.size(390.dp, 640.dp))
+            val box = shot.size ?: if (shot.landscape) DpSize(780.dp, 360.dp) else DpSize(390.dp, 640.dp)
+            GaugeView(theme, { shot.frame }, Modifier.size(box))
         }
         for (shot in shots) {
             current = shot
@@ -117,4 +119,38 @@ class ThemeScreenshotTest {
 
     @Test
     fun sun() = shoot(SunlightTheme, standard() + limitShots())
+
+    /** World speedos: the wide card docked under the map, the tall one beside it in landscape, idle and at a limit. */
+    private fun cardShots(): List<Shot> {
+        val card = DpSize(390.dp, 170.dp)
+        return listOf(
+            Shot("card", states.getValue("mid"), size = card),
+            Shot("idle", states.getValue("idle"), size = card),
+            Shot("tall", states.getValue("high"), size = DpSize(280.dp, 360.dp)),
+        ) + limitShots().take(2).map { it.copy(size = card) }
+    }
+
+    @Test
+    fun worldPalette() = shoot(
+        WorldTheme("world-palm_city", "PALM CITY", WorldPalette(Color(0xFFB6DB91), Color(0xFFB786ED), Color(0xFF20221F), Color(0xFF73776C), Color(0xFF383B35))),
+        cardShots(),
+    )
+
+    @Test
+    fun worldPaletteLight() = shoot(
+        WorldTheme("world-back_streets", "BACK STREETS", WorldPalette(Color(0xFFF2C877), Color(0xFFDA5B3C), Color(0xFFC2C5AD), Color(0xFFF4F0D8), Color(0xFFA4A48E))),
+        cardShots(),
+    )
+
+    @Test
+    fun neonCity() = shoot(NeonCityTheme, cardShots())
+
+    @Test
+    fun oldWest() = shoot(OldWestTheme, cardShots())
+
+    @Test
+    fun pixelWorld() = shoot(PixelWorldTheme, cardShots())
+
+    @Test
+    fun greenTerminal() = shoot(GreenTerminalTheme, cardShots())
 }

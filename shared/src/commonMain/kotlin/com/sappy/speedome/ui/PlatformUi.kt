@@ -58,9 +58,19 @@ expect val hasReliabilityScreen: Boolean
 @Composable
 expect fun ReliabilityScreen(onBack: () -> Unit)
 
-/** The Map theme: the live route coloured by speed, a heading puck and a follow camera. */
+/**
+ * The Map theme: the live route coloured by speed, a heading puck and a follow camera. With a [world]
+ * (the World page) the map uses that world's style and route colour and leaves the speed to the
+ * world's speedo, which covers the bottom [insetBottom] of the map.
+ */
 @Composable
-expect fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier = Modifier)
+expect fun MapPage(
+    driver: GaugeDriver,
+    northUp: Boolean,
+    modifier: Modifier = Modifier,
+    world: com.sappy.speedome.ui.worlds.World? = null,
+    insetBottom: androidx.compose.ui.unit.Dp = androidx.compose.ui.unit.Dp(0f),
+)
 
 /** Handles the system back gesture/button (Android); iOS has no system back, so it does nothing there. */
 @Composable

@@ -49,6 +49,8 @@ import org.maplibre.compose.map.rememberMapState
 import org.maplibre.compose.sources.GeoJsonData
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
+import com.sappy.speedome.ui.worlds.styleJson
+import kotlinx.serialization.json.jsonObject
 import org.maplibre.compose.util.DpPadding
 import org.maplibre.spatialk.geojson.Position
 import kotlin.time.Duration.Companion.milliseconds
@@ -112,14 +114,14 @@ internal fun pointGeoJson(points: List<Pair<Double, Double>>) = collection(
     points.map { (lat, lon) -> """{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[$lon,$lat]}}""" },
 )
 
-/** The speed-coloured route and its dashed gaps, above the base style. */
+/** The speed-coloured route (or all in [color], a world's route colour) and its dashed gaps, above the base style. */
 @Composable
-internal fun RouteLayers(lines: String, gaps: String) {
+internal fun RouteLayers(lines: String, gaps: String, color: Color? = null) {
     val lineSource = rememberGeoJsonSource(GeoJsonData.JsonString(lines))
     val gapSource = rememberGeoJsonSource(GeoJsonData.JsonString(gaps))
     LineLayer(
         id = "route-line", source = lineSource,
-        color = feature["color"].convertToColor(),
+        color = if (color != null) const(color) else feature["color"].convertToColor(),
         width = interpolate(linear(), zoom(), 10 to const(3.dp), 17 to const(7.dp)),
         cap = const(LineCap.Round), join = const(LineJoin.Round),
     )
@@ -138,7 +140,29 @@ internal fun Dot(id: String, json: String, fill: Color, radius: Float) {
 }
 
 @Composable
-actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier) {
+actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier, world: com.sappy.speedome.ui.worlds.World?, insetBottom: androidx.compose.ui.unit.Dp) {
+    if (world == null) {
+        LiveMap(driver, northUp, modifier, BaseStyle.Uri(STYLE_URL), null, insetBottom)
+        return
+    }
+    val style by androidx.compose.runtime.produceState<BaseStyle?>(null, world.id) {
+        value = BaseStyle.Json(kotlinx.serialization.json.Json.parseToJsonElement(world.styleJson()).jsonObject)
+    }
+    // A new map per world, so the style swap never mixes two worlds' layers.
+    androidx.compose.runtime.key(world.id) {
+        style?.let { LiveMap(driver, northUp, modifier, it, world, insetBottom) } ?: Box(modifier.background(world.palette.ground))
+    }
+}
+
+@Composable
+private fun LiveMap(
+    driver: GaugeDriver,
+    northUp: Boolean,
+    modifier: Modifier,
+    baseStyle: BaseStyle,
+    world: com.sappy.speedome.ui.worlds.World?,
+    insetBottom: androidx.compose.ui.unit.Dp,
+) {
     val app = LocalAppContainer.current
     val route by app.liveRoute.points.collectAsStateWithLifecycle()
     val view = rememberTrackView(app.tracking.state, 500)
@@ -152,10 +176,10 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier) {
     var following by remember { mutableStateOf(true) }
 
     val state = rememberMapState(
-        baseStyle = BaseStyle.Uri(STYLE_URL),
+        baseStyle = baseStyle,
         initialCameraPosition = CameraPosition(center = Position(fix?.lon ?: 0.0, fix?.lat ?: 0.0), zoom = if (fix != null) 16.0 else 2.0),
     ) {
-        RouteLayers(lines, gaps)
+        RouteLayers(lines, gaps, world?.palette?.route)
         Dot("puck", puck, SpeedoColors.Accent, 7f)
     }
     // Panning or rotating the map stops following until RE-CENTRE.
@@ -164,7 +188,7 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier) {
     }
 
     BoxWithConstraints(modifier.background(SpeedoColors.Background)) {
-        val lookAhead = if (northUp) 0.dp else maxHeight * .35f // course-up: see more road ahead
+        val lookAhead = if (northUp) 0.dp else (maxHeight - insetBottom) * .35f // course-up: see more road ahead
         LaunchedEffect(fix?.tNanos, following, northUp) {
             val f = fix ?: return@LaunchedEffect
             if (!following) return@LaunchedEffect
@@ -173,16 +197,19 @@ actual fun MapPage(driver: GaugeDriver, northUp: Boolean, modifier: Modifier) {
                     center = Position(f.lon, f.lat),
                     zoom = zoomFor(view.speedMps * 3.6),
                     bearing = if (northUp) 0.0 else heading ?: state.cameraPosition.bearing,
-                    padding = DpPadding(top = lookAhead),
+                    padding = DpPadding(top = lookAhead, bottom = insetBottom),
                 ),
                 CameraAnimation.Ease { duration = 900.milliseconds },
             )
         }
         MaplibreMap(Modifier.fillMaxSize(), state)
-        SpeedCard(driver, view, Modifier.align(Alignment.BottomStart).padding(12.dp))
+        if (world == null) SpeedCard(driver, view, Modifier.align(Alignment.BottomStart).padding(12.dp))
         if (!following) MapButton("RE-CENTRE", "Re-centre map", Modifier.align(Alignment.TopEnd)) { following = true }
         if (fix == null) {
-            Text("Waiting for position", color = SpeedoColors.Muted, fontSize = 13.sp, modifier = Modifier.align(Alignment.TopStart).padding(14.dp))
+            Text(
+                "Waiting for position", color = SpeedoColors.Muted, fontSize = 13.sp,
+                modifier = Modifier.align(if (world == null) Alignment.TopStart else Alignment.Center).padding(14.dp),
+            )
         }
     }
 }

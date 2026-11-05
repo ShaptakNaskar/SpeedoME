@@ -133,7 +133,7 @@ fun SpeedScreen() {
         }
         // On the Map the page must not scroll or swipe: map pinches would otherwise reach the page and
         // stretch the whole screen (Android's overscroll effect). Theme arrows still switch themes.
-        val mapShown = entry.id == SpeedThemes.MAP
+        val mapShown = entry.id == SpeedThemes.MAP || entry.id == SpeedThemes.WORLD
         Column(Modifier.fillMaxSize().background(chrome).verticalScroll(rememberScrollState(), enabled = !mapShown)) {
             Header(
                 height = if (landscape) HEADER_HEIGHT_LANDSCAPE else HEADER_HEIGHT,
@@ -170,6 +170,7 @@ fun SpeedScreen() {
                     when {
                         gauge != null -> GaugeView(gauge, { driver.frame }, Modifier.fillMaxSize())
                         e.id == SpeedThemes.MAP -> MapPage(driver, settings.mapNorthUp, Modifier.fillMaxSize())
+                        e.id == SpeedThemes.WORLD -> com.sappy.speedome.ui.worlds.WorldPage(driver, settings, Modifier.fillMaxSize())
                         e.id == SpeedThemes.GRAPH -> GraphPage(driver, settings.graphWindowS, Modifier.fillMaxSize())
                         else -> NerdPage(Modifier.fillMaxSize())
                     }

@@ -161,7 +161,7 @@ fun SettingsScreen() {
         Section("ABOUT")
         var licences by remember { mutableStateOf(false) }
         LinkRow("Privacy policy", "Your trips stay on your phone. Map tiles are the only network use.") { actions.openUrl("$REPO/blob/main/docs/privacy.md") }
-        LinkRow("Open-source licences", "MapLibre, OpenStreetMap data, fonts and AndroidX.") { licences = true }
+        LinkRow("Open-source licences", "MapLibre, OpenStreetMap data, Waypoint styles, fonts and AndroidX.") { licences = true }
         LinkRow("Source code", "GPL-3.0 on GitHub.") { actions.openUrl(REPO) }
         if (licences) LicencesDialog { licences = false }
 
@@ -206,7 +206,9 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
                     "SpeedoME" to "GNU General Public License v3.0 or later.",
                     "MapLibre Native" to "BSD 2-Clause. © MapLibre contributors, Mapbox.",
                     "Map data" to "© OpenStreetMap contributors (ODbL). Tiles by OpenFreeMap, schema © OpenMapTiles.",
-                    "Fonts" to "Oswald, Outfit, B612 Mono, Barlow Semi Condensed: SIL Open Font License 1.1.",
+                    "World map styles" to "From Waypoint (github.com/the-geeky-couldron/waypoint). Copyright (c) 2026 Waypoint contributors, MIT License; the full notice ships with the styles. Lettering changed to Noto Sans.",
+                    "Elevation (hill shading on some worlds)" to "Terrain Tiles on the AWS Open Data Registry: Mapzen, with SRTM, GMTED, ETOPO1 and other sources.",
+                    "Fonts" to "Oswald, Outfit, B612 Mono, Barlow Semi Condensed, Rye, VT323, Silkscreen, Orbitron, and Noto Sans on the maps: SIL Open Font License 1.1.",
                     "AndroidX, Jetpack Compose, Kotlin, kotlinx" to "Apache License 2.0.",
                 ).forEach { (name, text) ->
                     Column {

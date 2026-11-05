@@ -38,6 +38,10 @@ private fun androidAssets(context: Context): GaugeAssets {
         GaugeTypeface.B612 to font(R.font.b612_mono),
         GaugeTypeface.B612_BOLD to font(R.font.b612_mono_bold),
         GaugeTypeface.BARLOW_SEMI to font(R.font.barlow_semi_condensed_semibold),
+        GaugeTypeface.RYE to font(R.font.rye),
+        GaugeTypeface.VT323 to font(R.font.vt323),
+        GaugeTypeface.SILKSCREEN to font(R.font.silkscreen),
+        GaugeTypeface.ORBITRON to font(R.font.orbitron),
     )
     return GaugeAssets { face, weight, skewX ->
         Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {

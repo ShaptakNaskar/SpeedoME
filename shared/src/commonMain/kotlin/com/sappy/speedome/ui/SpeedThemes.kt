@@ -18,10 +18,11 @@ object SpeedThemes {
     const val MAP = "map"
     const val NERD = "nerd"
     const val GRAPH = "graph"
+    const val WORLD = "world"
 
     val all: List<SpeedThemeEntry> = listOf(
         RetroTheme.entry(), ModernTheme.entry(), DigitalTheme.entry(), NightFocusTheme.entry(),
-        SpeedThemeEntry(MAP, "MAP", null), SpeedThemeEntry(GRAPH, "GRAPH", null),
+        SpeedThemeEntry(MAP, "MAP", null), SpeedThemeEntry(WORLD, "WORLD", null), SpeedThemeEntry(GRAPH, "GRAPH", null),
         SpeedThemeEntry(NERD, "NERD", null),
         SpeedTapeTheme.entry(), SunlightTheme.entry(),
     )

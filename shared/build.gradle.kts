@@ -34,6 +34,7 @@ kotlin {
             api(libs.androidx.room.runtime)
             api(libs.androidx.datastore.preferences.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.cmp.resources)
         }
         iosMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)
@@ -62,6 +63,11 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
         }
     }
+}
+
+// The map worlds' styles (tools/import_worlds.py) are read through Compose resources on every platform.
+compose.resources {
+    packageOfResClass = "com.sappy.speedome.resources"
 }
 
 dependencies {
