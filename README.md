@@ -2,7 +2,7 @@
 
 An Android GPS speedometer and trip computer that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
 
-> **Status: 0.10, feature-complete.** All planned milestones are implemented and verified on the emulator; 0.10 adds the speed limit and trip maps. What's left before 1.0 is the on-phone checks (screen-off drives, battery, Doze) listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md). The roadmap is in [`docs/plan.md`](docs/plan.md) and progress in [`docs/progress.md`](docs/progress.md).
+> **Status: 0.16.0.** All 38 map worlds have their own hand-made speedometers and app looks. Settings groups controls by purpose and shows the options for the selected theme. Remaining on-phone reliability checks are listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md).
 
 <p>
   <img src="docs/store/retro.jpg" width="160" alt="Retro theme">
@@ -16,9 +16,10 @@ An Android GPS speedometer and trip computer that shows the speed your GPS chip 
 
 - **Honest speed:** uses the GPS chip's own Doppler speed, cleaned by a Kalman filter that rejects impossible jumps but never real high speeds (trains and planes included).
 - **Auto-range dial** that grows as you speed up and shrinks back afterwards. How it shrinks is configurable, and it can be switched off.
-- **Nine themes:** Retro, Modern, Digital, Night Focus, Map, Graph, Nerd, Speed Tape and Sunlight. You can try them all in the [Theme Lab](docs/theme-lab.html): download it and open it in a browser, then drive with the keyboard.
+- **Nine themes:** Retro, Modern, Digital, Night Focus, Map, Graph, Nerd, Speed Tape and Sunlight. The [Theme Lab](docs/theme-lab.html) previews the original instrument designs: download it and open it in a browser, then drive with the keyboard.
+- **38 map worlds:** original speedometers for every world, with matching colours and lettering throughout the app. Step with the arrows, or hold the name, slide to a choice and release.
 - **Speed limit:** dials and bars fix at 25 % over the limit with the top in red; the needle and digits turn red over the last 10 %, and the phone buzzes at the limit, then pulses faster the further over you go.
-- **Trip computer:** moving and overall averages, max speed, distance, target distance with arrival time, and an "arrive by" mode.
+- **Trip computer:** moving and overall averages, max speed, distance, trip time, target distance with arrival time, and an "arrive by" mode.
 - **Drive and step modes:** step mode adds step count, cadence and pace.
 - **Trips** that survive the app being killed, with a history, a map of each route and GPX export.
 - **Light when idle:** without a recording, the speedometer runs only while the app is open. Close it and nothing keeps running.
@@ -72,4 +73,4 @@ Single fixes go through the adb hook: `adb shell am broadcast -p com.sappy.Speed
 
 SpeedoME is free software under the [GNU General Public License v3.0 or later](LICENSE).
 
-The Map theme uses [MapLibre Native](https://maplibre.org) (BSD-2-Clause) with vector tiles from [OpenFreeMap](https://openfreemap.org): © [OpenMapTiles](https://www.openmaptiles.org), data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Gauge fonts are under the SIL Open Font License (see `gauges/src/main/assets/licenses`).
+The Map theme uses [MapLibre Native](https://maplibre.org) (BSD-2-Clause) with vector tiles from [OpenFreeMap](https://openfreemap.org): © [OpenMapTiles](https://www.openmaptiles.org), data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Gauge fonts are under the SIL Open Font License (see `gauges/src/androidMain/assets/licenses`).

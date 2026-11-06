@@ -15,11 +15,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -78,16 +86,20 @@ class PickMenuState {
     var hovered by mutableStateOf<String?>(null)
         private set
     internal val bounds = HashMap<String, Rect>()
+    internal var pointer by mutableStateOf<Offset?>(null)
+    internal var viewport by mutableStateOf<Rect?>(null)
 
     fun open(r: Request) {
         bounds.clear()
         hovered = null
+        pointer = null
         request = r
     }
 
     /** Highlights the option under [root]; true when that changed it. */
     fun hover(root: Offset): Boolean {
-        val id = bounds.entries.firstOrNull { it.value.contains(root) }?.key
+        pointer = root
+        val id = if (viewport?.contains(root) != false) bounds.entries.firstOrNull { it.value.contains(root) }?.key else null
         if (id == hovered) return false
         hovered = id
         return id != null
@@ -104,6 +116,8 @@ class PickMenuState {
     fun close() {
         request = null
         hovered = null
+        pointer = null
+        viewport = null
     }
 }
 
@@ -204,20 +218,47 @@ fun PickMenuHost(state: PickMenuState, content: @Composable () -> Unit) {
                 .clickable(remember { MutableInteractionSource() }, indication = null) { state.close() },
         ) {
             val anchorBottom = with(density) { r.anchor.bottom.toDp() }
-            val rowH = 44.dp
+            val rowH = 48.dp
             val maxRows = ((maxHeight - anchorBottom - 72.dp) / rowH).toInt().coerceAtLeast(4)
             val maxCols = ((maxWidth - 24.dp) / 156.dp).toInt().coerceIn(1, 4)
             val cols = ceil(r.options.size / maxRows.toFloat()).toInt().coerceIn(1, maxCols)
             val rows = ceil(r.options.size / cols.toFloat()).toInt()
             val panelW = minOf(maxWidth - 24.dp, if (cols == 1) 260.dp else 164.dp * cols + 16.dp) // room for "CONNECTED CITY"
             val x = with(density) { (r.anchor.center.x - (panelW / 2).toPx()).coerceIn(12.dp.toPx(), (maxWidth - panelW - 12.dp).toPx()) }
-            val y = with(density) { (r.anchor.bottom + 4.dp.toPx()).coerceAtMost((maxHeight - rowH * rows - 56.dp).toPx().coerceAtLeast(0f)) }
+            val safeTop = with(density) { WindowInsets.safeDrawing.getTop(this).toDp() }
+            val safeBottom = with(density) { WindowInsets.safeDrawing.getBottom(this).toDp() }
+            val panelMaxHeight = (maxHeight - safeTop - safeBottom - 24.dp).coerceAtLeast(rowH)
+            val panelHeight = minOf(panelMaxHeight, rowH * rows + 56.dp)
+            val top = minOf(anchorBottom + 4.dp, maxHeight - safeBottom - 12.dp - panelHeight).coerceAtLeast(safeTop + 12.dp)
+            val y = with(density) { top.toPx() }
+            val scroll = rememberScrollState()
+            LaunchedEffect(r) {
+                while (r.sliding && state.request === r) {
+                    val pointer = state.pointer
+                    val viewport = state.viewport
+                    if (pointer != null && viewport != null && pointer.x in viewport.left..viewport.right) {
+                        val edge = with(density) { 36.dp.toPx() }
+                        val step = when {
+                            pointer.y >= viewport.bottom - edge -> edge / 3
+                            pointer.y <= viewport.top + edge -> -edge / 3
+                            else -> 0f
+                        }
+                        if (step != 0f) {
+                            scroll.scrollBy(step)
+                            state.hover(pointer)
+                        }
+                    }
+                    delay(32)
+                }
+            }
             Column(
                 Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) }.width(panelW)
                     .clip(RoundedCornerShape(16.dp)).background(SpeedoColors.Raised)
                     .border(1.dp, SpeedoColors.Accent.copy(alpha = .35f), RoundedCornerShape(16.dp))
                     .clickable(remember { MutableInteractionSource() }, indication = null) {} // taps inside don't close
-                    .padding(8.dp),
+                    .heightIn(max = panelMaxHeight)
+                    .onGloballyPositioned { state.viewport = it.boundsInRoot() }
+                    .verticalScroll(scroll).padding(8.dp),
             ) {
                 Text(
                     if (r.sliding) "${r.title} · SLIDE AND LIFT" else r.title, color = SpeedoColors.Muted, fontSize = 10.sp, letterSpacing = 2.sp,
@@ -266,7 +307,7 @@ private fun PickItem(o: PickOption, selected: Boolean, hovered: Boolean, height:
             }
         }
         Text(
-            o.label, color = ink, fontSize = 11.sp, letterSpacing = 1.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            o.label, color = ink, fontSize = 11.sp, lineHeight = 14.sp, letterSpacing = .5.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
             fontWeight = if (selected || hovered) FontWeight.Bold else FontWeight.Medium,
         )
     }

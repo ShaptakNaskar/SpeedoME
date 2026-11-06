@@ -45,6 +45,9 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.androidx.sqlite.bundled)
         }
+        named("desktopTest").dependencies {
+            implementation(libs.junit)
+        }
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.activity.compose)
