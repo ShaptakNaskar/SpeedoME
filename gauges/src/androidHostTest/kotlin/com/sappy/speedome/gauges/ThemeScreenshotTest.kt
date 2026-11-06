@@ -218,4 +218,25 @@ class ThemeScreenshotTest {
     @Test
     fun highlands() = shoot(HighlandsTheme, cardShots())
 
+    @Test
+    fun connected_city() = shoot(ConnectedCityTheme, cardShots())
+
+    @Test
+    fun backcountry() = shoot(BackcountryTheme, cardShots())
+
+    @Test
+    fun courier() = shoot(CourierTheme, cardShots())
+
+    @Test
+    fun surface_survey() = shoot(SurfaceSurveyTheme, cardShots())
+
+    @Test
+    fun islands() = shoot(IslandsTheme, cardShots())
+
+    @Test
+    fun quarantine() = shoot(QuarantineTheme, cardShots())
+
+    @Test
+    fun field_ops() = shoot(FieldOpsTheme, cardShots())
+
 }
