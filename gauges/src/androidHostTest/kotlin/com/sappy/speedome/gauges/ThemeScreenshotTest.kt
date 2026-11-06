@@ -197,4 +197,25 @@ class ThemeScreenshotTest {
 
     @Test
     fun openRoad() = shoot(OpenRoadTheme, cardShots())
+    @Test
+    fun wayfarer() = shoot(WayfarerTheme, cardShots())
+
+    @Test
+    fun explorer() = shoot(ExplorerTheme, cardShots())
+
+    @Test
+    fun northern_road() = shoot(NorthernRoadTheme, cardShots())
+
+    @Test
+    fun golden_thread() = shoot(GoldenThreadTheme, cardShots())
+
+    @Test
+    fun desert_sands() = shoot(DesertSandsTheme, cardShots())
+
+    @Test
+    fun wilds() = shoot(WildsTheme, cardShots())
+
+    @Test
+    fun highlands() = shoot(HighlandsTheme, cardShots())
+
 }
