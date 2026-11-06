@@ -22,7 +22,7 @@ import kotlin.math.roundToInt
 
 /**
  * Golden images of every theme in representative states (docs/plan.md §11). Record with
- * `./gradlew :gauges:recordRoborazziDebug`; `./gradlew check` verifies them.
+ * `./gradlew :gauges:recordRoborazziAndroidHostTest`; `./gradlew check` verifies them.
  */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -127,18 +127,23 @@ class ThemeScreenshotTest {
             Shot("card", states.getValue("mid"), size = card),
             Shot("idle", states.getValue("idle"), size = card),
             Shot("tall", states.getValue("high"), size = DpSize(280.dp, 360.dp)),
+            Shot("time_mph", states.getValue("mid").let { it.copy(
+                stats = it.stats.copy(elapsedS = 45_296.0),
+                options = it.options.copy(average = AverageDisplay.MOVING, units = SpeedUnit.MPH),
+            ) }, size = card),
         ) + limitShots().take(2).map { it.copy(size = card) }
     }
 
+    /** The palette speedo, on Palm City's (dark) and Back Streets' (light) colours; its own ids, as those worlds now have hand-made ones. */
     @Test
     fun worldPalette() = shoot(
-        WorldTheme("world-palm_city", "PALM CITY", WorldPalette(Color(0xFFB6DB91), Color(0xFFB786ED), Color(0xFF20221F), Color(0xFF73776C), Color(0xFF383B35))),
+        WorldTheme("world-palette_dark", "PALETTE", WorldPalette(Color(0xFFB6DB91), Color(0xFFB786ED), Color(0xFF20221F), Color(0xFF73776C), Color(0xFF383B35))),
         cardShots(),
     )
 
     @Test
     fun worldPaletteLight() = shoot(
-        WorldTheme("world-back_streets", "BACK STREETS", WorldPalette(Color(0xFFF2C877), Color(0xFFDA5B3C), Color(0xFFC2C5AD), Color(0xFFF4F0D8), Color(0xFFA4A48E))),
+        WorldTheme("world-palette_light", "PALETTE", WorldPalette(Color(0xFFF2C877), Color(0xFFDA5B3C), Color(0xFFC2C5AD), Color(0xFFF4F0D8), Color(0xFFA4A48E))),
         cardShots(),
     )
 
@@ -171,4 +176,25 @@ class ThemeScreenshotTest {
 
     @Test
     fun inkWind() = shoot(InkWindTheme, cardShots())
+
+    @Test
+    fun palmCity() = shoot(PalmCityTheme, cardShots())
+
+    @Test
+    fun backStreets() = shoot(BackStreetsTheme, cardShots())
+
+    @Test
+    fun midnightRun() = shoot(MidnightRunTheme, cardShots())
+
+    @Test
+    fun concreteGrid() = shoot(ConcreteGridTheme, cardShots())
+
+    @Test
+    fun violetCity() = shoot(VioletCityTheme, cardShots())
+
+    @Test
+    fun skyline() = shoot(SkylineTheme, cardShots())
+
+    @Test
+    fun openRoad() = shoot(OpenRoadTheme, cardShots())
 }

@@ -58,9 +58,12 @@ fun DrawScope.cardStats(
         val x = if (l.landscape) s.left + s.width * (i % 2 + .5f) / 2 else s.left + s.width * (i + .5f) / n
         val y = if (l.landscape) s.top + s.height * (i / 2 + .4f) / rows else s.top + minOf(s.height * .3f, 30.dp.toPx())
         val sz = scale * if (l.landscape) minOf(s.height / rows * .38f, 30.dp.toPx()) else minOf(s.width / n * .3f, 26.dp.toPx())
-        shadow?.let { (c, o) -> text(v, x + o, y + o, value, sz, c) }
-        text(v, x, y, value, sz, ink)
-        text(k, x, y + sz * .9f, label, sz * .36f, muted, spacingEm = .16f)
+        val cellW = s.width / if (l.landscape) 2 else n
+        val valueSize = minOf(sz, cellW * .86f / (v.length * .65f))
+        val labelSize = minOf(maxOf(sz * .36f, 8.dp.toPx()), cellW * .9f / (k.length * .72f))
+        shadow?.let { (c, o) -> text(v, x + o, y + o, value, valueSize, c) }
+        text(v, x, y, value, valueSize, ink)
+        text(k, x, y + sz * .9f, label, labelSize, muted, spacingEm = .08f)
     }
 }
 

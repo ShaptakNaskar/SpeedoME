@@ -89,7 +89,7 @@ fun SpeedScreen() {
     val simRunning by remember { app.simulator.truth.map { it.running }.distinctUntilChanged() }.collectAsStateWithLifecycle(false)
     val view = rememberTrackView(app.tracking.state)
     val entry = SpeedThemes.byId(settings.theme)
-    val theme = entry.gauge ?: RetroTheme
+    val theme = entry.gauge ?: if (entry.id == SpeedThemes.MAP) com.sappy.speedome.ui.worlds.Worlds.byId(settings.worldId).gauge else RetroTheme
     val showStrip = entry.gauge != null && theme.id != "night" && (settings.nerdStrip || settings.showHeading || settings.showGForce)
     val needsCompass = theme.id == "tape" || settings.showHeading || settings.showGForce
     DisposableEffect(needsCompass) {
