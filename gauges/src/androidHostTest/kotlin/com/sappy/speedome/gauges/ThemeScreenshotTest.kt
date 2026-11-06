@@ -239,4 +239,25 @@ class ThemeScreenshotTest {
     @Test
     fun field_ops() = shoot(FieldOpsTheme, cardShots())
 
+    @Test
+    fun old_kingdom() = shoot(OldKingdomTheme, cardShots())
+
+    @Test
+    fun prohibition() = shoot(ProhibitionTheme, cardShots())
+
+    @Test
+    fun new_chapter() = shoot(NewChapterTheme, cardShots())
+
+    @Test
+    fun vector_command() = shoot(VectorCommandTheme, cardShots())
+
+    @Test
+    fun home_console() = shoot(HomeConsoleTheme, cardShots())
+
+    @Test
+    fun exclusion_zone() = shoot(ExclusionZoneTheme, cardShots())
+
+    @Test
+    fun machine_atlas() = shoot(MachineAtlasTheme, cardShots())
+
 }
