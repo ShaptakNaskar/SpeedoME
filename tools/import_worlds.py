@@ -3,7 +3,8 @@
 
     tools/import_worlds.py            # writes shared/src/commonMain/composeResources/files/worlds/<id>.json
 
-Only the style documents are taken. They are rewritten so nothing with other rights ships:
+Only style documents are taken; inherited style licences still apply (ACKNOWLEDGEMENTS.md).
+They are rewritten to avoid bundling proprietary fonts or runtime artwork:
 - lettering uses OpenFreeMap's Noto Sans (Waypoint bundles game and commercial fonts);
 - texture images Waypoint adds at runtime (pixel grass/stone/water, paper fibre) are dropped,
   leaving each layer's own flat colour.

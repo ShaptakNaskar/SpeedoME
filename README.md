@@ -1,8 +1,15 @@
 # SpeedoME
 
-An Android GPS speedometer and trip computer that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
+A GPS speedometer and trip computer for Android and iOS that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
 
-> **Status: 0.16.0.** All 38 map worlds have their own hand-made speedometers and app looks. Settings groups controls by purpose and shows the options for the selected theme. Remaining on-phone reliability checks are listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md).
+> **Version 1.0.0.** All 38 map worlds have their own hand-made speedometers and app looks. Settings groups controls by purpose and shows the options for the selected theme. Platform details and remaining device checks are listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md).
+
+## Download 1.0.0
+
+- **Android:** [SpeedoME-1.0.0.apk](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.0/SpeedoME-1.0.0.apk) — signed universal release APK, Android 8.0+.
+- **iPhone:** [SpeedoME-1.0.0-unsigned.ipa](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.0/SpeedoME-1.0.0-unsigned.ipa) — iOS 16.0+; sign it with your own certificate before installing. See [iOS instructions](docs/ios.md).
+
+[Release notes](docs/releases/v1.0.0.md) · [Latest release](https://github.com/ShaptakNaskar/SpeedoME/releases/latest)
 
 <p>
   <img src="docs/store/retro.jpg" width="160" alt="Retro theme">
@@ -21,6 +28,7 @@ An Android GPS speedometer and trip computer that shows the speed your GPS chip 
 - **Speed limit:** dials and bars fix at 25 % over the limit with the top in red; the needle and digits turn red over the last 10 %, and the phone buzzes at the limit, then pulses faster the further over you go.
 - **Trip computer:** moving and overall averages, max speed, distance, trip time, target distance with arrival time, and an "arrive by" mode.
 - **Drive and step modes:** step mode adds step count, cadence and pace.
+- **Trip sections (laps):** mark part of a recording, review its own stats, and save it linked to the full trip or as a separate trip.
 - **Trips** that survive the app being killed, with a history, a map of each route and GPX export.
 - **Light when idle:** without a recording, the speedometer runs only while the app is open. Close it and nothing keeps running.
 - **Graph page:** your speed over the last 30 s, 1, 2, 5, 30, 60 or 120 minutes, task-manager style, under the live speed.
@@ -65,12 +73,36 @@ Single fixes go through the adb hook: `adb shell am broadcast -p com.sappy.Speed
 |---|---|
 | `engine/` | Pure Kotlin with no Android code: speed filter, trip stats, auto-range and arrival-time maths. Unit-tested on the JVM. |
 | `gauges/` | Jetpack Compose gauge toolkit and themes. |
-| `app/` | The Android app: tracking service, sensors, storage and screens. |
+| `shared/` | Shared Compose screens, trip storage, settings and platform services for Android/iOS. |
+| `app/` | Android launcher, manifest and release packaging. |
+| `ios/`, `iosApp/` | iOS entry point, Linux screen previews and the SwiftUI host. |
 | `docs/` | The design and implementation plan, and the Theme Lab mockup. |
 | `tools/` | Emulator helper (`emu.sh`) and the mock GPS streamer (`mockstream.py`). |
 
-## License
+## Thanks to Waypoint
 
-SpeedoME is free software under the [GNU General Public License v3.0 or later](LICENSE).
+Special thanks to **[the-geeky-couldron](https://github.com/the-geeky-couldron)** and all
+**[Waypoint developers and contributors](https://github.com/the-geeky-couldron/waypoint)**
+for creating and open-sourcing the 38 map worlds adapted by SpeedoME. Waypoint's work
+made this integration possible. We retained its MIT copyright notice, credited the
+inherited map-style designs, and added our own speedometers.
 
-The Map theme uses [MapLibre Native](https://maplibre.org) (BSD-2-Clause) with vector tiles from [OpenFreeMap](https://openfreemap.org): © [OpenMapTiles](https://www.openmaptiles.org), data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Gauge fonts are under the SIL Open Font License (see `gauges/src/androidMain/assets/licenses`).
+See [Acknowledgements and third-party licences](ACKNOWLEDGEMENTS.md) for the imported
+commit, adaptations, complete credits and licence sources.
+
+## Licence
+
+SpeedoME's application code is [GNU GPL version 3 or later](LICENSE). Third-party
+components retain their own licences: Waypoint (MIT), inherited OSM Liberty / Mapbox
+styles (BSD-3-Clause code, CC BY 3.0 design), MapLibre Native (BSD-2-Clause), MapLibre
+Compose (BSD-3-Clause), Spatial K (MIT), AndroidX/Kotlin/Compose/Skiko (Apache-2.0),
+Skia (BSD-3-Clause), SQLite (public domain), and fonts (SIL OFL 1.1).
+
+Map data is © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright),
+with [OpenMapTiles](https://openmaptiles.org/) schema/design and tiles from
+[OpenFreeMap](https://openfreemap.org/). Some worlds use Mapzen/Tilezen terrain data;
+provider-specific credits are included in the notices.
+
+The [full notices](shared/src/commonMain/composeResources/files/licenses/THIRD_PARTY_NOTICES.txt)
+ship in **both APK and IPA** and are available under Settings → About SpeedoME →
+Open-source licences → Full notices. [Full attribution details](ACKNOWLEDGEMENTS.md).

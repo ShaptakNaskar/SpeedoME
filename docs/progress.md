@@ -61,7 +61,18 @@ Owner's workflow: implement → verify on emulator → commit locally; **do not 
 - `PickMenuStateTest` adds two desktop regression tests: hidden/clipped items cannot be selected, and a new menu clears old item locations. `./gradlew :shared:desktopTest check --max-workers=2` passed after the final picker change.
 - Batches 3–6 and Settings are separate signed local commits. SSH signing uses the existing `/run/user/1000/ssh-agent.socket` when the terminal lacks `SSH_AUTH_SOCK`. Nothing was pushed.
 
-## Before 1.0: on-phone checks (owner)
+## 1.0.0 release preparation (2026-11-06)
+
+Owner confirmed 0.16.0 works on the connected Android phone and requested publishing 1.0.0 with exactly one APK and one IPA, using one Actions run.
+
+- Android versionName / iOS short version: 1.0.0; Android versionCode / iOS build: 21.
+- README, release notes and ACKNOWLEDGEMENTS.md credit the-geeky-couldron and all Waypoint contributors, retain MIT plus inherited OSM Liberty / Mapbox style terms, and explain the adaptations.
+- Full notices are now shared Compose resources, so the APK and IPA both carry all ten gauge-font OFL texts, Waypoint, inherited style notices, MapLibre Native/Compose/FFI and native dependency notices, Spatial K, Skia/Skiko, Kotlin/Apache, terrain-provider attributions and SpeedoME's GPL. Settings exposes the complete text through a lazy, scrollable Full notices reader.
+- `.github/workflows/ios.yml` is the only workflow and runs automatically on `v*` tags only. Main pushes do not run it. It builds the unsigned IPA, checks its notice file, attaches it to the draft release and publishes only when the asset list is exactly `SpeedoME-<version>.apk` and `SpeedoME-<version>-unsigned.ipa`.
+- The signed universal Android release APK is built locally with the existing release key and uploaded to the draft after pushing main and the version tag together. No keystore is sent to GitHub.
+- Validation: full Gradle checks, Kotlin/iOS compilation and signed release build passed. `apksigner` verifies the universal APK; `aapt` reports 1.0.0 / 21; archive inspection confirms all three ABIs and the exact bundled notices. The signed release was installed on the emulator and its Full notices reader loaded the Waypoint acknowledgement successfully. Workflow/action shell syntax and the sole tag-only trigger were checked before pushing.
+
+## Remaining on-phone checks (owner)
 
 These need a real phone and can't be done on the emulator (docs/plan.md §11):
 1. A 30 min screen-off drive (per available brand), with and without "Allow all the time" plus the battery exemption.

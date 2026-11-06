@@ -21,8 +21,8 @@ targets:
       path: Info.plist
       properties:
         CFBundleDisplayName: SpeedoME
-        CFBundleShortVersionString: "0.16.0"
-        CFBundleVersion: "13"
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "21"
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIStatusBarStyle: UIStatusBarStyleDefault

@@ -8,7 +8,7 @@
 
 SpeedoME shows the speed your GPS chip actually measures. It uses the receiver's own Doppler speed, cleaned by a filter that throws away impossible jumps, so you get no 200 km/h glitches in a tunnel and no lag when you pull away.
 
-**Eight themes.** Swipe between them:
+**Nine themes.** Swipe between them:
 
 - Retro: a chrome-bezel 1970s gauge.
 - Modern: a glowing arc.
@@ -39,4 +39,4 @@ Free and open source (GPL-3.0): github.com/ShaptakNaskar/SpeedoME
 
 ## Screenshots
 
-`docs/store/` holds phone screenshots (JPEG, 720 px wide) taken from the emulator with the mock GPS stream (`tools/mockstream.py`). They cover all eight themes, the trip summary, the Trips list, trip detail and Settings.
+`docs/store/` holds phone screenshots (JPEG, 720 px wide) taken from the emulator with the mock GPS stream (`tools/mockstream.py`). They cover the original themes, the trip summary, the Trips list, trip detail and Settings.

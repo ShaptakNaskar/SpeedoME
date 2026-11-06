@@ -1,5 +1,9 @@
 package com.sappy.speedome.ui
 
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -219,6 +223,26 @@ private fun LinkRow(title: String, body: String, onClick: () -> Unit) {
 
 @Composable
 private fun LicencesDialog(onDismiss: () -> Unit) {
+    var full by rememberSaveable { mutableStateOf(false) }
+    if (full) {
+        val notices by androidx.compose.runtime.produceState<String?>(null) {
+            value = com.sappy.speedome.resources.Res.readBytes("files/licenses/THIRD_PARTY_NOTICES.txt").decodeToString()
+        }
+        val paragraphs = remember(notices) { notices?.split("\n\n") ?: listOf("Loading notices…") }
+        AlertDialog(
+            onDismissRequest = { full = false },
+            title = { Text("Full licence notices") },
+            text = {
+                LazyColumn(Modifier.heightIn(max = 420.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(paragraphs) { paragraph ->
+                        Text(paragraph, color = SpeedoColors.Text, fontFamily = readingFont, fontSize = 12.sp, lineHeight = 17.sp)
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { full = false }) { Text("Back") } },
+        )
+        return
+    }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Open-source licences") },
@@ -226,12 +250,14 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf(
                     "SpeedoME" to "GNU General Public License v3.0 or later.",
-                    "MapLibre Native" to "BSD 2-Clause. © MapLibre contributors, Mapbox.",
+                    "MapLibre Native" to "BSD 2-Clause. © MapLibre contributors, MapTiler.com and Mapbox. Full native dependency notices are included below.",
+                    "MapLibre Compose / Native FFI / Spatial K" to "BSD 3-Clause / BSD 2-Clause / MIT, respectively. Thanks to the MapLibre contributors.",
                     "Map data" to "© OpenStreetMap contributors (ODbL). Tiles by OpenFreeMap, schema © OpenMapTiles.",
-                    "World map styles" to "From Waypoint (github.com/the-geeky-couldron/waypoint). Copyright (c) 2026 Waypoint contributors, MIT License; the full notice ships with the styles. Lettering changed to Noto Sans.",
+                    "World map styles" to "Special thanks to the-geeky-couldron and all Waypoint developers and contributors for sharing the 38 map worlds. github.com/the-geeky-couldron/waypoint. Copyright (c) 2026 Waypoint contributors, MIT. SpeedoME changes the lettering to Noto Sans and removes runtime textures; full notices are bundled.",
+                    "Map style ancestry" to "OSM Liberty and Mapbox Open Styles: BSD 3-Clause code and CC BY 3.0 design. OpenMapTiles schema/design: CC BY 4.0. Full inherited notices are included.",
                     "Elevation (hill shading on some worlds)" to "Terrain Tiles on the AWS Open Data Registry: Mapzen, with SRTM, GMTED, ETOPO1 and other sources.",
                     "Fonts" to "Oswald, Outfit, B612 Mono, Barlow Semi Condensed, Rye, VT323, Silkscreen, Orbitron, Cinzel, Courier Prime, and Noto Sans on the maps: SIL Open Font License 1.1.",
-                    "AndroidX, Jetpack Compose, Kotlin, kotlinx" to "Apache License 2.0.",
+                    "AndroidX, Jetpack Compose, Kotlin, kotlinx and Skiko" to "Apache License 2.0. Skia: BSD 3-Clause. SQLite: public domain.",
                 ).forEach { (name, text) ->
                     Column {
                         Text(name, color = SpeedoColors.Text, fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
@@ -240,6 +266,7 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
                 }
             }
         },
+        dismissButton = { TextButton(onClick = { full = true }) { Text("Full notices") } },
         confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Close") } },
     )
 }
