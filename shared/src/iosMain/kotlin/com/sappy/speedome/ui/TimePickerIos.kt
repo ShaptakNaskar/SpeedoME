@@ -2,6 +2,7 @@
     kotlinx.cinterop.ExperimentalForeignApi::class,
     kotlinx.cinterop.BetaInteropApi::class,
     androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class,
 )
 
 package com.sappy.speedome.ui
@@ -55,6 +56,8 @@ actual fun PlatformTimePicker(state: TimePickerState) {
         },
         modifier = Modifier.fillMaxWidth().height(48.dp),
         properties = UIKitInteropProperties(
+            // Keep the dialog behind the transparent picker instead of cutting a hole through it.
+            placedAsOverlay = true,
             interactionMode = UIKitInteropInteractionMode.NonCooperative,
             isNativeAccessibilityEnabled = true,
         ),

@@ -2,14 +2,14 @@
 
 A GPS speedometer and trip computer for Android and iOS that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
 
-> **Version 1.0.1.** The iPhone Target dialog now uses the native iOS time picker, fixing the clock layout when the keyboard opens. Includes all 38 map worlds with their own hand-made speedometers and app looks. Platform details and remaining device checks are listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md).
+> **Version 1.0.2.** Fixes the map showing through the iPhone Target dialog's native time picker. Includes all 38 map worlds with their own hand-made speedometers and app looks. Platform details and remaining device checks are listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md).
 
-## Download 1.0.1
+## Download 1.0.2
 
-- **Android:** [SpeedoME-1.0.1.apk](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.1/SpeedoME-1.0.1.apk) — signed universal release APK, Android 8.0+.
-- **iPhone:** [SpeedoME-1.0.1-unsigned.ipa](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.1/SpeedoME-1.0.1-unsigned.ipa) — iOS 16.0+; sign it with your own certificate before installing. See [iOS instructions](docs/ios.md).
+- **Android:** [SpeedoME-1.0.2.apk](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.2/SpeedoME-1.0.2.apk) — signed universal release APK, Android 8.0+.
+- **iPhone:** [SpeedoME-1.0.2-unsigned.ipa](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.2/SpeedoME-1.0.2-unsigned.ipa) — iOS 16.0+; sign it with your own certificate before installing. See [iOS instructions](docs/ios.md).
 
-[Release notes](docs/releases/v1.0.1.md) · [Latest release](https://github.com/ShaptakNaskar/SpeedoME/releases/latest)
+[Release notes](docs/releases/v1.0.2.md) · [Latest release](https://github.com/ShaptakNaskar/SpeedoME/releases/latest)
 
 <p>
   <img src="docs/store/retro.jpg" width="160" alt="Retro theme">

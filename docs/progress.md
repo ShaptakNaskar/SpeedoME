@@ -87,6 +87,13 @@ Owner confirmed 0.16.0 works on the connected Android phone and requested publis
 - Release uses the existing single tag-triggered macOS workflow: upload the locally signed APK to the draft, then let Actions add the unsigned IPA and publish after checking that exactly the two expected assets exist. Release: https://github.com/ShaptakNaskar/SpeedoME/releases/tag/v1.0.1.
 - macOS build succeeded: https://github.com/ShaptakNaskar/SpeedoME/actions/runs/42795108683 (tag `v1.0.1`, commit `c12a209`). Release 1.0.1 is published as latest with exactly the APK and unsigned IPA. The downloaded IPA passes ZIP integrity checks, reports 1.0.1 / 22 and iOS 16.0+, and includes the executable and current notices. Its SHA-256 matches the release asset; both README download URLs return HTTP 200.
 
+## 1.0.2 iOS picker compositing (2026-11-10)
+
+- Owner's 1.0.1 screenshot shows the map and speedo through the rectangular area around the native time picker. `UIKitView`'s default underlay placement cuts a transparent hole through the Compose dialog.
+- The iOS picker now uses `UIKitInteropProperties(placedAsOverlay = true)`, the [Compose option for transparent native views](https://kotlinlang.org/docs/multiplatform/whats-new-compose-110.html#overlay-placement-for-interop-views). Its allocated 48 dp row stays above the dialog surface. Target time state, callbacks and Android/desktop code are unchanged.
+- Android/iOS version is 1.0.2, build 23. README download links, patch notes and the bundled notice header follow the new version.
+- Validation: `./gradlew check :shared:compileKotlinIosArm64 :ios:compileKotlinIosArm64 :app:assembleRelease --max-workers=2` passed. APK signature, package version, native libraries, bundled notices and version/link consistency checks passed. This Linux workspace has no connected iPhone; visual confirmation of the corrected native compositing still needs the owner.
+
 ## Remaining on-phone checks (owner)
 
 These need a real phone and can't be done on the emulator (docs/plan.md §11):
