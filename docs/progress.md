@@ -83,7 +83,9 @@ Owner confirmed 0.16.0 works on the connected Android phone and requested publis
 - Owner requested the IPA and updated README download links after the native picker fix was pushed. Main pushes intentionally do not start the release workflow; version tags do.
 - Android/iOS version is 1.0.1, build 22. README points to the versioned APK, unsigned IPA and patch notes, and explains the tag/manual IPA triggers. The bundled notices carry the new version.
 - Validation: `./gradlew check :shared:compileKotlinIosArm64 :ios:compileKotlinIosArm64 :app:assembleRelease --max-workers=2` passed. The universal release APK passes `apksigner`, reports 1.0.1 / 22 and contains the current notices. Version/link consistency checks passed. Native iPhone keyboard/layout verification remains outstanding.
+- Android runtime check: the signed release installs and launches on the emulator; Target retains the Material clock, saves a 10 km arrive-by target, restores its selected hour/minute on edit, and clears it without crashes. Screenshots: `/tmp/speedome-shots/release-1.0.1-home.png` and `release-1.0.1-target.png`.
 - Release uses the existing single tag-triggered macOS workflow: upload the locally signed APK to the draft, then let Actions add the unsigned IPA and publish after checking that exactly the two expected assets exist. Release: https://github.com/ShaptakNaskar/SpeedoME/releases/tag/v1.0.1.
+- macOS build run: https://github.com/ShaptakNaskar/SpeedoME/actions/runs/42795108683 (tag `v1.0.1`, commit `c12a209`).
 
 ## Remaining on-phone checks (owner)
 
