@@ -93,6 +93,7 @@ Owner confirmed 0.16.0 works on the connected Android phone and requested publis
 - The iOS picker now uses `UIKitInteropProperties(placedAsOverlay = true)`, the [Compose option for transparent native views](https://kotlinlang.org/docs/multiplatform/whats-new-compose-110.html#overlay-placement-for-interop-views). Its allocated 48 dp row stays above the dialog surface. Target time state, callbacks and Android/desktop code are unchanged.
 - Android/iOS version is 1.0.2, build 23. README download links, patch notes and the bundled notice header follow the new version.
 - Validation: `./gradlew check :shared:compileKotlinIosArm64 :ios:compileKotlinIosArm64 :app:assembleRelease --max-workers=2` passed. APK signature, package version, native libraries, bundled notices and version/link consistency checks passed. This Linux workspace has no connected iPhone; visual confirmation of the corrected native compositing still needs the owner.
+- [macOS release build](https://github.com/ShaptakNaskar/SpeedoME/actions/runs/42807663591) succeeded for tag `v1.0.2` at `351c469`. [1.0.2](https://github.com/ShaptakNaskar/SpeedoME/releases/tag/v1.0.2) is published as latest with exactly one APK and one unsigned IPA. Both asset hashes match the verified local files; IPA integrity, version 1.0.2 / 23, executable and notices checks passed. Both README download URLs return HTTP 200.
 
 ## Remaining on-phone checks (owner)
 
