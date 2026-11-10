@@ -1,5 +1,7 @@
 package com.sappy.speedome.ui
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
@@ -39,6 +41,11 @@ expect fun rememberBatteryLow(): Boolean
 /** True when the system has animations turned off (the startup sweep and range animations skip). */
 @Composable
 expect fun rememberAnimationsOff(): Boolean
+
+/** The target's arrive-by time: a native control on iOS, the Material clock elsewhere. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+expect fun PlatformTimePicker(state: TimePickerState)
 
 /** Location (and other) permissions: whether tracking can run, and the cards that ask for what's missing. */
 @Stable

@@ -21,7 +21,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -113,7 +112,7 @@ fun TargetDialog(current: TargetView?, onDismiss: () -> Unit) {
                     Text("Arrive by", color = SpeedoColors.Text, fontSize = 16.sp, modifier = Modifier.weight(1f))
                     Switch(byOn, { byOn = it })
                 }
-                if (byOn) TimePicker(time)
+                if (byOn) PlatformTimePicker(time)
             }
         },
         confirmButton = {

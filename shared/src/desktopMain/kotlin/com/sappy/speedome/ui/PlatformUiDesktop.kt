@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -18,6 +21,10 @@ import com.sappy.speedome.ui.theme.SpeedoColors
 import com.sappy.speedome.ui.trips.RouteView
 
 // The desktop preview's stand-ins: messages go to stdout, maps become the plain route drawing.
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+actual fun PlatformTimePicker(state: TimePickerState) = TimePicker(state)
 
 private object Actions : PlatformActions {
     override fun toast(message: String, long: Boolean) = println("toast: $message")

@@ -72,6 +72,12 @@ Owner confirmed 0.16.0 works on the connected Android phone and requested publis
 - The signed universal Android release APK is built locally with the existing release key and uploaded to the draft after pushing main and the version tag together. No keystore is sent to GitHub.
 - Validation: full Gradle checks, Kotlin/iOS compilation and signed release build passed. `apksigner` verifies the universal APK; `aapt` reports 1.0.0 / 21; archive inspection confirms all three ABIs and the exact bundled notices. The signed release was installed on the emulator and its Full notices reader loaded the Waypoint acknowledgement successfully. Workflow/action shell syntax and the sole tag-only trigger were checked before pushing.
 
+## iOS target time picker (2026-11-10)
+
+- The Target dialog now uses UIKit's compact, time-only `UIDatePicker` on iOS. The tall Material clock no longer competes with the distance keyboard for space. Native changes update the existing saved hour/minute state; Set, Cancel, Clear and the next-occurrence calculation keep their existing behavior. Android and desktop retain the Material picker.
+- The native control follows the system clock format and appearance, is labelled "Arrive by", and exposes its native accessibility controls. iPhone runtime verification (especially with the distance keyboard open) still needs a device or macOS simulator; Linux desktop previews cannot render UIKit.
+- Validation: `./gradlew check :shared:compileKotlinIosArm64 :ios:compileKotlinIosArm64 :app:assembleDebug --max-workers=2` passed, including the existing desktop tests, gauge screenshot checks and Android lint. No iPhone is connected to this Linux workspace. No release or push.
+
 ## Remaining on-phone checks (owner)
 
 These need a real phone and can't be done on the emulator (docs/plan.md §11):
