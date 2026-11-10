@@ -1,4 +1,4 @@
-SpeedoME 1.0.0 — licences, acknowledgements and third-party notices
+SpeedoME 1.0.1 — licences, acknowledgements and third-party notices
 
 Special thanks to the-geeky-couldron and the Waypoint developers and contributors
 for creating and sharing the 38 map worlds adapted by SpeedoME.

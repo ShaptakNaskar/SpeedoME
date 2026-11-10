@@ -78,6 +78,13 @@ Owner confirmed 0.16.0 works on the connected Android phone and requested publis
 - The native control follows the system clock format and appearance, is labelled "Arrive by", and exposes its native accessibility controls. iPhone runtime verification (especially with the distance keyboard open) still needs a device or macOS simulator; Linux desktop previews cannot render UIKit.
 - Validation: `./gradlew check :shared:compileKotlinIosArm64 :ios:compileKotlinIosArm64 :app:assembleDebug --max-workers=2` passed, including the existing desktop tests, gauge screenshot checks and Android lint. No iPhone is connected to this Linux workspace. No release or push.
 
+## 1.0.1 patch release (2026-11-10)
+
+- Owner requested the IPA and updated README download links after the native picker fix was pushed. Main pushes intentionally do not start the release workflow; version tags do.
+- Android/iOS version is 1.0.1, build 22. README points to the versioned APK, unsigned IPA and patch notes, and explains the tag/manual IPA triggers. The bundled notices carry the new version.
+- Validation: `./gradlew check :shared:compileKotlinIosArm64 :ios:compileKotlinIosArm64 :app:assembleRelease --max-workers=2` passed. The universal release APK passes `apksigner`, reports 1.0.1 / 22 and contains the current notices. Version/link consistency checks passed. Native iPhone keyboard/layout verification remains outstanding.
+- Release uses the existing single tag-triggered macOS workflow: upload the locally signed APK to the draft, then let Actions add the unsigned IPA and publish after checking that exactly the two expected assets exist. Release: https://github.com/ShaptakNaskar/SpeedoME/releases/tag/v1.0.1.
+
 ## Remaining on-phone checks (owner)
 
 These need a real phone and can't be done on the emulator (docs/plan.md §11):

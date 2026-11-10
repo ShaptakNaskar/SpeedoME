@@ -2,14 +2,14 @@
 
 A GPS speedometer and trip computer for Android and iOS that shows the speed your GPS chip actually measures, without the 200 km/h glitches.
 
-> **Version 1.0.0.** All 38 map worlds have their own hand-made speedometers and app looks. Settings groups controls by purpose and shows the options for the selected theme. Platform details and remaining device checks are listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md).
+> **Version 1.0.1.** The iPhone Target dialog now uses the native iOS time picker, fixing the clock layout when the keyboard opens. Includes all 38 map worlds with their own hand-made speedometers and app looks. Platform details and remaining device checks are listed in [`docs/progress.md`](docs/progress.md). [Privacy policy](docs/privacy.md).
 
-## Download 1.0.0
+## Download 1.0.1
 
-- **Android:** [SpeedoME-1.0.0.apk](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.0/SpeedoME-1.0.0.apk) — signed universal release APK, Android 8.0+.
-- **iPhone:** [SpeedoME-1.0.0-unsigned.ipa](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.0/SpeedoME-1.0.0-unsigned.ipa) — iOS 16.0+; sign it with your own certificate before installing. See [iOS instructions](docs/ios.md).
+- **Android:** [SpeedoME-1.0.1.apk](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.1/SpeedoME-1.0.1.apk) — signed universal release APK, Android 8.0+.
+- **iPhone:** [SpeedoME-1.0.1-unsigned.ipa](https://github.com/ShaptakNaskar/SpeedoME/releases/download/v1.0.1/SpeedoME-1.0.1-unsigned.ipa) — iOS 16.0+; sign it with your own certificate before installing. See [iOS instructions](docs/ios.md).
 
-[Release notes](docs/releases/v1.0.0.md) · [Latest release](https://github.com/ShaptakNaskar/SpeedoME/releases/latest)
+[Release notes](docs/releases/v1.0.1.md) · [Latest release](https://github.com/ShaptakNaskar/SpeedoME/releases/latest)
 
 <p>
   <img src="docs/store/retro.jpg" width="160" alt="Retro theme">
@@ -46,6 +46,8 @@ adb install -r app/build/outputs/apk/debug/app-arm64-v8a-debug.apk   # most phon
 ```
 
 The debug build installs as **SpeedoME Dev** (`com.sappy.SpeedoMe.debug`), alongside the release build (`com.sappy.SpeedoMe`).
+
+iOS IPAs are built by the [Release workflow](https://github.com/ShaptakNaskar/SpeedoME/actions/workflows/ios.yml) on version tags, or manually with **Run workflow**. Pushing `main` alone does not build an IPA. See the [iOS build guide](docs/ios.md).
 
 ### Release signing
 
